@@ -1,4 +1,0 @@
-<?php
-//000000000000
- exit();?>
-a:1:{i:102;a:30:{s:2:"id";i:102;s:11:"channeltype";i:10;s:15:"current_channel";i:10;s:9:"parent_id";i:76;s:8:"typename";s:26:"工业IoT网关Smart.IDBox";s:7:"dirname";s:31:"gongyeiotwangguansmart_idbox695";s:7:"dirpath";s:72:"/chanpinjijiejuefangan/zhinenzhizaoxilie/gongyeiotwangguansmart_idbox695";s:12:"englist_name";s:0:"";s:5:"grade";i:2;s:8:"typelink";s:0:"";s:6:"litpic";s:0:"";s:8:"templist";s:13:"lists_pro.htm";s:8:"tempview";s:12:"view_pro.htm";s:9:"seo_title";s:0:"";s:12:"seo_keywords";s:0:"";s:15:"seo_description";s:0:"";s:10:"sort_order";i:107;s:9:"is_hidden";i:0;s:7:"is_part";i:0;s:8:"admin_id";i:1;s:6:"is_del";i:0;s:10:"del_method";i:0;s:6:"status";i:1;s:10:"is_release";i:0;s:10:"weapp_code";s:0:"";s:4:"lang";s:2:"cn";s:8:"add_time";i:1571886809;s:11:"update_time";i:1573020656;s:12:"has_children";i:0;s:5:"level";i:2;}}

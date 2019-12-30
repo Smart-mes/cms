@@ -73,7 +73,7 @@
         <ul id="con_one_{$i}">
           {eyou:arclist typeid='$field.typeid' row='4' titlelen='30'}
           <li>
-            <a href="{$field.arcurl}" title="{$field.title}">
+            <a href="{$field.aid!==203?$field.arcurl:''}" title="{$field.title}">
               <div><img src="{$field.litpic}" alt="{$field.title}" height="280"></div>
               <p class="title">{$field.title}</p>
             </a>

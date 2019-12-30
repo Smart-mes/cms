@@ -1,4 +1,4 @@
-<?php if (!defined('THINK_PATH')) exit(); /*a:4:{s:31:"./template/pc/lists_article.htm";i:1571037616;s:38:"D:\work\php\cms\template\pc\header.htm";i:1572513233;s:38:"D:\work\php\cms\template\pc\banner.htm";i:1571037616;s:38:"D:\work\php\cms\template\pc\footer.htm";i:1572514955;}*/ ?>
+<?php if (!defined('THINK_PATH')) exit(); /*a:4:{s:31:"./template/pc/lists_article.htm";i:1576482098;s:38:"D:\work\php\cms\template\pc\header.htm";i:1572513233;s:38:"D:\work\php\cms\template\pc\banner.htm";i:1571037616;s:38:"D:\work\php\cms\template\pc\footer.htm";i:1572514955;}*/ ?>
 <!doctype html>
 <html>
 <head>
@@ -134,8 +134,14 @@ style="background: url(<?php echo gettoptype($eyou['field']['typeid'],'litpic');
   </div>
   <ul class="news_list mt20">
    <?php  $typeid = "";  if(empty($typeid) && isset($channelartlist["id"]) && !empty($channelartlist["id"])) : $typeid = intval($channelartlist["id"]); endif;  $param = array(      "typeid"=> $typeid,      "notypeid"=> "",      "flag"=> "",      "noflag"=> "",      "channel"=> "", ); $tagList = new \think\template\taglib\eyou\TagList; $_result_tmp = $tagList->getList($param, 8, "", "", "desc", "on");if(is_array($_result_tmp) || $_result_tmp instanceof \think\Collection || $_result_tmp instanceof \think\Paginator): $i = 0; $e = 1; $__LIST__ = $_result = $_result_tmp["list"]; $__PAGES__ = $_result_tmp["pages"];if( count($__LIST__)==0 ) : echo htmlspecialchars_decode("");else: foreach($__LIST__ as $key=>$field): $aid = $field["aid"];$field["title"] = text_msubstr($field["title"], 0, 60, false);$field["seo_description"] = text_msubstr($field["seo_description"], 0, 160, true);$i= intval($key) + 1;$mod = ($i % 2 ); ?>
-    <li><span class="date"><?php echo MyDate('d',$field['add_time']); ?><em><?php echo MyDate('Y-m',$field['add_time']); ?></em></span>
-      <div><a href="<?php echo $field['arcurl']; ?>" title="<?php echo $field['title']; ?>"><?php echo $field['title']; ?></a><?php echo html_msubstr($field['seo_description'],0,120,true); ?></div>
+    <li>
+      <div class="img"><img src="<?php echo $field['litpic']; ?>" alt="<?php echo $field['title']; ?>"></div>
+      <!-- <span class="date"><?php echo MyDate('d',$field['add_time']); ?><em><?php echo MyDate('Y-m',$field['add_time']); ?></em></span> -->
+      <div class="text">
+        <a href="<?php echo $field['arcurl']; ?>" title="<?php echo $field['title']; ?>" class="title"><?php echo $field['title']; ?></a>
+      <p> <?php echo MyDate('Y-m-d',$field['add_time']); ?></p>
+      <p><?php echo html_msubstr($field['seo_description'],0,200,true); ?>  </p>
+      </div>
     </li>
    <?php ++$e; $aid = 0; endforeach; endif; else: echo htmlspecialchars_decode("");endif; $field = []; ?> 
   </ul>

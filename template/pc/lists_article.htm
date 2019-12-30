@@ -49,8 +49,14 @@
   </div>
   <ul class="news_list mt20">
    {eyou:list titlelen='60' pagesize='8'}
-    <li><span class="date">{$field.add_time|MyDate='d',###}<em>{$field.add_time|MyDate='Y-m',###}</em></span>
-      <div><a href="{$field.arcurl}" title="{$field.title}">{$field.title}</a>{$field.seo_description|html_msubstr=###,0,120,true}</div>
+    <li>
+      <div class="img"><img src="{$field.litpic}" alt="{$field.title}"></div>
+      <!-- <span class="date">{$field.add_time|MyDate='d',###}<em>{$field.add_time|MyDate='Y-m',###}</em></span> -->
+      <div class="text">
+        <a href="{$field.arcurl}" title="{$field.title}" class="title">{$field.title}</a>
+      <p> {$field.add_time|MyDate='Y-m-d',###}</p>
+      <p>{$field.seo_description|html_msubstr=###,0,200,true}  </p>
+      </div>
     </li>
    {/eyou:list} 
   </ul>

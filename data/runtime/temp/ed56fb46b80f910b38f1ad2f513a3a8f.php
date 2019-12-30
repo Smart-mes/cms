@@ -1,4 +1,4 @@
-<?php if (!defined('THINK_PATH')) exit(); /*a:3:{s:23:"./template/pc/index.htm";i:1574758466;s:38:"D:\work\php\cms\template\pc\header.htm";i:1572513233;s:38:"D:\work\php\cms\template\pc\footer.htm";i:1572514955;}*/ ?>
+<?php if (!defined('THINK_PATH')) exit(); /*a:3:{s:23:"./template/pc/index.htm";i:1577429839;s:38:"D:\work\php\cms\template\pc\header.htm";i:1572513233;s:38:"D:\work\php\cms\template\pc\footer.htm";i:1572514955;}*/ ?>
 <!doctype html>
 <html>
 
@@ -140,7 +140,7 @@
   'titlelen' => '30',
 ); $tagArclist = new \think\template\taglib\eyou\TagArclist; $_result = $tagArclist->getArclist($param, $row, "", "","desc","",$tag,"0","on");if(is_array($_result["list"]) || $_result["list"] instanceof \think\Collection || $_result["list"] instanceof \think\Paginator): $i = 0; $e = 1; $__LIST__ = is_array($_result["list"]) ? array_slice($_result["list"],0, $row, true) : $_result["list"]->slice(0, $row, true);  $__TAG__ = $_result["tag"];if( count($__LIST__)==0 ) : echo htmlspecialchars_decode("");else: foreach($__LIST__ as $key=>$field): $aid = $field["aid"];$field["title"] = text_msubstr($field["title"], 0, 30, false);$field["seo_description"] = text_msubstr($field["seo_description"], 0, 160, true);$i= intval($key) + 1;$mod = ($i % 2 ); ?>
           <li>
-            <a href="<?php echo $field['arcurl']; ?>" title="<?php echo $field['title']; ?>">
+            <a href="<?php echo $field['aid']!==203?$field['arcurl']:''; ?>" title="<?php echo $field['title']; ?>">
               <div><img src="<?php echo $field['litpic']; ?>" alt="<?php echo $field['title']; ?>" height="280"></div>
               <p class="title"><?php echo $field['title']; ?></p>
             </a>

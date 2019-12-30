@@ -1,34 +1,34 @@
-<?php if (!defined('THINK_PATH')) exit(); /*a:4:{s:26:"./template/pc/view_pro.htm";i:1573181399;s:38:"D:\work\php\cms\template\pc\header.htm";i:1572513233;s:38:"D:\work\php\cms\template\pc\banner.htm";i:1571037616;s:38:"D:\work\php\cms\template\pc\footer.htm";i:1572514955;}*/ ?>
+<?php if (!defined('THINK_PATH')) exit(); /*a:4:{s:26:"./template/pc/view_pro.htm";i:1577417651;s:38:"D:\work\php\cms\template\pc\header.htm";i:1572513233;s:38:"D:\work\php\cms\template\pc\banner.htm";i:1571037616;s:38:"D:\work\php\cms\template\pc\footer.htm";i:1572514955;}*/ ?>
 <!doctype html>
 <html>
 
-<head>
-  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-  <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <meta name="viewport" content="width=device-width, initial-scale=0">
-  <meta name="renderer" content="webkit">
-  <meta http-equiv="Cache-Control" content="no-siteapp" />
-  <!--页面seo标题-->
-  <title><?php echo $eyou['field']['seo_title']; ?></title>
-  <!--页面seo描述-->
-  <meta name="description" content="<?php echo $eyou['field']['seo_description']; ?>" />
-  <!--页面seo关键词-->
-  <meta name="keywords" content="<?php echo $eyou['field']['seo_keywords']; ?>" />
-  <!--网站地址栏图标-->
-  <link href="<?php  $tagGlobal = new \think\template\taglib\eyou\TagGlobal; $__VALUE__ = $tagGlobal->getGlobal("web_cmspath"); echo $__VALUE__; ?>/favicon.ico" rel="shortcut icon" type="image/x-icon" />
-  <?php  $tagStatic = new \think\template\taglib\eyou\TagStatic; $__VALUE__ = $tagStatic->getStatic("skin/css/amazeui.min.css","","",""); echo $__VALUE__;  $tagStatic = new \think\template\taglib\eyou\TagStatic; $__VALUE__ = $tagStatic->getStatic("skin/css/app.css","","",""); echo $__VALUE__; ?>
-  <!--[if lt IE 9]>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<meta name="viewport" content="width=device-width, initial-scale=0">
+		<meta name="renderer" content="webkit">
+		<meta http-equiv="Cache-Control" content="no-siteapp" />
+		<!--页面seo标题-->
+		<title><?php echo $eyou['field']['seo_title']; ?></title>
+		<!--页面seo描述-->
+		<meta name="description" content="<?php echo $eyou['field']['seo_description']; ?>" />
+		<!--页面seo关键词-->
+		<meta name="keywords" content="<?php echo $eyou['field']['seo_keywords']; ?>" />
+		<!--网站地址栏图标-->
+		<link href="<?php  $tagGlobal = new \think\template\taglib\eyou\TagGlobal; $__VALUE__ = $tagGlobal->getGlobal("web_cmspath"); echo $__VALUE__; ?>/favicon.ico" rel="shortcut icon" type="image/x-icon" />
+		<?php  $tagStatic = new \think\template\taglib\eyou\TagStatic; $__VALUE__ = $tagStatic->getStatic("skin/css/amazeui.min.css","","",""); echo $__VALUE__;  $tagStatic = new \think\template\taglib\eyou\TagStatic; $__VALUE__ = $tagStatic->getStatic("skin/css/app.css","","",""); echo $__VALUE__; ?>
+		<!--[if lt IE 9]>
 <div class="notsupport">
 	<h1>:( 非常遗憾</h1>
 	<h2>您的浏览器版本太低，请升级您的浏览器</h2>
 </div>
 <![endif]-->
-  <?php  $tagStatic = new \think\template\taglib\eyou\TagStatic; $__VALUE__ = $tagStatic->getStatic("skin/js/jquery.min.js","","",""); echo $__VALUE__;  $tagStatic = new \think\template\taglib\eyou\TagStatic; $__VALUE__ = $tagStatic->getStatic("skin/js/amazeui.min.js","","",""); echo $__VALUE__;  $tagStatic = new \think\template\taglib\eyou\TagStatic; $__VALUE__ = $tagStatic->getStatic("skin/js/app.js","","",""); echo $__VALUE__; ?>
-</head>
+		<?php  $tagStatic = new \think\template\taglib\eyou\TagStatic; $__VALUE__ = $tagStatic->getStatic("skin/js/jquery.min.js","","",""); echo $__VALUE__;  $tagStatic = new \think\template\taglib\eyou\TagStatic; $__VALUE__ = $tagStatic->getStatic("skin/js/amazeui.min.js","","",""); echo $__VALUE__;  $tagStatic = new \think\template\taglib\eyou\TagStatic; $__VALUE__ = $tagStatic->getStatic("skin/js/app.js","","",""); echo $__VALUE__; ?>
+	</head>
 
-<body>
-  <!--网站公用头部——开始-->
-  <!-- 
+	<body>
+		<!--网站公用头部——开始-->
+		<!-- 
 <div class="top">
   <div class="width">
 	<div class="user">
@@ -99,9 +99,9 @@
 
         </div>
 </div> -->
-  <!--网站公用头部——结束-->
-  <!--网站公用自定义文件——开始-->
-  <!--判断后台是否有输出图片，没有则显示默认图片开始-->
+		<!--网站公用头部——结束-->
+		<!--网站公用自定义文件——开始-->
+		<!--判断后台是否有输出图片，没有则显示默认图片开始-->
 <div class="bg_inner" 
 <?php $toplitpic = gettoptype($eyou['field']['typeid'],"litpic"); if(empty($toplitpic) || (($toplitpic instanceof \think\Collection || $toplitpic instanceof \think\Paginator ) && $toplitpic->isEmpty())): ?>
 style="background: url(<?php  $tagGlobal = new \think\template\taglib\eyou\TagGlobal; $__VALUE__ = $tagGlobal->getGlobal("web_templets_pc"); echo $__VALUE__; ?>/skin/img/cate_bg_<?php echo gettoptype($eyou['field']['typeid'],'id'); ?>.jpg) center center no-repeat;"
@@ -119,70 +119,72 @@ style="background: url(<?php echo gettoptype($eyou['field']['typeid'],'litpic');
 
 
 
-  <!--网站公用自定义文件——结束-->
-  <div class="width inner_container">
+		<!--网站公用自定义文件——结束-->
+		<div class="width inner_container">
 
-    <ol class="am-breadcrumb">
-      <li><i class="am-icon-home"></i> <?php  $typeid = ""; if(empty($typeid) && isset($channelartlist["id"]) && !empty($channelartlist["id"])) : $typeid = intval($channelartlist["id"]); endif;  $tagPosition = new \think\template\taglib\eyou\TagPosition; $__VALUE__ = $tagPosition->getPosition($typeid, "", ""); echo $__VALUE__; ?></li>
-    </ol>
-    <!--当前位置调用-->
-    <div class="product-show">
-      <h1><?php echo $eyou['field']['title']; ?></h1>
-      <div class="img"><img src="<?php echo !empty($eyou['field']['litpic'])?$eyou['field']['litpic']:'/public/static/common/images/not_adv.jpg'; ?>" alt="<?php echo $field['title']; ?>"></div>
-      <div class="desc"><?php echo $eyou['field']['desc']; ?></div>
-    </div>
-    <!-- 产品描述 -->
-    <div class="product_intro">
-      <div class="subject m20"> <b>产品介绍</b> </div>
-      <div class="intro view_content">
-        <?php echo $eyou['field']['content']; ?>
-      </div>
-      <!--上下篇-->
-      <div class="news_show ">
-        <div class="prenext">
-          <?php  $tagPrenext = new \think\template\taglib\eyou\TagPrenext; $_result = $tagPrenext->getPrenext("pre");if(!empty($_result) || (($_result instanceof \think\Collection || $_result instanceof \think\Paginator ) && $_result->isEmpty())): $field = $_result; $field["title"] = text_msubstr($field["title"], 0, 30, false); ?>
-          <a href="<?php echo $field['arcurl']; ?>" title="<?php echo $field['title']; ?>" class="pre"> <?php  $tagLang = new \think\template\taglib\eyou\TagLang; $__VALUE__ = $tagLang->getLang('a:1:{s:4:"name";s:5:"sys11";}'); echo $__VALUE__; ?> :
-            <?php echo $field['title']; ?></span> </a>
-          <?php else: ?>
-          <a class="pre"><?php  $tagLang = new \think\template\taglib\eyou\TagLang; $__VALUE__ = $tagLang->getLang('a:1:{s:4:"name";s:5:"sys11";}'); echo $__VALUE__; ?>：<?php  $tagLang = new \think\template\taglib\eyou\TagLang; $__VALUE__ = $tagLang->getLang('a:1:{s:4:"name";s:5:"sys10";}'); echo $__VALUE__; ?></a>
-          <?php endif; $field = []; ?>
-          <!--上一篇-->
-          <?php  $tagPrenext = new \think\template\taglib\eyou\TagPrenext; $_result = $tagPrenext->getPrenext("next");if(!empty($_result) || (($_result instanceof \think\Collection || $_result instanceof \think\Paginator ) && $_result->isEmpty())): $field = $_result; $field["title"] = text_msubstr($field["title"], 0, 30, false); ?>
-          <a href="<?php echo $field['arcurl']; ?>" title="<?php echo $field['title']; ?>" class="next"> <?php  $tagLang = new \think\template\taglib\eyou\TagLang; $__VALUE__ = $tagLang->getLang('a:1:{s:4:"name";s:5:"sys12";}'); echo $__VALUE__; ?> :
-            <?php echo $field['title']; ?></span> </a>
-          <?php else: ?>
-          <a class="next"><?php  $tagLang = new \think\template\taglib\eyou\TagLang; $__VALUE__ = $tagLang->getLang('a:1:{s:4:"name";s:5:"sys12";}'); echo $__VALUE__; ?>：<?php  $tagLang = new \think\template\taglib\eyou\TagLang; $__VALUE__ = $tagLang->getLang('a:1:{s:4:"name";s:5:"sys10";}'); echo $__VALUE__; ?></a>
-          <?php endif; $field = []; ?>
-          <!--下一篇-->
-        </div>
-      </div>
-      <!--/上下篇-->
-    </div>
-    <!-- 产品详情 -->
-    <div class="product-recommend">
-      <div class="subject m20"> <b>产品推荐</b> </div>
-      <div class="plist">
-        <ul>
-          <?php  if(isset($ui_typeid) && !empty($ui_typeid)) : $typeid = $ui_typeid; else: $typeid = "72"; endif; if(empty($typeid) && isset($channelartlist["id"]) && !empty($channelartlist["id"])) : $typeid = intval($channelartlist["id"]); endif;  if(isset($ui_row) && !empty($ui_row)) : $row = $ui_row; else: $row = 10; endif; $channelid = ""; $param = array(      "typeid"=> $typeid,      "notypeid"=> "",      "flag"=> "c",      "noflag"=> "",      "channel"=> $channelid,      "joinaid"=> "", ); $tag = array (
+			<ol class="am-breadcrumb">
+				<li><i class="am-icon-home"></i> <?php  $typeid = ""; if(empty($typeid) && isset($channelartlist["id"]) && !empty($channelartlist["id"])) : $typeid = intval($channelartlist["id"]); endif;  $tagPosition = new \think\template\taglib\eyou\TagPosition; $__VALUE__ = $tagPosition->getPosition($typeid, "", ""); echo $__VALUE__; ?></li>
+			</ol>
+			<!--当前位置调用-->
+			<div class="product-show">
+				<div class="img"><img src="<?php echo !empty($eyou['field']['litpic'])?$eyou['field']['litpic']:'/public/static/common/images/not_adv.jpg'; ?>" alt="<?php echo $field['title']; ?>"></div>
+				<div class="desc">
+					<h1 class="desc-title"><?php echo $eyou['field']['title']; ?></h1>
+					<?php echo $eyou['field']['seo_description']; ?>
+				</div>
+			</div>
+			<!-- 产品描述 -->
+			<div class="product_intro">
+				<div class="subject m20"> <b>产品介绍</b> </div>
+				<div class="intro view_content">
+					<?php echo $eyou['field']['content']; ?>
+				</div>
+				<!--上下篇-->
+				<div class="news_show ">
+					<div class="prenext">
+						<?php  $tagPrenext = new \think\template\taglib\eyou\TagPrenext; $_result = $tagPrenext->getPrenext("pre");if(!empty($_result) || (($_result instanceof \think\Collection || $_result instanceof \think\Paginator ) && $_result->isEmpty())): $field = $_result; $field["title"] = text_msubstr($field["title"], 0, 30, false); ?>
+						<a href="<?php echo $field['arcurl']; ?>" title="<?php echo $field['title']; ?>" class="pre"> <?php  $tagLang = new \think\template\taglib\eyou\TagLang; $__VALUE__ = $tagLang->getLang('a:1:{s:4:"name";s:5:"sys11";}'); echo $__VALUE__; ?> :
+							<?php echo $field['title']; ?></span> </a>
+						<?php else: ?>
+						<a class="pre"><?php  $tagLang = new \think\template\taglib\eyou\TagLang; $__VALUE__ = $tagLang->getLang('a:1:{s:4:"name";s:5:"sys11";}'); echo $__VALUE__; ?>：<?php  $tagLang = new \think\template\taglib\eyou\TagLang; $__VALUE__ = $tagLang->getLang('a:1:{s:4:"name";s:5:"sys10";}'); echo $__VALUE__; ?></a>
+						<?php endif; $field = []; ?>
+						<!--上一篇-->
+						<?php  $tagPrenext = new \think\template\taglib\eyou\TagPrenext; $_result = $tagPrenext->getPrenext("next");if(!empty($_result) || (($_result instanceof \think\Collection || $_result instanceof \think\Paginator ) && $_result->isEmpty())): $field = $_result; $field["title"] = text_msubstr($field["title"], 0, 30, false); ?>
+						<a href="<?php echo $field['arcurl']; ?>" title="<?php echo $field['title']; ?>" class="next"> <?php  $tagLang = new \think\template\taglib\eyou\TagLang; $__VALUE__ = $tagLang->getLang('a:1:{s:4:"name";s:5:"sys12";}'); echo $__VALUE__; ?> :
+							<?php echo $field['title']; ?></span> </a>
+						<?php else: ?>
+						<a class="next"><?php  $tagLang = new \think\template\taglib\eyou\TagLang; $__VALUE__ = $tagLang->getLang('a:1:{s:4:"name";s:5:"sys12";}'); echo $__VALUE__; ?>：<?php  $tagLang = new \think\template\taglib\eyou\TagLang; $__VALUE__ = $tagLang->getLang('a:1:{s:4:"name";s:5:"sys10";}'); echo $__VALUE__; ?></a>
+						<?php endif; $field = []; ?>
+						<!--下一篇-->
+					</div>
+				</div>
+				<!--/上下篇-->
+			</div>
+			<!-- 产品详情 -->
+			<div class="product-recommend">
+				<div class="subject m20"> <b>产品推荐</b> </div>
+				<div class="plist">
+					<ul>
+						<?php  if(isset($ui_typeid) && !empty($ui_typeid)) : $typeid = $ui_typeid; else: $typeid = "72"; endif; if(empty($typeid) && isset($channelartlist["id"]) && !empty($channelartlist["id"])) : $typeid = intval($channelartlist["id"]); endif;  if(isset($ui_row) && !empty($ui_row)) : $row = $ui_row; else: $row = 10; endif; $channelid = ""; $param = array(      "typeid"=> $typeid,      "notypeid"=> "",      "flag"=> "c",      "noflag"=> "",      "channel"=> $channelid,      "joinaid"=> "", ); $tag = array (
   'flag' => 'c',
   'orderby' => 'now',
   'titlelen' => '30',
   'row' => '10',
   'typeid' => '72',
 ); $tagArclist = new \think\template\taglib\eyou\TagArclist; $_result = $tagArclist->getArclist($param, $row, "now", "","desc","",$tag,"0","on");if(is_array($_result["list"]) || $_result["list"] instanceof \think\Collection || $_result["list"] instanceof \think\Paginator): $i = 0; $e = 1; $__LIST__ = is_array($_result["list"]) ? array_slice($_result["list"],0, $row, true) : $_result["list"]->slice(0, $row, true);  $__TAG__ = $_result["tag"];if( count($__LIST__)==0 ) : echo htmlspecialchars_decode("");else: foreach($__LIST__ as $key=>$field): $aid = $field["aid"];$field["title"] = text_msubstr($field["title"], 0, 30, false);$field["seo_description"] = text_msubstr($field["seo_description"], 0, 160, true);$i= intval($key) + 1;$mod = ($i % 2 ); ?>
-          <li><a href="<?php echo $field['arcurl']; ?>" title="<?php echo $field['title']; ?>">
-              <div><img src="<?php echo $field['litpic']; ?>" alt="<?php echo $field['title']; ?>"></div>
-              <p><?php echo $field['title']; ?></p>
-            </a></li>
-          <?php ++$e; $aid = 0; endforeach; endif; else: echo htmlspecialchars_decode("");endif; $field = []; ?>
-        </ul>
-        <div class="clear"></div>
-      </div>
-    </div>
-    <!-- 产品推荐 -->
-  </div>
-  <!--网站公用底部——开始-->
-  <div class="bg_footer">
+						<li><a href="<?php echo $field['arcurl']; ?>" title="<?php echo $field['title']; ?>">
+								<div><img src="<?php echo $field['litpic']; ?>" alt="<?php echo $field['title']; ?>"></div>
+								<p><?php echo $field['title']; ?></p>
+							</a></li>
+						<?php ++$e; $aid = 0; endforeach; endif; else: echo htmlspecialchars_decode("");endif; $field = []; ?>
+					</ul>
+					<div class="clear"></div>
+				</div>
+			</div>
+			<!-- 产品推荐 -->
+		</div>
+		<!--网站公用底部——开始-->
+		<div class="bg_footer">
     <div class="width footer">
         <!-- <div class="fl">
             	<h1><?php  $tagGlobal = new \think\template\taglib\eyou\TagGlobal; $__VALUE__ = $tagGlobal->getGlobal("web_name"); echo $__VALUE__; ?></h1>
@@ -242,7 +244,7 @@ style="background: url(<?php echo gettoptype($eyou['field']['typeid'],'litpic');
         <h2>您的浏览器版本太低，请升级您的浏览器</h2>
     </div>
     <![endif]-->
-  <!--网站公用底部——结束-->
-</body>
+		<!--网站公用底部——结束-->
+	</body>
 
 </html>
