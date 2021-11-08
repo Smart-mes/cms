@@ -3,8 +3,9 @@
 @import "./common/mixin.scss";
 @import "./common/common.scss";
 
-.wrapper {
-  min-width: 1100px;
+
+.wrapper{
+  min-width: $min-width;
 }
 .c-banner {
   position: relative;
@@ -43,6 +44,7 @@
 }
 .page {
   overflow: hidden;
+  min-width: $min-width;
   background: $column-bj;
   .column-title {
     margin-bottom: 50px;
@@ -378,7 +380,7 @@
         .iconfont {
           font-size: 50px;
           line-height: 50px;
-          transition: all 0.8s ease;
+          transition: all 0.3s ease;
         }
         .name {
           margin-top: 15px;
@@ -386,7 +388,7 @@
         }
         &:hover {
           .iconfont {
-            color: #3b61e0;
+            color: $light-blue-color;
           }
           // .iconfont{transform: rotateY(180deg);}
         }
@@ -1146,6 +1148,7 @@
 
 // 新闻动态
 .news-page{
+  padding-bottom:100px;
 	.news{
 		margin-bottom: 100px;
 	}
@@ -1219,6 +1222,7 @@
 	// .banner{
 	// 	margin-bottom: 100px;
 	// }
+  padding-bottom: 100px;
 	.news-container{
 		padding: 50px 0;
 		background:$white-color;
@@ -1259,16 +1263,11 @@
 			}
 		}
 	}
-    .news-content{
+  .news-content{
 		overflow: hidden;
 		padding: 0 20px;
 	}
-	.prenext{
-		margin: 50px 0;
-	}
-	.news-more{
-		margin-bottom:100px;
-	}
+
 }
 
 .case-page {
@@ -1462,7 +1461,7 @@
 	.about{
 		overflow: hidden;
 		position: relative;	
-		margin-bottom: 100px;
+		// margin-bottom: 100px;
 		max-height: 1080px;
 		background-image: url("../images/about-bj.png");
 		background-repeat:no-repeat;
@@ -1531,8 +1530,7 @@
         }
         .h6{
           margin-bottom: 15px;
-          font-size: $font-20;
-          font-weight: bold;
+          font-size:$font-25;
         }
         p{
           font-size: $font-16;
@@ -1650,6 +1648,163 @@
  }
 }
 
+// 联系我们
+.contact-page{
+  .contact{
+    overflow: hidden;
+    background-image: url("../images/contact/contact-bj.png");
+    background-repeat: no-repeat;
+    .contact-box{
+      margin: 150px 0;
+      padding: 60px;
+      background-color:$white-color ;
+      @include box-shadow(0.1);
+      border-radius: 15px;     
+    }
+  }
+  .map{
+    height: 599px;
+    background-image: url("../images/contact/contact-map-bj.jpg");
+    background-repeat: no-repeat;
+    background-position: center center;
+  }  
+}
+// 招聘
+.recruit-page{
+  .recruit-list{
+    padding-bottom: 80px;
+    .recruit-item{
+      margin-bottom: 20px;
+      padding: 15px 40px;
+      background-color:$white-color;
+      &:hover{
+        @include box-shadow(0.1);
+			}
+      a{
+        color:#000;
+      }
+      .h6{
+        position: relative;
+        padding-bottom: 15px;
+        font-size: $font-20;
+        &::after{
+          content: '';
+          position: absolute;
+          left: 0;
+          bottom: 0;
+          width: 30%;
+          height: 0;  
+          border-bottom: 1px dashed #ddd;
+        }
+        // &::before{
+        //   content: '';
+        //   position: absolute;
+        //   top: 10px;
+        //   left:-20px;
+        //   border-radius: 50%;
+        //   width: 8px;
+        //   height: 8px;
+        //   background-color: #333;
+        // }
+      }
+      .recruit-ul{
+        padding-top: 15px;
+        display: flex;
+        >li{
+          flex:1;
+          text-align: center;
+          .name{
+            color:$light-gray-color;
+          }
+        }
+      }
+    }
+  }
+  .welfare{
+    overflow: hidden;
+    height: 670px;
+    background-image: url("../images/contact/recruit-welfare-bj.jpg");
+		background-repeat:no-repeat;
+    background-position: center center;
+    .underlined-title{
+      margin:80px 0 40px 0;
+      padding-left: 14%;
+      width: 170px;
+      &::before{
+        bottom: -30px;
+        width: 95px;
+      }
+    }
+    .welfare-list{
+      display: flex;
+      flex-wrap: wrap;
+      >li{
+        margin-top: 60px;
+        width: 33.3%;
+        color:$white-color;
+        text-align: center;
+        .iconfont,.name{
+          display: block;
+          font-size: $font-20;
+        }
+        .iconfont{
+          margin-bottom: 20px;
+          font-size: 65px;
+          line-height: 65px;
+          transition: all 0.3s ease;
+        }
+        &:hover{
+          .iconfont {
+            color: $light-blue-color;
+          }
+        }
+      }
+    }
+  }
+}
+// 招聘详情
+.recruit-details-page{
+  padding-bottom: 100px;
+  .recruit{
+    padding: 60px;
+    background-color:$white-color;
+    .recruit-title{
+      margin-bottom: 30px;
+      font-size: $font-30;
+    }
+    .claim-list{
+      display: flex;
+      flex-wrap: wrap;
+      padding: 10px;
+      height: 80px;
+      background-color:#fafafa ;
+      >li{
+        box-sizing: border-box;
+        flex-basis: 25%;
+        height: 40px;
+        line-height: 40px;
+        border-right: 2px solid #fff;
+        span{
+          display:inline-block;
+          &.name{
+            width: 70px;
+            padding-left: 50px;
+            text-align: right;
+            color:$light-gray-color;
+          }
+        }
+        &:nth-child(4n + 0) {
+          border-right: 0;
+        }
+      }
+    }
+    .recruit-content{
+      margin: 50px 0;
+
+      
+    }
+  }
+}
 
 
 

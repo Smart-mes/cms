@@ -743,20 +743,21 @@ body {
       transform: translateY(0);
     }
   }
-  .btn-box {
+  .submit-btn {
     margin-top: 35px;
-    text-align: center;
-    .btn {
-      padding: 10px 50px;
-      background-color: $color;
-      border: 0;
-      color: $white-color;
-      font-size: $font-16;
-      border-radius: 10px;
-      cursor: pointer;
-      .iconfont {
-        padding-right: 15px;
-      }
-    }
+    // text-align: center;
+    // .btn {
+    //   padding: 10px 50px;
+    //   background-color: $color;
+    //   border: 0;
+    //   color: $white-color;
+    //   font-size: $font-16;
+    //   border-radius: 10px;
+    //   cursor: pointer;
+    //   .iconfont {
+    //     padding-right: 15px;
+    //   }
+    // }
   }
+
 }

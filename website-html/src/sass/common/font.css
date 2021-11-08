@@ -1,8 +1,8 @@
 @font-face {
   font-family: "iconfont"; /* Project id 2809127 */
-  src: url('https://at.alicdn.com/t/font_2809127_f1mily3tslw.woff2?t=1636253701208') format('woff2'),
-       url('https://at.alicdn.com/t/font_2809127_f1mily3tslw.woff?t=1636253701208') format('woff'),
-       url('https://at.alicdn.com/t/font_2809127_f1mily3tslw.ttf?t=1636253701208') format('truetype');
+  src: url('https://at.alicdn.com/t/font_2809127_ljrx8mskj7.woff2?t=1636354177153') format('woff2'),
+       url('https://at.alicdn.com/t/font_2809127_ljrx8mskj7.woff?t=1636354177153') format('woff'),
+       url('https://at.alicdn.com/t/font_2809127_ljrx8mskj7.ttf?t=1636354177153') format('truetype');
 }
 
 .iconfont {
@@ -11,6 +11,30 @@
   font-style: normal;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+.icon-paid_annual_leave:before {
+  content: "\e645";
+}
+
+.icon-shuangxiu:before {
+  content: "\e671";
+}
+
+.icon-xiawucha:before {
+  content: "\e731";
+}
+
+.icon-nianzhongjiangjin:before {
+  content: "\e61a";
+}
+
+.icon-wuxianyijin:before {
+  content: "\e610";
+}
+
+.icon-jierifuli:before {
+  content: "\e61d";
 }
 
 .icon-tuandui:before {

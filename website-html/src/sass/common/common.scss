@@ -2,7 +2,7 @@
 /* common */
 $color: #1b2c59;
 // $light-blue:#3B61E0;
-$light-blue-color:#3B61E0;;
+$light-blue-color:#3B61E0;
 $white-color: #fff;
 $gray-color:#666;
 $light-gray-color:#999;
@@ -20,6 +20,7 @@ $font-14: 14px;
 $font-12: 12px;
 // 间距
 $mt-50:50px;
+$min-width:1100px;
 
 // 背景色
 $column-bj:#fafafa;
@@ -83,6 +84,25 @@ a:hover { text-decoration: none;color: $color;}
 	overflow:hidden;
 	text-overflow:ellipsis;
 }
+// 按钮
+.submit-btn{
+  text-align: center;
+  .btn {
+    padding: 10px 50px;
+    background-color: $color;
+    border: 0;
+    color: $white-color;
+    font-size: $font-16;
+    border-radius: 10px;
+    cursor: pointer;
+    .iconfont {
+      padding-right: 15px;
+    }
+    &:hover{
+      background-color:$light-blue-color;
+    }
+  }
+} 
 // 盒子
 .cell-box {
   font-size: 0;
@@ -99,7 +119,6 @@ a:hover { text-decoration: none;color: $color;}
   vertical-align: middle;
 }
 // 幻灯片分页
-
 .custom-swiper{
   position: relative;
   .swiper-pagination-bullets 
@@ -244,6 +263,7 @@ a.index-more {
   z-index: 99;
   position: fixed;
   width: 100%;
+  min-width: $min-width;
   height: 70px;
   text-align: center;
   color: #f2f2f2;
@@ -546,6 +566,7 @@ a.index-more {
 
 .footer {
   padding: 100px 0 50px 0;
+  min-width: $min-width;
   color: $white-color;
   background: $color;
   background-image: linear-gradient(#182956, #01113a);
@@ -648,18 +669,18 @@ a.index-more {
 .pagelist li.active a{border-color:$color;background:$color;color:#fff;}
 
 //上一页
-.news{
-	.prenext {
+	.page-prenext {
+    margin: 50px  0;
 		font-size: $font-16;
 		a{color: $color;text-decoration: underline;}
 		overflow: hidden;
 		.pre{float: left;}
 		.next{float: right;}
 	}
-}
-.news-more{
+
+.more-list{
  .h6{
-	 margin-bottom: 20px;
+	 margin-bottom: 50px;
 	 font-size: $font-32;
 	 color: $color;
  }	
