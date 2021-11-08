@@ -124,12 +124,12 @@ $(document).ready(function () {
 		loopedSlides: 3,
 		autoplay: true,
 		navigation: {
-			nextEl: '.swiper-button-next',
-			prevEl: '.swiper-button-prev',
+			nextEl: '.mes-page #certify .swiper-button-next',
+			prevEl: '.mes-page #certify .swiper-button-prev',
 		},
 		pagination: {
 			el: '.swiper-pagination',
-			//clickable :true,
+			clickable :true,
 		},
 		on: {
 			progress: function(progress) {
@@ -162,5 +162,35 @@ $(document).ready(function () {
 
 	})
 
+  // 关于我们
+  new Swiper(".about-page  .honour-swiper .swiper", {
+  	slidesPerView: 3,
+  	spaceBetween: 40,
+  	pagination: {
+  		el: ".about-page  .honour-swiper .swiper-pagination",
+  		clickable: true,
+  	},
+  	navigation: {
+  		nextEl: ".about-page  .honour-swiper .swiper-button-next",
+  		prevEl: ".about-page  .honour-swiper .swiper-button-prev",
+  	}
+  });
+  
+  // 时间轴
+  new Swiper(".about-page .history .swiper", {
+  	slidesPerView: 4,
+  	// spaceBetween: 30,
+  	pagination: {
+  		el: ".about-page .history .swiper-pagination",
+  		clickable: true,
+  	},
+  	navigation: {
+  		nextEl: ".about-page .history .swiper-button-next",
+  		prevEl: ".about-page .history .swiper-button-prev",
+  	}
+  });
+  
 });
+
+
 

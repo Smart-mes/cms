@@ -1,9 +1,10 @@
 @import "./mixin.scss";
 /* common */
 $color: #1b2c59;
-$light-blue:#3B61E0;
-$light-blue-color:#3b61e0;
+// $light-blue:#3B61E0;
+$light-blue-color:#3B61E0;;
 $white-color: #fff;
+$gray-color:#666;
 $light-gray-color:#999;
 $red-color: #d32229;
 $grey-blue: #9fa3ab;
@@ -17,10 +18,17 @@ $font-20: 20px;
 $font-16: 16px;
 $font-14: 14px;
 $font-12: 12px;
+// 间距
+$mt-50:50px;
 
 // 背景色
 $column-bj:#fafafa;
 $box-shadow: 0px 6px 20px rgba(0, 0, 0, 0.1);
+// 函数
+
+@mixin box-shadow($transparent) {
+  box-shadow: 0 0 1vw rgba(0, 0, 0,$transparent);
+}
 
 // 动画
 @keyframes o-upfade-top {
@@ -58,6 +66,7 @@ a:hover { text-decoration: none;color: $color;}
 .fr{float: right;}
 .red {color: $red-color;}
 .p-20{padding: 20px;}
+
 .clearfix:after {
   content: "";
   display: block;
@@ -74,6 +83,7 @@ a:hover { text-decoration: none;color: $color;}
 	overflow:hidden;
 	text-overflow:ellipsis;
 }
+// 盒子
 .cell-box {
   font-size: 0;
 }
@@ -88,7 +98,38 @@ a:hover { text-decoration: none;color: $color;}
   display: inline-block;
   vertical-align: middle;
 }
+// 幻灯片分页
 
+.custom-swiper{
+  position: relative;
+  .swiper-pagination-bullets 
+	.swiper-pagination-bullet {
+      margin: 0 4px;
+      background-color: #d5d5d5;
+      width: 10px;
+      height: 10px;
+      opacity: 1;
+    }
+  .swiper-pagination-bullets 
+	.swiper-pagination-bullet-active {
+      background-color: #00aadc;
+    }
+    .swiper-button-prev,.swiper-button-next{
+      margin-top: -25px;
+      top: 50%;
+      width: 50px;
+      height: 50px;
+      line-height: 50px;
+      text-align: center;
+      background:#90a1cc;
+      border-radius: 50%;
+      .iconfont{
+        color:$white-color;
+        font-size: 25px;
+      }
+    }
+
+}
 /* base */
 .wrapper {
   width: 80vw;
