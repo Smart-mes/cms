@@ -21,7 +21,7 @@ gulp.task('sass', () => {
 
 //JS处理
 gulp.task('concatJs',function(){
-   return gulp.src(['./src/js/jquery-3.5.1.min.js','./src/js/fullpage.js','./src/js/swiper.min.js'])  //选择合并的JS
+   return gulp.src(['./src/js/jquery-3.5.1.min.js','./src/js/fullpage.js','./src/js/swiper-bundle.min.js','./src/js/jquery.cityselect.js'])  //选择合并的JS
        .pipe(concat('build.js'))   
        .pipe(gulp.dest('static/js'))        
        .pipe(rename({suffix:'.min'}))     
@@ -33,7 +33,7 @@ gulp.task('concatJs',function(){
 
 
 gulp.task("watch",function(){
-    // gulp.watch("./src/sass/**/*.scss",gulp.series('sass'));
 	gulp.watch("./src/sass/**/*.scss",gulp.series('sass'))
 	gulp.watch("./src/js/**/*.js",gulp.series('concatJs'));
 }) 
+// gulp.task('default', gulp.series(['sass', 'concatJs'], async(done) =>done))

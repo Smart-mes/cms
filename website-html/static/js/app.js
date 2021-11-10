@@ -19,15 +19,15 @@ $(document).ready(function () {
 		});
 	}
 	// 选项卡
-	const successSwiper=(page)=>{
-	  const swiper=new Swiper(`${page} .swiper-container`);
+	const successSwiper = (page) => {
+		const swiper = new Swiper(`${page} .swiper-container`);
 		$(`${page} .success-hd li`).on('mouseover', function (e) {
 			e.preventDefault();
 			$(this).addClass('active').siblings().removeClass('active');
 			let i = $(this).index();
 			swiper.slideTo(i, false);
 		})
-	} 
+	}
 
 	// search
 	$('.header .search').click(function () {
@@ -45,6 +45,7 @@ $(document).ready(function () {
 			return false;
 		}
 	})
+
 	// fullpage
 	new fullpage('#fullpage', {
 		anchors: ['page1', 'page2', 'page3', 'page4', 'page5', 'page6', 'page7'],
@@ -101,7 +102,7 @@ $(document).ready(function () {
 	})
 
 	// windchill
-  successSwiper('.windchill-page')
+	successSwiper('.windchill-page')
 
 	//creo 
 	const creoSwiper = new Swiper('.creo-page .swiper-container');
@@ -116,80 +117,81 @@ $(document).ready(function () {
 	// mes
 	accordion('.mes-page .main-modules', '.accordion-hd', '.accordion-bd');
 	successSwiper('.mes-page .success')
-	new Swiper('.mes-page #certify .swiper-container', {
-		watchSlidesProgress: true,
-		slidesPerView: 'auto',
-		centeredSlides: true,
-		loop: true,
-		loopedSlides: 3,
-		autoplay: true,
-		navigation: {
-			nextEl: '.mes-page #certify .swiper-button-next',
-			prevEl: '.mes-page #certify .swiper-button-prev',
-		},
+
+	// new Swiper('.mes-page #certify .swiper-container', {
+	// 	watchSlidesProgress: true,
+	// 	slidesPerView: 'auto',
+	// 	centeredSlides: true,
+	// 	loop: true,
+	// 	loopedSlides: 3,
+	// 	autoplay: true,
+	// 	navigation: {
+	// 		nextEl: '.mes-page #certify .swiper-button-next',
+	// 		prevEl: '.mes-page #certify .swiper-button-prev',
+	// 	},
+	// 	pagination: {
+	// 		el: '.swiper-pagination',
+	// 		clickable :true,
+	// 	},
+	// 	on: {
+	// 		progress: function(progress) {
+	// 			for (i = 0; i < this.slides.length; i++) {
+	// 				var slide = this.slides.eq(i);
+	// 				var slideProgress = this.slides[i].progress;
+	// 				modify = 1;
+	// 				if (Math.abs(slideProgress) > 1) {
+	// 					modify = (Math.abs(slideProgress) - 1) * 0.3 + 1;
+	// 				}
+	// 				translate = slideProgress * modify * 260 + 'px';
+	// 				scale = 1 - Math.abs(slideProgress) / 5;
+	// 				zIndex = 999 - Math.abs(Math.round(10 * slideProgress));
+	// 				slide.transform('translateX(' + translate + ') scale(' + scale + ')');
+	// 				slide.css('zIndex', zIndex);
+	// 				slide.css('opacity', 1);
+	// 				if (Math.abs(slideProgress) > 1) {
+	// 					slide.css('opacity', 0);
+	// 				}
+	// 			}
+	// 		},
+	// 		setTransition: function(transition) {
+	// 			for (var i = 0; i < this.slides.length; i++) {
+	// 				var slide = this.slides.eq(i)
+	// 				slide.transition(transition);
+	// 			}
+
+	// 		}
+	// 	}
+
+	// })
+
+	// 关于我们
+	new Swiper(".about-page  .honour-swiper .swiper", {
+		slidesPerView: 3,
+		spaceBetween: 40,
 		pagination: {
-			el: '.swiper-pagination',
-			clickable :true,
+			el: ".about-page  .honour-swiper .swiper-pagination",
+			clickable: true,
 		},
-		on: {
-			progress: function(progress) {
-				for (i = 0; i < this.slides.length; i++) {
-					var slide = this.slides.eq(i);
-					var slideProgress = this.slides[i].progress;
-					modify = 1;
-					if (Math.abs(slideProgress) > 1) {
-						modify = (Math.abs(slideProgress) - 1) * 0.3 + 1;
-					}
-					translate = slideProgress * modify * 260 + 'px';
-					scale = 1 - Math.abs(slideProgress) / 5;
-					zIndex = 999 - Math.abs(Math.round(10 * slideProgress));
-					slide.transform('translateX(' + translate + ') scale(' + scale + ')');
-					slide.css('zIndex', zIndex);
-					slide.css('opacity', 1);
-					if (Math.abs(slideProgress) > 1) {
-						slide.css('opacity', 0);
-					}
-				}
-			},
-			setTransition: function(transition) {
-				for (var i = 0; i < this.slides.length; i++) {
-					var slide = this.slides.eq(i)
-					slide.transition(transition);
-				}
-
-			}
+		navigation: {
+			nextEl: ".about-page  .honour-swiper .swiper-button-next",
+			prevEl: ".about-page  .honour-swiper .swiper-button-prev",
 		}
+	});
 
-	})
+	// 时间轴
+	new Swiper(".about-page .history .swiper", {
+		slidesPerView: 4,
+		// spaceBetween: 30,
+		pagination: {
+			el: ".about-page .history .swiper-pagination",
+			clickable: true,
+		},
+		navigation: {
+			nextEl: ".about-page .history .swiper-button-next",
+			prevEl: ".about-page .history .swiper-button-prev",
+		}
+	});
 
-  // 关于我们
-  new Swiper(".about-page  .honour-swiper .swiper", {
-  	slidesPerView: 3,
-  	spaceBetween: 40,
-  	pagination: {
-  		el: ".about-page  .honour-swiper .swiper-pagination",
-  		clickable: true,
-  	},
-  	navigation: {
-  		nextEl: ".about-page  .honour-swiper .swiper-button-next",
-  		prevEl: ".about-page  .honour-swiper .swiper-button-prev",
-  	}
-  });
-  
-  // 时间轴
-  new Swiper(".about-page .history .swiper", {
-  	slidesPerView: 4,
-  	// spaceBetween: 30,
-  	pagination: {
-  		el: ".about-page .history .swiper-pagination",
-  		clickable: true,
-  	},
-  	navigation: {
-  		nextEl: ".about-page .history .swiper-button-next",
-  		prevEl: ".about-page .history .swiper-button-prev",
-  	}
-  });
-  
 });
 
 

@@ -13,7 +13,6 @@ body {
   width: 100%;
   height: 100%;
 }
-
 /* section1*/
 .section-main {
   .section {
@@ -532,6 +531,103 @@ body {
   }
   // }
 }
+.section4{
+  .bg-box {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1;
+    overflow: hidden;
+    .bg {
+      width: 100%;
+      height: 100%;
+      @include backcover;
+      background-image: url(../images/index/s4-bj.jpg);
+      // animation: o-scale 20s linear infinite;
+    }
+  }
+  .cont-box {
+    height: 100%;
+    // padding-top: 70px;
+    position: relative;
+    z-index: 2;
+  }
+  .index-tit{
+    margin-bottom: 50px;
+  } 
+  .partner{
+    height: 450px;
+    background: #fff;
+    overflow: hidden;
+    .swiper {
+      width: 100%;
+      height: 100%;
+    }
+
+    .swiper-slide {
+      text-align: center;
+      font-size: 18px;
+      background: #fff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .swiper-slide img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    body {
+      background: #000;
+      color: #000;
+    }
+
+    .swiper {
+      width: 100%;
+      height: 300px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .swiper-slide {
+      background-size: cover;
+      background-position: center;
+    }
+
+    .mySwiper2 {
+      height: 80%;
+      width: 100%;
+    }
+
+    .mySwiper {
+      height: 20%;
+      box-sizing: border-box;
+      padding: 10px 0;
+    }
+
+    .mySwiper .swiper-slide {
+      width: 25%;
+      height: 100%;
+      opacity: 0.4;
+    }
+
+    .mySwiper .swiper-slide-thumb-active {
+      opacity: 1;
+    }
+
+    .swiper-slide img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+  }
+}
 .section5 {
   .bg-box {
     position: absolute;
@@ -579,6 +675,7 @@ body {
       .picture-box {
         position: relative;
         overflow: hidden;
+        height: 200px;
         .date {
           z-index: 1;
           position: absolute;
@@ -652,10 +749,10 @@ body {
     overflow: hidden;
     display: flex;
     min-width: 900px;
-    height: 530px;
+    height: 450px;
     background-color: $white-color;
     border-radius: 30px;
-    box-shadow: $box-shadow;
+    box-shadow: 0 20px 20px rgba(0, 0, 0,0.1);
     .left {
       display: flex;
       align-items: center;
@@ -671,65 +768,9 @@ body {
     }
     .right {
       flex: 1;
-      padding: 25px;
+      padding: 80px 40px 40px;
     }
-    .form-list {
-      display: flex;
-      flex-wrap: wrap;
-      label {
-        font-size: $font-16;
-      }
-      li {
-        flex-basis: 50%;
-        &:last-child {
-          flex: 1;
-          flex-basis: 100%;
-          .item {
-            height: auto;
-            border: 0;
-          }
-          .input-box {
-            padding: 15px;
-            border: 0;
-            border-radius: 10px;
-            background-color: #f7f7f7;
-          }
-        }
-        .item {
-          display: flex;
-          padding: 15px 25px;
-          height: 40px;
-          line-height: 40px;
-        }
-        .label-box {
-          flex-basis: 85px;
-          font-size: $font-16;
-          font-weight: bold;
-          color: #000;
-        }
-        .input-box {
-          overflow: hidden;
-          flex: 1;
-          padding: 0 15px;
-          border: 1px solid #ddd;
-          border-width: 0 0 1px 0;
-          .input {
-            width: 100%;
-            height: 40px;
-            line-height: 40px;
-            border: 0;
-            font-size: $font-16;
-          }
-          .textarea {
-            width: 100%;
-            height: 150px;
-            font-size: $font-16;
-            border: 0;
-            background-color: #f7f7f7;
-          }
-        }
-      }
-    }
+
   }
   .trial {
     opacity: 0;
@@ -743,6 +784,7 @@ body {
       transform: translateY(0);
     }
   }
+  .form-list{}
   .submit-btn {
     margin-top: 35px;
     // text-align: center;
@@ -761,3 +803,4 @@ body {
   }
 
 }
+

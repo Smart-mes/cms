@@ -4,9 +4,9 @@
 @import "./common/common.scss";
 
 
-.wrapper{
-  min-width: $min-width;
-}
+// .wrapper{
+//   min-width: $min-width;
+// }
 .c-banner {
   position: relative;
   overflow: hidden;
@@ -44,7 +44,7 @@
 }
 .page {
   overflow: hidden;
-  min-width: $min-width;
+  min-width: $width;
   background: $column-bj;
   .column-title {
     margin-bottom: 50px;
@@ -74,7 +74,10 @@
       overflow: hidden;
       height: 420px;
       color: $white-color;
-      background: $color;
+      // background-image: url("../images/apply-bj.jpg");
+      // background-repeat: no-repeat;
+      // background-position: center center;
+      @include img-bj(center,center,"../images/apply-bj.jpg");
       h3 {
         margin-top: 150px;
         font-size: $font-36;
@@ -484,12 +487,13 @@
     background-image: url("../images/solution/windchill/solution.jpg");
     @include backcover;
     .column-title {
-      margin-top: 130px;
+      margin-top: 120px;
       margin-bottom: 0;
       text-align: left;
       color: $white-color;
     }
     .underlined-title {
+      margin-top: 10px;
       width: 270px;
       font-size: $font-36;
       &:before {
@@ -810,7 +814,7 @@
           border: 1px solid #ddd;
           border-width: 1px 1px 0 0;
           box-sizing: border-box;
-          &:nth-child(3n + 0) {
+          &:nth-child(3n) {
             border-right: 0;
           }
         }
@@ -928,41 +932,100 @@
       .column-title{
         text-align: left;
       }
-        // 幻灯片
-  .interface-swiper {
-    position: relative;
-    margin: 0 auto;
-    background:#fafafa;
-    .swiper-container {
-      padding-bottom: 60px;
-    }
-    .swiper-slide {
-      width: 560px;
-      height: 320px;
-      background: #fff;
-      box-shadow: 0 8px 30px #ddd;
-    }
-    .swiper-slide img{
-      display:block;
-      width: 100%;
-      height: 100%;
-    }
-    .swiper-slide p { 
-      margin: 0;
-      padding-top: 0;
-      height: 40px;
-      line-height:40px;
-      text-align: center;
-      color: #636363;
-      font-size: 14px;      
-    }
-    .swiper-pagination {
-      width: 100%;
-      bottom: 20px;
-    }
+      .swiper {
+        width: 100%;
+        padding-top: 50px;
+        padding-bottom: 50px;
+        background-color: red;
+      }
 
-  }
+			.swiper-slide {
+			
+				height: 300px;
+				background-color: #000066;
+				// visibility: hidden;
+				color: #fff;
+        text-align: center;
+        visibility: hidden;
+        // img{
+        //   margin:0 auto ;
+        // }
+			}
+
+     .swiper-slide.swiper-slide-prev,
+		.swiper-slide.swiper-slide-next,
+     .swiper-slide.swiper-slide-active {
+				visibility: visible;
+			}
+      // .swiper-slide {
+      //   overflow: hidden;
+      //   // background-position: center;
+      //   // background-size: cover;
+      //   width: 300px;
+      //   height: 300px;
+      //   background: #00ff00;
+      // }
+
+      // .swiper-slide img {
+      //   display: block;
+      //   width: 100%;
+      // }
+
+
+
     }
+        // 幻灯片
+        // .interface-swiper{
+        //   overflow:hidden;
+        //   width: 1200px;
+        //   margin: 0 auto;
+        //   height: 400px;
+        //   background: red;
+        // }
+        // .swiper-slide {
+        //   background-position: center;
+        //   background-size: cover;
+        // /* 	width: 300px; */
+        //   height: 300px;
+        //   background-color: #000066;
+        //   visibility: hidden;
+        //   color: #fff;
+        // }
+   
+  // .interface-swiper {
+  //   position: relative;
+  //   margin: 0 auto;
+  //   background:#fafafa;
+  //   .swiper-container {
+  //     padding-bottom: 60px;
+  //   }
+  //   .swiper-slide {
+  //     width: 560px;
+  //     height: 320px;
+  //     background: #fff;
+  //     box-shadow: 0 8px 30px #ddd;
+  //   }
+  //   .swiper-slide img{
+  //     display:block;
+  //     width: 100%;
+  //     height: 100%;
+  //   }
+  //   .swiper-slide p { 
+  //     margin: 0;
+  //     padding-top: 0;
+  //     height: 40px;
+  //     line-height:40px;
+  //     text-align: center;
+  //     color: #636363;
+  //     font-size: 14px;      
+  //   }
+  //   .swiper-pagination {
+  //     width: 100%;
+  //     bottom: 20px;
+  //   }
+
+  // }
+    
 }
 // 数字转型
 .solution-page{
@@ -1288,7 +1351,7 @@
 			// box-shadow: 0 0 1vw rgba(0, 0, 0, 0.1);
       @include box-shadow(0.1);
 			 transition: all .3s ease;
-			&:nth-child(3n + 0) {
+			&:nth-child(3n) {
 			   margin-right: 0;
 			}
 			&:hover{
@@ -1320,7 +1383,7 @@
 			// flex-basis: 20%;	
 			margin:0 20px 20px 0 ;
 			width: calc(20% - 16px);
-			&:nth-child(5n + 0) {
+			&:nth-child(5n) {
 			   margin-right: 0;
 			}
 			.down-item{
@@ -1416,7 +1479,7 @@
 			margin:0 40px 40px 0 ;
 			width: calc(50% - 20px);
       @include box-shadow(0.1);
-			&:nth-child(2n + 0) { margin-right: 0;}
+			&:nth-child(2n) { margin-right: 0;}
 			&:hover{
         @include box-shadow(0.3);
 			}
@@ -1658,15 +1721,16 @@
       margin: 150px 0;
       padding: 60px;
       background-color:$white-color ;
-      @include box-shadow(0.1);
-      border-radius: 15px;     
+      box-shadow: 0 10px 10px rgba(0, 0, 0,0.1);
+      // border-radius: 15px;     
     }
   }
   .map{
     height: 599px;
-    background-image: url("../images/contact/contact-map-bj.jpg");
-    background-repeat: no-repeat;
-    background-position: center center;
+    // background-image: url("../images/contact/contact-map-bj.jpg");
+    // background-repeat: no-repeat;
+    // background-position: center center;
+    @include img-bj(center, center,"../images/contact/contact-map-bj.jpg");
   }  
 }
 // 招聘
@@ -1696,16 +1760,6 @@
           height: 0;  
           border-bottom: 1px dashed #ddd;
         }
-        // &::before{
-        //   content: '';
-        //   position: absolute;
-        //   top: 10px;
-        //   left:-20px;
-        //   border-radius: 50%;
-        //   width: 8px;
-        //   height: 8px;
-        //   background-color: #333;
-        // }
       }
       .recruit-ul{
         padding-top: 15px;
@@ -1723,9 +1777,10 @@
   .welfare{
     overflow: hidden;
     height: 670px;
-    background-image: url("../images/contact/recruit-welfare-bj.jpg");
-		background-repeat:no-repeat;
-    background-position: center center;
+    // background-image: url("../images/contact/recruit-welfare-bj.jpg");
+		// background-repeat:no-repeat;
+    // background-position: center center;
+    @include img-bj(center, center,"../images/contact/recruit-welfare-bj.jpg");
     .underlined-title{
       margin:80px 0 40px 0;
       padding-left: 14%;
@@ -1793,7 +1848,7 @@
             color:$light-gray-color;
           }
         }
-        &:nth-child(4n + 0) {
+        &:nth-child(4n) {
           border-right: 0;
         }
       }
@@ -1804,6 +1859,72 @@
       
     }
   }
+}
+// 留言
+.message-page{
+  padding-bottom: 100px;
+  .message{
+    margin: 0 auto;
+    padding: 60px;
+    width: 800px;
+    background-color:$white-color ;
+    box-shadow: 0 10px 10px rgba(0, 0, 0,0.1);
+    // border-radius: 15px;
+    .submit-btn{
+      margin-top: 35px;
+    }    
+  }
+}
+// 地图
+.map-page{
+  padding-bottom: 100px;
+  background-color: $white-color;
+  .breadcrumb{
+    margin-bottom: 25px;
+  }
+  .sitemap-s1{
+    position: relative;
+    .cont{
+      margin: 0 auto;
+    }
+    .item{
+      padding: 40px 0;
+      border-bottom: 1px solid #e6e6e6;
+      font-size: 0;
+    }
+    a.btn{
+      @include inline_top;
+      width: calc(20% - 25px);
+      line-height: 60px;
+      font-size: 16px;
+      text-align: center;
+      @include transition(color .3s ease,background .3s ease);
+    }
+    h3{
+      a.btn{
+        display: block;
+        background-color: $color;
+        color: #fff;
+      }
+    }
+    .link{
+      margin-top: 25px;
+      a.btn{
+        background-color: #e6e6e6;
+        margin-right: 25px;
+        margin-top: 1.25vw;
+        color: #666;
+        &:nth-of-type(5n){
+          margin-right: 0;
+        }
+        &:hover{
+          background-color: $color;
+          color: #fff;
+        }
+      }
+    }
+  }
+  
 }
 
 
