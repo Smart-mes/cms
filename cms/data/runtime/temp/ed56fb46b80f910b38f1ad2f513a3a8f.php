@@ -1,4 +1,4 @@
-<?php if (!defined('THINK_PATH')) exit(); /*a:3:{s:23:"./template/pc/index.htm";i:1636704598;s:42:"D:\work\php\cms\cms\template\pc\header.htm";i:1636531270;s:42:"D:\work\php\cms\cms\template\pc\footer.htm";i:1636357838;}*/ ?>
+<?php if (!defined('THINK_PATH')) exit(); /*a:3:{s:23:"./template/pc/index.htm";i:1636704713;s:42:"D:\work\php\cms\cms\template\pc\header.htm";i:1636531270;s:42:"D:\work\php\cms\cms\template\pc\footer.htm";i:1636357838;}*/ ?>
 <!DOCTYPE html>
 <html>
 
@@ -9,9 +9,12 @@
 	<link rel="stylesheet" href="<?php  $tagGlobal = new \think\template\taglib\eyou\TagGlobal; $__VALUE__ = $tagGlobal->getGlobal("web_templets_pc"); echo $__VALUE__; ?>/skin/css/fullpage.min.css">
 	<link rel="stylesheet" href="<?php  $tagGlobal = new \think\template\taglib\eyou\TagGlobal; $__VALUE__ = $tagGlobal->getGlobal("web_templets_pc"); echo $__VALUE__; ?>/skin/css/swiper-bundle.min.css">
 	<link rel="stylesheet" href="<?php  $tagGlobal = new \think\template\taglib\eyou\TagGlobal; $__VALUE__ = $tagGlobal->getGlobal("web_templets_pc"); echo $__VALUE__; ?>/skin/css/index.min.css">
-	<style>
-
-	</style>
+	<!--[if lt IE 9]>
+    <div class="notsupport">
+        <h1>:( 非常遗憾</h1>
+        <h2>您的浏览器版本太低，请升级您的浏览器</h2>
+    </div>
+    <![endif]--> 
 </head>
 
 <body>
