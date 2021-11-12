@@ -76,7 +76,7 @@ class TagVideolist extends Base
 <script type="text/javascript">
 var vars1612143009 = {$data_json};
 </script>
-<script type="text/javascript" src="{$this->root_dir}/public/static/common/js/tag_videolist.js?v={$version}"></script>
+<script type="text/javascript" src="{$this->root_dir}/public/static/common/js/tag_videolist.js?t={$version}"></script>
 EOF;
                     }
                     $result[] = $row[$key];

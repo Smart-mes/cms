@@ -31,7 +31,7 @@ class TagFlink extends Base
      */
     public function getFlink($type = 'text', $limit = '', $groupid = 1)
     {
-        if ($type == 'text') {
+        if ($type == 'text' || $type == 'textall') {
             $typeid = 1;
         } elseif ($type == 'image') {
             $typeid = 2;
@@ -49,7 +49,7 @@ class TagFlink extends Base
 
             $map['groupid'] = array('eq', $groupid);
         }
-        $map['lang'] = $this->home_lang;
+        $map['lang'] = self::$home_lang;
         $map['status'] = 1;
         $result = M("links")->where($map)
             ->order('sort_order asc')

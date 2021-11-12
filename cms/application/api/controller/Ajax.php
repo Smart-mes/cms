@@ -35,6 +35,7 @@ class Ajax extends Base
             $this->success('请求成功', null, $res);
         }
     }
+
     /**
      * 内容页浏览量的自增接口
      */
@@ -53,6 +54,34 @@ class Ajax extends Base
                 $click = $archives_db->where(array('aid'=>$aid))->getField('click');
             }
             echo($click);
+            exit;
+        } else {
+            abort(404);
+        }
+    }
+
+    /**
+     * 付费文档的订单数/用户数
+     */
+    public function freebuynum()
+    {
+        \think\Session::pause(); // 暂停session，防止session阻塞机制
+        if (IS_AJAX) {
+            $freebuynum = 0;
+            $aid = input('aid/d', 0);
+            $channelid = input('channelid/d', 0);
+            if ($aid > 0) {
+                if (empty($channelid)) {
+                    $channelid = Db::name('archives')->where(['aid'=>$aid])->value('channel');
+                }
+                
+                if (1 == $channelid) {
+                    $freebuynum = Db::name('article_order')->where(['order_status'=>1,'product_id'=>$aid])->count();
+                } else if (5 == $channelid) {
+                    $freebuynum = Db::name('media_order')->where(['order_status'=>1,'product_id'=>$aid])->count();
+                }
+            }
+            echo($freebuynum);
             exit;
         } else {
             abort(404);
@@ -272,7 +301,16 @@ class Ajax extends Base
                         $this->success('请求成功', null, $users);
                     }
                 }
-                $this->success('请先登录', null, ['ey_is_login'=>0]);
+                
+                $data = [
+                    'ey_is_login'   => 0,
+                    'ey_third_party_login'  => $this->is_third_party_login(),
+                    'ey_third_party_qqlogin'  => $this->is_third_party_login('qq'),
+                    'ey_third_party_wxlogin'  => $this->is_third_party_login('wx'),
+                    'ey_third_party_wblogin'  => $this->is_third_party_login('wb'),
+                    'ey_login_vertify'  => $this->is_login_vertify(),
+                ];
+                $this->success('请先登录', null, $data);
             }
             else if ('reg' == $type)
             {
@@ -303,10 +341,107 @@ class Ajax extends Base
                 }
                 $this->success('请求成功', null, $users);
             }
+            else if ('collect' == $type)
+            {
+                if (!empty($users_id)) {
+                    $users['ey_is_login'] = 1;
+                    $users['ey_collect_num_20191212'] = Db::name('users_collection')->where(['users_id'=>$users_id])->count();
+                } else {
+                    $users['ey_is_login'] = 0;
+                    $users['ey_collect_num_20191212'] = 0;
+                }
+                $this->success('请求成功', null, $users);
+            }
             $this->error('访问错误');
         } else {
             abort(404);
         }
+    }
+
+    /**
+     * 是否启用并开启第三方登录
+     * @return boolean [description]
+     */
+    private function is_third_party_login($type = '')
+    {
+        static $result = null;
+        if (null === $result) {
+            $result = Db::name('weapp')->field('id,code,data')->where([
+                   'code'  => ['IN', ['QqLogin','WxLogin','Wblogin']],
+                   'status'    => 1,
+               ])->getAllWithIndex('code');
+        }
+        $value = 0;
+        if (empty($type)) {
+           $qqlogin = 0;
+           if (!empty($result['QqLogin']['data'])) {
+               $qqData = unserialize($result['QqLogin']['data']);
+               if (!empty($qqData['login_show'])) {
+                   $qqlogin = 1;
+               }
+           }
+           
+           $wxlogin = 0;
+           if (!empty($result['WxLogin']['data'])) {
+               $wxData = unserialize($result['WxLogin']['data']);
+               if (!empty($wxData['login_show'])) {
+                   $wxlogin = 1;
+               }
+           }
+           
+           $wblogin = 0;
+           if (!empty($result['WbLogin']['data'])) {
+               $wbData = unserialize($result['WbLogin']['data']);
+               if (!empty($wbData['login_show'])) {
+                   $wblogin = 1;
+               }
+           }
+           
+           if ($qqlogin == 1 || $wxlogin == 1 || $wblogin == 1) {
+               $value = 1;
+           } 
+        } else {
+            if ('qq' == $type) {
+                if (!empty($result['QqLogin']['data'])) {
+                   $qqData = unserialize($result['QqLogin']['data']);
+                   if (!empty($qqData['login_show'])) {
+                       $value = 1;
+                   }
+                }
+            } else if ('wx' == $type) {
+                if (!empty($result['WxLogin']['data'])) {
+                   $wxData = unserialize($result['WxLogin']['data']);
+                   if (!empty($wxData['login_show'])) {
+                       $value = 1;
+                   }
+                }
+            } else if ('wb' == $type) {
+                if (!empty($result['Wblogin']['data'])) {
+                   $wbData = unserialize($result['WbLogin']['data']);
+                   if (!empty($wbData['login_show'])) {
+                       $value = 1;
+                   }
+                }
+            }
+        }
+    
+        return $value;
+    }
+
+    /**
+     * 是否开启登录图形验证码
+     * @return boolean [description]
+     */
+    private function is_login_vertify()
+    {
+        // 默认开启验证码
+        $is_vertify          = 1;
+        $users_login_captcha = config('captcha.users_login');
+        if (!function_exists('imagettftext') || empty($users_login_captcha['is_on'])) {
+            $is_vertify = 0; // 函数不存在，不符合开启的条件
+        }
+
+        return $is_vertify;
     }
 
     /**
@@ -342,9 +477,12 @@ class Ajax extends Base
                         $users[$val] = '';
                     }
                 }
-                $users['url'] = url('user/Users/centre');
                 unset($users['password']);
                 unset($users['paypwd']);
+                // 头像处理
+                $head_pic = get_head_pic(htmlspecialchars_decode($users['head_pic']));
+                $users['head_pic'] = func_preg_replace(['http://thirdqq.qlogo.cn'], ['https://thirdqq.qlogo.cn'], $head_pic);
+                $users['url'] = url('user/Users/centre');
                 $dtypes = [];
                 foreach ($users as $key => $val) {
                     $html_key = md5($key.'-'.$t_uniqid);
@@ -412,6 +550,14 @@ class Ajax extends Base
         
         // 留言发送邮件
         if (IS_AJAX_POST && 'gbook_submit' == $type) {
+
+            // 是否满足发送邮箱的条件
+            $is_open = Db::name('smtp_tpl')->where(['send_scene'=>1,'lang'=>$this->home_lang])->value('is_open');
+            $smtp_config = tpCache('smtp');
+            if (empty($is_open) || empty($smtp_config['smtp_user']) || empty($smtp_config['smtp_pwd'])) {
+                $this->error("邮箱尚未配置，发送失败");
+            }
+
             $tid = input('param.tid/d');
             $aid = input('param.aid/d');
 
@@ -488,7 +634,7 @@ class Ajax extends Base
                         $content = $preg_res ? '待发货' : '您有新的待发货订单';
                         break;
                     case '2':
-                        $content = $preg_res ? '待收货' : '您有新的待收货订单';
+                        $content = $preg_res ? $data['order_code'] : $data['order_code'];
                         break;
                     default:
                         $content = '';
@@ -746,6 +892,53 @@ class Ajax extends Base
         $this->error($msg);
     }
 
+    /**
+     * 发布或编辑文档/栏目时，小程序 API 提交
+     * 将小程序资源 path 路径，提交到 API 接口中
+     */
+    public function push_bdminipro($aid=0,$typeid=0)
+    {
+        //先判断是否安装百度小程序插件
+        $BdDiyminipro = Db::name('weapp')->where('code','BdDiyminipro')->where('status',1)->find();
+        if (empty($BdDiyminipro)){
+            $this->error('未安装可视化百度小程序！');
+        }else{
+            $data = Db::name('weapp_bd_diyminipro_setting')->order('mini_id desc')->find();
+            $value = json_decode($data['value'],true);
+            $access_token = '';
+            if (empty($value['access_token']) || (!empty($value['access_token_extime']) && $value['access_token_extime'] > getTime() )){
+                if (!empty($value['appId'])){
+                    $vaules = [];
+                    $vaules['appId'] = $value['appId'];
+                    $url = "https://service.eyysz.cn/index.php?m=api&c=BaiduMiniproClient&a=minipro&".http_build_query($vaules);
+                    $response = httpRequest($url);
+                    $params = array();
+                    $params = json_decode($response, true);
+                    if (!empty($params) && $params['errcode'] == 0) {
+                        $at_url = 'https://openapi.baidu.com/oauth/2.0/token?grant_type=client_credentials&client_id='.$params['errmsg']['appKey'].'&client_secret='.$params['errmsg']['appSecret'].'&scope=smartapp_snsapi_base';
+                        $response1 = httpRequest($at_url);
+                        $params1 = array();
+                        $params1 = json_decode($response1, true);
+                        if (!empty($params1['access_token'])){
+                            $value['access_token'] = $access_token = $params1['access_token'];
+                            $value['access_token_extime'] = getTime()+$params1['expires_in'];
+                            $updateValue = json_encode($value);
+                            Db::name('weapp_bd_diyminipro_setting')->where('mini_id',$data['mini_id'])->update(['value'=>$updateValue,'update_time'=>getTime()]);
+                        }
+                    }
+                }
+            }else{
+                $access_token = $value['access_token'];
+            }
+            if (!empty($access_token)){
+                $res = push_bdminiproapi($access_token,1,$aid,$typeid);
+                if (!empty($res)){
+                    $this->success($res['msg']);
+                }
+            }
+        }
+    }
+
     /*
      * 视频权限播放逻辑
      */
@@ -772,7 +965,7 @@ class Ajax extends Base
             if (5 == $archivesInfo['channel']) {
                 // 获取用户最新信息
                 $UsersData = GetUsersLatestData();
-                $UsersID = $UsersData['users_id'];
+                $UsersID = !empty($UsersData['users_id']) ? $UsersData['users_id'] : 0;
                 $result['status_value'] = 0; // status_value 0-所有人免费 1-所有人付费 2-会员免费 3-会员付费
                 $result['status_name'] = ''; //status_name 要求会员等级时会员级别名称
                 $result['play_auth'] = 0; //播放权限
@@ -1122,8 +1315,7 @@ class Ajax extends Base
     {
         if (IS_AJAX_POST) {
             \think\Session::pause(); // 暂停session，防止session阻塞机制
-            $ajaxLogic = new \app\admin\logic\AjaxLogic;
-            $ajaxLogic->clear_session_file();
+            clear_session_file(); // 清理过期的data/session文件
         } else {
             abort(404);
         }
@@ -1138,34 +1330,50 @@ class Ajax extends Base
         }
         $artData = Db::name('archives')
             ->alias('a')
-            ->field('a.users_price, b.content')
+            ->field('a.restric_type,a.arc_level_id,b.content')
             ->join('article_content b','a.aid = b.aid')
             ->where('a.aid',$aid)
             ->find();
-        if (0 < $artData['users_price']) { // 付费阅读
-            $users_id = session('users_id');
-            $pay_data = Db::name('article_pay')->field('part_free,free_content')->where('aid',$aid)->find();
+        if (empty($artData['restric_type'])) { // 免费
+            $result['display'] = 0; // 1-显示购买 0-不显示
+            $result['content'] = $artData['content'];
+        }
+        else { // 其他
+
+            /*预览内容*/
             $free_content = '';
-            if (!empty($pay_data['part_free'])) { // 允许试看
+            $pay_data = Db::name('article_pay')->field('part_free,free_content')->where('aid',$aid)->find();
+            if (!empty($pay_data['part_free'])) {
                 $free_content = !empty($pay_data['free_content']) ? $pay_data['free_content'] : '';
             }
+            /*end*/
+
+            $users_id = session('users_id');
             if (empty($users_id)) {
                 $result['display'] = 1; // 1-显示购买 0-不显示
                 $result['content'] = $free_content;
             } else {
-                $is_pay = Db::name('article_order')->where(['users_id'=>$users_id,'order_status'=>1,'product_id'=>$aid])->find();
-                if (empty($is_pay)){ // 没有购买
-                    $result['display'] = 1;// 1-显示购买 0-不显示
+
+                $UsersData = GetUsersLatestData();
+                $arc_level_id = $artData['arc_level_id'];
+
+                //会员限制
+                if (0 < $arc_level_id && $UsersData['level'] < $arc_level_id) {
+                    $result['vipDisplay'] = 1;// 1-显示会员限制 0-不显示
                     $result['content'] = $free_content;
-                }else{ // 已经购买
-                    $result['display'] = 0;
+                } else if (in_array($artData['restric_type'], [1,3])) { // 付费/会员付费
+                    $is_pay = Db::name('article_order')->where(['users_id'=>$users_id,'order_status'=>1,'product_id'=>$aid])->find();
+                    if (empty($is_pay)){ // 没有购买
+                        $result['display'] = 1; // 1-显示购买 0-不显示
+                        $result['content'] = $free_content;
+                    }else{ // 已经购买
+                        $result['display'] = 0; // 1-显示购买 0-不显示
+                        $result['content'] = $artData['content'];
+                    }
+                } else {
                     $result['content'] = $artData['content'];
                 }
             }
-        }
-        else { // 免费阅读
-            $result['display'] = 0; // 1-显示购买 0-不显示
-            $result['content'] = $artData['content'];
         }
 
         $result['content'] = htmlspecialchars_decode($result['content']);
@@ -1175,6 +1383,7 @@ class Ajax extends Base
 
         $this->success('success', null,$result);
     }
+
     //获取第三方上传的域名
     public function get_third_domain()
     {

@@ -78,7 +78,7 @@ class ProductLogic extends Model
                 if($val['attr_input_type'] == 3)
                 {
                     $str .= "<dd class='opt'><textarea class='span12 ckeditor' id='attr_{$attr_id}' name='attr_{$attr_id}[]'>".($aid ? $v['attr_value'] : $val['attr_values'])."</textarea><span class='err' tyle='color:#F00; display:none;'></span><p class='notic'></p></dd>";
-                    $url = url('Ueditor/index', array('savepath'=>'product'));
+                    $url = url('Ueditor/index', array('savepath'=>'allimg'));
                     $str .= <<<EOF
 <script type="text/javascript">
     UE.getEditor("attr_{$attr_id}",{
@@ -164,7 +164,7 @@ EOF;
                 // 富文本编辑器
                 if($val['attr_input_type'] == 3) {
                     $str .= "<dd class='opt'><textarea class='span12 ckeditor' id='attr_{$attr_id}' name='shop_attr_{$attr_id}[]'>".($aid ? $v['attr_value'] : $val['attr_values'])."</textarea><span class='err' tyle='color:#F00; display:none;'></span><p class='notic'></p></dd>";
-                    $url = url('Ueditor/index', array('savepath'=>'product'));
+                    $url = url('Ueditor/index', array('savepath'=>'allimg'));
                     $str .= <<<EOF
 <script type="text/javascript">
     UE.getEditor("attr_{$attr_id}",{

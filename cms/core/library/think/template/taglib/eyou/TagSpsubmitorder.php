@@ -30,6 +30,7 @@ class TagSpsubmitorder extends Base
      */
     public $users_id = 0;
     public $users    = [];
+    public $usersTplVersion    = '';
     
     //初始化
     protected function _initialize()
@@ -39,6 +40,7 @@ class TagSpsubmitorder extends Base
         $this->users    = session('users');
         $this->users_id = session('users_id');
         $this->users_id = !empty($this->users_id) ? $this->users_id : 0;
+        $this->usersTplVersion = getUsersTplVersion();
     }
 
     /**
@@ -75,7 +77,7 @@ class TagSpsubmitorder extends Base
                 // 立即购买查询条件
                 $ArchivesWhere = [
                     'a.aid'  => $aid,
-                    'a.lang' => $this->home_lang,
+                    'a.lang' => self::$home_lang,
                 ];
                 if (!empty($spec_value_id)) $ArchivesWhere['b.spec_value_id'] = $spec_value_id;
                 
@@ -111,7 +113,7 @@ class TagSpsubmitorder extends Base
             // 购物车查询条件
             $CartWhere = [
                 'a.users_id' => $this->users_id,
-                'a.lang'     => $this->home_lang,
+                'a.lang'     => self::$home_lang,
                 'a.selected' => 1,
             ];
             $field = 'a.*, b.aid, b.title, b.litpic, b.users_price, b.stock_count, b.prom_type, b.attrlist_id, c.spec_price, c.spec_stock, d.spec_is_select';
@@ -183,7 +185,7 @@ class TagSpsubmitorder extends Base
                 // 折扣率百分比 100 != $level_discount
                 $discount_price = $level_discount / 100;
                 // 会员折扣价
-                $result['list'][$key]['users_price'] = $value['users_price'] * $discount_price;
+                $result['list'][$key]['users_price'] = floatval(sprintf("%.2f", $value['users_price'] * $discount_price));
             }
 
             // 购物车商品存在规格并且库存不为空，则覆盖商品原来的库存
@@ -211,10 +213,10 @@ class TagSpsubmitorder extends Base
         foreach ($result['list'] as $key => $value) {
             if ($value['users_price'] >= 0 && !empty($value['product_num'])) {
                 // 计算小计
-                $result['list'][$key]['subtotal'] = sprintf("%.2f", $value['users_price'] * $value['product_num']);
+                $result['list'][$key]['subtotal'] = floatval(sprintf("%.2f", $value['users_price'] * $value['product_num']));
                 // 计算合计金额
                 $result['data']['TotalAmount'] += $result['list'][$key]['subtotal'];
-                $result['data']['TotalAmount'] = sprintf("%.2f", $result['data']['TotalAmount']);
+                $result['data']['TotalAmount'] = floatval(sprintf("%.2f", $result['data']['TotalAmount']));
                 // 计算合计数量
                 $result['data']['TotalNumber'] += $value['product_num'];
                 // 判断订单类型，目前逻辑：一个订单中，只要存在一个普通产品(实物产品，需要发货物流)，则为普通订单
@@ -247,20 +249,26 @@ class TagSpsubmitorder extends Base
 
             // 规格处理
             $result['list'][$key]['product_spec'] = '';
+            $product_spec_list = [];
             if (!empty($value['spec_value_id'])) {
                 $spec_value_id = explode('_', $value['spec_value_id']);
                 if (!empty($spec_value_id)) {
                     $SpecWhere = [
                         'aid'           => $value['aid'],
-                        'lang'          => $this->home_lang,
+                        'lang'          => self::$home_lang,
                         'spec_value_id' => ['IN',$spec_value_id]
                     ];
                     $ProductSpecData = Db::name("product_spec_data")->where($SpecWhere)->field('spec_name, spec_value')->select();
                     foreach ($ProductSpecData as $spec_value) {
                         $result['list'][$key]['product_spec'] .= $spec_value['spec_name'].'：'.$spec_value['spec_value'].'<br/>';
+                        $product_spec_list[] = [
+                            'name' => $spec_value['spec_name'],
+                            'value' => $spec_value['spec_value'],
+                        ];
                     }
                 }
             }
+            $result['list'][$key]['product_spec_list'] = $product_spec_list;
         }
         
         // 封装初始金额隐藏域
@@ -268,21 +276,21 @@ class TagSpsubmitorder extends Base
 
         // 封装添加收货地址JS
         if (isWeixin() && !isWeixinApplets()) {
-            $result['data']['goAddressList'] = " data-url=\"".url('user/Shop/shop_address_list')."\" onclick=\"goAddressList(this);\" ";
+            $result['data']['goAddressList'] = " data-url=\"".url('user/Shop/shop_address_list', ['type'=>'order'])."\" onclick=\"goAddressList(this);\" ";
             $result['data']['ShopAddAddr'] = " onclick=\"GetWeChatAddr();\" ";
             $data['shop_add_address'] = url('user/Shop/shop_get_wechat_addr');
         } else {
-            $result['data']['goAddressList'] = " data-url=\"".url('user/Shop/shop_address_list')."\" onclick=\"goAddressList(this);\" ";
+            $result['data']['goAddressList'] = " data-url=\"".url('user/Shop/shop_address_list', ['type'=>'order'])."\" onclick=\"goAddressList(this);\" ";
             $result['data']['ShopAddAddr'] = " onclick=\"ShopAddAddress();\" ";
             $data['shop_add_address'] = url('user/Shop/shop_add_address');
         }
 
         // 会员模板版本号
-        if (getUsersTplVersion() == 'v2') {
+        if ($this->usersTplVersion == 'v2') {
             $ShopAddressInfo = [];
             $ShopAddressList = Db::name('shop_address')->field('*')->where([
                     'users_id'  => $this->users_id,
-                    'lang'  => $this->home_lang,
+                    'lang'  => self::$home_lang,
                 ])->order('is_default desc')->getAllWithIndex('addr_id');
             if (!empty($ShopAddressList)) {
                 $PlaceOrderAddrid = cookie('PlaceOrderAddrid');
@@ -302,6 +310,37 @@ class TagSpsubmitorder extends Base
             if (empty($ShopAddressInfo)) $ShopAddressInfo = false;
             $result['data']['ShopAddressInfo'][] = $ShopAddressInfo;
         }
+        else if ($this->usersTplVersion == 'v3') {
+            $ShopAddressInfo = [];
+            $ShopAddressList = Db::name('shop_address')->field('*')->where([
+                    'users_id'  => $this->users_id,
+                    'lang'  => self::$home_lang,
+                ])->order('is_default desc')->getAllWithIndex('addr_id');
+            if (!empty($ShopAddressList)) {
+                $PlaceOrderAddrid = cookie('PlaceOrderAddrid');
+                if (!empty($ShopAddressList[$PlaceOrderAddrid])) {
+                    $ShopAddressInfo = $ShopAddressList[$PlaceOrderAddrid];
+                } else {
+                    $ShopAddressInfo = current($ShopAddressList);
+                }
+                $ShopAddressInfo['ul_il_id'] = "{$ShopAddressInfo['addr_id']}_ul_li";
+                // 封装收货地址信息
+                $ShopAddressInfo['country']  = '中国';
+                $ShopAddressInfo['province'] = get_province_name($ShopAddressInfo['province']);
+                $ShopAddressInfo['city']     = get_city_name($ShopAddressInfo['city']);
+                $ShopAddressInfo['district'] = get_area_name($ShopAddressInfo['district']);
+                $ShopAddressInfo['Info'] = $ShopAddressInfo['province'].' '.$ShopAddressInfo['city'].' '.$ShopAddressInfo['district'];
+            }
+            if (empty($ShopAddressInfo)) $ShopAddressInfo = false;
+            $result['data']['ShopAddressInfo'][] = $ShopAddressInfo;
+
+            // 第三套模板使用，若存在收货地址则进入收货地址列表，没有则进入添加收货和获取微信收货地址处理页
+            if (!empty($ShopAddressInfo)) {
+                $result['data']['goAddressList'] = " data-url=\"".url('user/Shop/shop_address_list', ['type'=>'order'])."\" onclick=\"goAddressList(this);\" ";
+            } else {
+                $result['data']['goAddressList'] = " data-url=\"".url('user/Shop/shop_add_address', ['type'=>'order'])."\" onclick=\"goAddressList(this);\" ";
+            }
+        }
 
         // 封装UL的ID,用于添加收货地址
         $result['data']['UlHtmlId']       = " id=\"UlHtml\" ";
@@ -310,9 +349,11 @@ class TagSpsubmitorder extends Base
         $result['data']['DeliveryPay']    = " onclick=\"ColorS('hdfk')\" id=\"hdfk\"  ";
         // 封装运费信息
         if (empty($result['data']['shop_open_shipping'])) {
-            $result['data']['Shipping'] = " 免运费 ";
+            $result['data']['Shipping'] = " 包邮 ";
+            $result['data']['ShippingMoney'] = 0;
         } else {
-            $result['data']['Shipping'] = " <span id=\"template_money\">￥0.00</span> ";
+            $result['data']['Shipping'] = " <span id=\"template_money\">￥0</span> ";
+            $result['data']['ShippingMoney'] = " <span id=\"shipping_money\">0</span> ";
         }
         // 封装全部产品总额ID，用于计算总额
         $result['data']['TotalAmountId'] = " id=\"TotalAmount\" ";
@@ -331,9 +372,10 @@ class TagSpsubmitorder extends Base
         // 会员信息
         $usersInfo = Db::name('users')->field('users_money')->where(['users_id'=>$this->users_id])->find();
         if (!empty($usersInfo)) {
+            $usersInfo['users_money'] = floatval($usersInfo['users_money']);
             $result['data']['UsersMoney'] = $usersInfo['users_money'];
             $UsersSurplusMoney = strval($usersInfo['users_money']) - strval($result['data']['TotalAmount']);
-            $result['data']['UsersSurplusMoney'] = number_format($UsersSurplusMoney, 2, ".", "");
+            $result['data']['UsersSurplusMoney'] = floatval(number_format($UsersSurplusMoney, 2, ".", ""));
         }
         // 用于计算总额
         $result['data']['PayTotalAmountID'] = " id=\"PayTotalAmountID\" ";
@@ -405,24 +447,37 @@ class TagSpsubmitorder extends Base
         $data['shop_del_address']  = url('user/Shop/shop_del_address');
         $data['shop_inquiry_shipping']  = url('user/Shop/shop_inquiry_shipping');
         $data['shop_payment_page'] = url('user/Shop/shop_payment_page');
+        $data['shop_centre_url'] = url('user/Shop/shop_centre');
+        // 会员模板版本号
+        if (empty($this->usersTplVersion) || 'v1' == $this->usersTplVersion) {
+            $jsfile = "tag_spsubmitorder.js";
+        } else {
+            $jsfile = "tag_spsubmitorder_{$this->usersTplVersion}.js";
+        }
+
+        $data['is_wap'] = 0;
         if (isWeixin() || isMobile()) {
             $data['addr_width']  = '100%';
             $data['addr_height'] = '100%';
+            $data['is_wap'] = 1;
         }else{
-            $data['addr_width']  = '350px';
-            $data['addr_height'] = '480px';
+            if ('v3' == $this->usersTplVersion) {
+                $data['addr_width']  = '660px';
+                $data['addr_height'] = '363px';
+            } else {
+                $data['addr_width']  = '350px';
+                $data['addr_height'] = '480px';
+            }
         }
         $data_json = json_encode($data);
         $version   = getCmsVersion();
-        // 会员模板版本号
-        $usersTplVersion = getUsersTplVersion();
-        $jsfile = ('v2' == $usersTplVersion) ? 'tag_spsubmitorder_v2.js' : 'tag_spsubmitorder.js';
         // 循环中第一个数据带上JS代码加载
         $result['data']['hidden'] = <<<EOF
+<input type="hidden" id="submit_order_type" value="{$submit_order_type}">
 <script type="text/javascript">
     var b1decefec6b39feb3be1064e27be2a9 = {$data_json};
 </script>
-<script type="text/javascript" src="{$this->root_dir}/public/static/common/js/{$jsfile}?v={$version}"></script>
+<script type="text/javascript" src="{$this->root_dir}/public/static/common/js/{$jsfile}?t={$version}"></script>
 EOF;
 
         if (empty($result['list'])) {

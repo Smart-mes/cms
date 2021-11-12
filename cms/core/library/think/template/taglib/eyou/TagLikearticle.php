@@ -14,6 +14,7 @@
 namespace think\template\taglib\eyou;
 
 use think\Db;
+
 use app\home\logic\FieldLogic;
 
 /**
@@ -83,8 +84,15 @@ class TagLikearticle extends Base
         //tag标签
         if (3 > count($keywords)) {
             $where_taglist = [];
-            !empty($this->aid) && $where_taglist['aid'] = $this->aid;
-            !empty($typeidArr) && $where_taglist['typeid'] = ['IN', $typeidArr];
+            if (!empty($typeidArr)) {
+                $where_taglist['typeid'] = ['IN', $typeidArr];
+                if (!empty($this->aid)) {
+                    $tids = Db::name('taglist')->where(['aid'=>$this->aid])->column('tid');
+                    $where_taglist['tid'] = ['IN', $tids];
+                }
+            } else {
+                !empty($this->aid) && $where_taglist['aid'] = $this->aid;
+            }
             $tag                  = Db::name('taglist')->field('tag')->where($where_taglist)->select();
             if (!empty($tag)) {
                 foreach ($tag as $key => $value) {
@@ -150,7 +158,7 @@ class TagLikearticle extends Base
         $map['a.arcrank'] = ['gt', -1];
         $map['a.status'] = 1;
         $map['a.is_del'] = 0;
-        $map['a.lang'] = $this->home_lang;
+        $map['a.lang'] = self::$home_lang;
         $map['a.aid'] = ['NEQ', $this->aid];
         /*定时文档显示插件*/
         if (is_dir('./weapp/TimingTask/')) {
@@ -188,7 +196,7 @@ class TagLikearticle extends Base
                     'tag'   => ['IN', $tags_arr],
                     'aid'   => ['NOTIN', $aids],
                     'arcrank'   => ['gt', -1],
-                    'lang'  => $this->home_lang,
+                    'lang'  => self::$home_lang,
                 ];
                 if (!empty($typeidArr)) {
                     $tagmap['typeid'] = ['IN', $typeidArr];
@@ -200,7 +208,7 @@ class TagLikearticle extends Base
                 $map['a.arcrank'] = ['gt', -1];
                 $map['a.status'] = 1;
                 $map['a.is_del'] = 0;
-                $map['a.lang'] = $this->home_lang;
+                $map['a.lang'] = self::$home_lang;
                 if (!empty($channelid)) {
                     $map['a.channel'] = ['IN', explode(',', $channelid)];
                 } else {
@@ -239,7 +247,7 @@ class TagLikearticle extends Base
             $map['a.arcrank'] = ['gt', -1];
             $map['a.status'] = 1;
             $map['a.is_del'] = 0;
-            $map['a.lang'] = $this->home_lang;
+            $map['a.lang'] = self::$home_lang;
             $limit2 = $limit_num - count($result);
             $result2 = $this->archives_db
                 ->field($field)

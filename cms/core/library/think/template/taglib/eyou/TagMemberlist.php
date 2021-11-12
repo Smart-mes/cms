@@ -41,11 +41,11 @@ class TagMemberlist extends Base
 
         $condition = [
             'admin_id'  => 0,
-            'lang'      => $this->home_lang,
+            'lang'      => self::$home_lang,
         ];
 
         switch ($orderby) {
-            case 'logintime': // 兼容织梦的写法
+            case 'logintime': // 兼容写法
             case 'last_login':
                 $orderby = "last_login {$orderway}";
                 break;
@@ -103,7 +103,7 @@ class TagMemberlist extends Base
         $result_json = json_encode($result);
         $version = getCmsVersion();
         $hidden = <<<EOF
-<script type="text/javascript" src="{$this->root_dir}/public/static/common/js/tag_memberlist.js?v={$version}"></script>
+<script type="text/javascript" src="{$this->root_dir}/public/static/common/js/tag_memberlist.js?t={$version}"></script>
 <script type="text/javascript">
     var tag_memberlist_result_json = {$result_json};
     tag_memberlist(tag_memberlist_result_json);

@@ -383,7 +383,7 @@ class Shop extends Model
                 // 折扣率百分比
                 $discount_price = $level_discount / 100;
                 // 会员折扣价
-                $value['users_price']      = $value['users_price'] * $discount_price;
+                $value['users_price']      = sprintf("%.2f", $value['users_price'] * $discount_price);
             }
             // 购物车商品存在规格并且库存不为空，则覆盖商品原来的库存
             if (!empty($value['spec_stock'])) {
@@ -572,21 +572,27 @@ class Shop extends Model
     /*------陈风任---2021-1-12---售后服务(退换货)------开始------*/
 
     // 读取会员自身所有服务单信息
-    public function GetAllServiceInfo($users_id = null, $order_code = null)
+    public function GetAllServiceInfo($users_id = null, $order_code = null, $status = null,$keywords = null)
     {
         $where = [
             'users_id' => $users_id
         ];
+        if ('ing' == $status){
+            $where['status'] = ['in',[1,2,3,4,5]];
+        }else if ('ed' == $status){
+            $where['status'] = ['in',[6,7,8]];
+        }
         if (!empty($order_code)) $where['order_code'] = ['LIKE', "%{$order_code}%"];
+        if (!empty($keywords)) $where['order_code|product_name'] = ['LIKE', "%{$keywords}%"];
 
         $count   = Db::name('shop_order_service')->where($where)->count('service_id');
         $pageObj = new Page($count, config('paginate.list_rows'));
-
         // 订单主表数据查询
         $Service = Db::name('shop_order_service')->where($where)
             ->order('status asc, service_id desc')
             ->limit($pageObj->firstRow.','.$pageObj->listRows)
             ->select();
+
         $New = get_archives_data($Service, 'product_id');
         foreach ($Service as $key => $value) {
             $Service[$key]['status']       = Config::get('global.order_service_status')[$value['status']];
@@ -595,6 +601,21 @@ class Shop extends Model
             $Service[$key]['OrDetailsUrl'] = url('user/Shop/shop_order_details', ['order_id'=>$value['order_id']]);
             $Service[$key]['SeDetailsUrl'] = url('user/Shop/after_service_details', ['service_id'=>$value['service_id']]);
             $Service[$key]['product_spec'] = str_replace("&lt;br/&gt;", " &nbsp; ", $value['product_spec']);
+
+            // 规格
+            $product_spec = !empty($Service[$key]['product_spec']) ? htmlspecialchars_decode($Service[$key]['product_spec']) : '';
+            $product_spec_list = [];
+            $product_spec_arr = explode('<br/>', $product_spec);
+            foreach ($product_spec_arr as $sp_key => $sp_val) {
+                $sp_arr = explode('：', $sp_val);
+                if (trim($sp_arr[0]) && !empty($sp_arr[0])) {
+                    $product_spec_list[] = [
+                        'name'  => !empty($sp_arr[0]) ? trim($sp_arr[0]) : '',
+                        'value' => !empty($sp_arr[1]) ? trim($sp_arr[1]) : '',
+                    ];
+                }
+            }
+            $Service[$key]['product_spec_list'] = $product_spec_list;
         }
 
         $Return['Service'] = $Service;
@@ -628,9 +649,9 @@ class Shop extends Model
         $Service['service_type_old'] = $Service['service_type'];
         $Service['service_type'] = Config::get('global.order_service_type')[$Service['service_type']];
         $Service['admin_delivery'] = unserialize($Service['admin_delivery']);
-        $Service['product_total'] = sprintf("%.2f", $Service['refund_price'] * (string)$Service['product_num']);
+        $Service['product_total'] = floatval(sprintf("%.2f", $Service['refund_price'] * (string)$Service['product_num']));
         /*计算退还余额*/
-        $field_new = 'b.details_id, b.product_price, b.num, a.shipping_fee, a.order_total_num';
+        $field_new = 'b.details_id, b.product_price, b.data, b.num, a.shipping_fee, a.order_total_num';
         $where_new = [
             'b.order_id' => $Service['order_id'],
             'b.details_id' => $Service['details_id'],
@@ -645,9 +666,25 @@ class Shop extends Model
         $ShippingFee = 0;
         if (!empty($Order['shipping_fee'])) {
             $ShippingFee = sprintf("%.2f", ($Order['shipping_fee'] / (string)$Order['order_total_num']) * (string)$Service['product_num']);
-            $Service['ShippingFee'] = $ShippingFee;
+            $Service['ShippingFee'] = floatval($ShippingFee);
         }
-        $Service['refund_total_price'] = (string)$Service['product_total'] - (string)$ShippingFee;
+        $Service['refund_total_price'] = floatval((string)$Service['product_total'] - (string)$ShippingFee);
+        // 规格
+        $product_spec_list = [];
+        $spec_data = unserialize($Order['data']);
+        if (!empty($spec_data['spec_value'])) {
+            $spec_value_arr = explode('<br/>', htmlspecialchars_decode($spec_data['spec_value']));
+            foreach ($spec_value_arr as $sp_key => $sp_val) {
+                $sp_arr = explode('：', $sp_val);
+                if (trim($sp_arr[0]) && !empty($sp_arr[0])) {
+                    $product_spec_list[] = [
+                        'name'  => !empty($sp_arr[0]) ? trim($sp_arr[0]) : '',
+                        'value' => !empty($sp_arr[1]) ? trim($sp_arr[1]) : '',
+                    ];
+                }
+            }
+        }
+        $Service['product_spec_list'] = $product_spec_list;
         /* END */
         return $Service;
     }
@@ -702,6 +739,22 @@ class Shop extends Model
         $Details['value_id'] = $Details['data']['value_id'];
         $Details['arcurl'] = url('home/View/index', ['aid' => $Details['product_id']]);
         $Details['litpic'] = handle_subdir_pic(get_default_pic($Details['litpic']));
+
+        $product_spec_list = [];
+        if (!empty($Details['spec_value'])) {
+            $spec_value_arr = explode('<br/>', $Details['spec_value']);
+            foreach ($spec_value_arr as $sp_key => $sp_val) {
+                $sp_arr = explode('：', $sp_val);
+                if (trim($sp_arr[0]) && !empty($sp_arr[0])) {
+                    $product_spec_list[] = [
+                        'name'  => !empty($sp_arr[0]) ? trim($sp_arr[0]) : '',
+                        'value' => !empty($sp_arr[1]) ? trim($sp_arr[1]) : '',
+                    ];
+                }
+            }
+        }
+        $Details['product_spec_list'] = $product_spec_list;
+
         unset($Details['data']);
         /* END */
 

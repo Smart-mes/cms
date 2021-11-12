@@ -30,6 +30,7 @@ class TagSppayapilist extends Base
      */
     public $users_id = 0;
     public $users    = [];
+    public $usersTplVersion    = '';
     
     //初始化
     protected function _initialize()
@@ -39,6 +40,7 @@ class TagSppayapilist extends Base
         $this->users    = session('users');
         $this->users_id = session('users_id');
         $this->users_id = !empty($this->users_id) ? $this->users_id : 0;
+        $this->usersTplVersion = getUsersTplVersion();
     }
 
     /**
@@ -74,7 +76,7 @@ class TagSppayapilist extends Base
                     'moneyid'      => $money_id,
                     'order_number' => $money_code,
                     'users_id'     => $this->users_id,
-                    'lang'         => $this->home_lang
+                    'lang'         => self::$home_lang
                 ];
                 $Result = Db::name('users_money')->where($where)->find();
                 if (empty($Result)) $this->error('订单不存在或已变更', url('user/Pay/pay_consumer_details'));
@@ -92,7 +94,7 @@ class TagSppayapilist extends Base
                         'order_id'   => $order_id,
                         'order_code' => $order_code,
                         'users_id'   => $this->users_id,
-                        'lang'       => $this->home_lang
+                        'lang'       => self::$home_lang
                     ];
                     $Result = Db::name('media_order')->where($where)->find();
                     if (empty($Result)) $this->error('订单不存在或已变更', url('user/Media/index'));
@@ -112,7 +114,7 @@ class TagSppayapilist extends Base
                         'order_id'   => $order_id,
                         'order_code' => $order_code,
                         'users_id'   => $this->users_id,
-                        'lang'       => $this->home_lang
+                        'lang'       => self::$home_lang
                     ];
                     $Result = Db::name('article_order')->where($where)->find();
                     if (empty($Result)) $this->error('订单不存在或已变更', url('user/Article/index'));
@@ -132,7 +134,7 @@ class TagSppayapilist extends Base
                         'order_id'   => $order_id,
                         'order_code' => $order_code,
                         'users_id'   => $this->users_id,
-                        'lang'       => $this->home_lang
+                        'lang'       => self::$home_lang
                     ];
                     $Result = Db::name('shop_order')->where($where)->find();
                     if (empty($Result)) $this->error('订单不存在或已变更', url('user/Shop/shop_centre'));
@@ -170,6 +172,11 @@ class TagSppayapilist extends Base
                 $PayApiList[$key]['hidden'] = '';
                 $PayInfo = unserialize($value['pay_info']);
                 if ('wechat' == $value['pay_mark']) {
+                    if (!empty($PayInfo['is_open_wechat'])) {
+                        $r1 = $this->findHupijiaoIsExis('wechat');
+                        if ($r1 == true) unset($PayApiList[$key]);
+                    } 
+                    /*
                     if (0 == $PayInfo['is_open_wechat']) {
                         if (empty($PayInfo['appid']) || empty($PayInfo['mchid']) || empty($PayInfo['key'])) {
                             $r1 = $this->findHupijiaoIsExis('wechat');
@@ -179,7 +186,13 @@ class TagSppayapilist extends Base
                         $r1 = $this->findHupijiaoIsExis('wechat');
                         if ($r1 == true) unset($PayApiList[$key]);
                     }
+                    */
                 } else if ('alipay' == $value['pay_mark']) {
+                    if (!empty($PayInfo['is_open_alipay'])) {
+                        $r1 = $this->findHupijiaoIsExis('alipay');
+                        if ($r1 == true) unset($PayApiList[$key]);
+                    }
+                    /*
                     if (0 == $PayInfo['is_open_alipay']) {
                         if (version_compare(PHP_VERSION,'5.5.0','<')) {
                             // 旧版支付宝
@@ -206,6 +219,7 @@ class TagSppayapilist extends Base
                         $r1 = $this->findHupijiaoIsExis('alipay');
                         if ($r1 == true) unset($PayApiList[$key]);
                     }
+                    */
                 } else if (0 == $value['system_built']) {
                     if (0 == $PayInfo['is_open_pay']) {
                         foreach ($PayInfo as $kk => $vv) {
@@ -231,10 +245,18 @@ class TagSppayapilist extends Base
         $JsonData['OrderPayPolling'] = url('user/PayApi/order_pay_polling', ['_ajax' => 1], true, false, 1, 1, 0);
         $JsonData['UsersUpgradePay'] = url('user/PayApi/users_upgrade_pay', ['_ajax' => 1], true, false, 1, 1, 0);
         $JsonData['get_token_url']   = url('api/Ajax/get_token', ['name'=>'__token__'], true, false, 1, 1, 0);
+        if (isWeixin() || isMobile()) {
+            $JsonData['is_wap'] = 1;
+        } else {
+            $JsonData['is_wap'] = 0;
+        }
         $JsonData = json_encode($JsonData);
         $version   = getCmsVersion();
-        $usersTplVersion = getUsersTplVersion();
-        $jsfile = ('v2' == $usersTplVersion) ? 'tag_sppayapilist_v2.js' : 'tag_sppayapilist.js';
+        if (empty($this->usersTplVersion) || 'v1' == $this->usersTplVersion) {
+            $jsfile = "tag_sppayapilist.js";
+        } else {
+            $jsfile = "tag_sppayapilist_{$this->usersTplVersion}.js";
+        }
         // 循环中第一个数据带上JS代码加载
         if (!empty($PayApiList)) {
             foreach ($PayApiList as $key => $value) {
@@ -243,7 +265,7 @@ class TagSppayapilist extends Base
 <script type="text/javascript">
     var eyou_data_json_1590627847 = {$JsonData};
 </script>
-<script type="text/javascript" src="{$this->root_dir}/public/static/common/js/{$jsfile}?v={$version}"></script>
+<script type="text/javascript" src="{$this->root_dir}/public/static/common/js/{$jsfile}?t={$version}"></script>
 EOF;
                 break;
                 }
@@ -253,7 +275,7 @@ EOF;
 <script type="text/javascript">
     var eyou_data_json_1590627847 = {$JsonData};
 </script>
-<script type="text/javascript" src="{$this->root_dir}/public/static/common/js/{$jsfile}?v={$version}"></script>
+<script type="text/javascript" src="{$this->root_dir}/public/static/common/js/{$jsfile}?t={$version}"></script>
 EOF;
         }
 

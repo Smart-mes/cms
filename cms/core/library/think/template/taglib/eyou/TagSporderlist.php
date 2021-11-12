@@ -39,7 +39,7 @@ class TagSporderlist extends Base
         // 基础查询条件
         $OrderWhere = [
             'users_id' => $this->users_id,
-            'lang'     => $this->home_lang,
+            'lang'     => self::$home_lang,
         ];
 
         // 应用搜索条件
@@ -70,7 +70,7 @@ class TagSporderlist extends Base
             ->paginate($pagesize, false, $paginate);
         $result['list']  = $pages->items();
         $result['pages'] = $pages;
-
+        
         // 搜索名称时，查询订单明细表商品名称
         if (empty($result['list']) && !empty($keywords)) {
             $Data = model('Shop')->QueryOrderList($pagesize, $this->users_id, $keywords, $query_get);
@@ -111,9 +111,10 @@ class TagSporderlist extends Base
 
                 foreach ($result['list'][$key]['details'] as $kk => $vv) {
                     // 产品规格处理
+                    $spec_data = unserialize($vv['data']);
                     if (!in_array($vv['order_id'], $OrderIds) && 0 == $value['order_status']) {
-                        $spec_value_id = unserialize($vv['data'])['spec_value_id'];
-                        if (!empty($spec_value_id)) {
+                        if (!empty($spec_data['spec_value_id'])) {
+                            $spec_value_id = $spec_data['spec_value_id'];
                             if (!in_array($spec_value_id, $ReturnData[$vv['product_id']])) {
                                 // 用于更新订单数据
                                 array_push($OrderIds, $vv['order_id']);
@@ -126,6 +127,21 @@ class TagSporderlist extends Base
                             }
                         }
                     }
+
+                    $product_spec_list = [];
+                    if (!empty($spec_data['spec_value'])) {
+                        $spec_value_arr = explode('<br/>', htmlspecialchars_decode($spec_data['spec_value']));
+                        foreach ($spec_value_arr as $sp_key => $sp_val) {
+                            $sp_arr = explode('：', $sp_val);
+                            if (trim($sp_arr[0]) && !empty($sp_arr[0])) {
+                                $product_spec_list[] = [
+                                    'name'  => !empty($sp_arr[0]) ? trim($sp_arr[0]) : '',
+                                    'value' => !empty($sp_arr[1]) ? trim($sp_arr[1]) : '',
+                                ];
+                            }
+                        }
+                    }
+                    $result['list'][$key]['details'][$kk]['product_spec_list'] = $product_spec_list;
 
                     // 产品内页地址
                     if (!empty($array_new[$vv['product_id']]) && 0 == $vv['is_del']) {
@@ -142,6 +158,7 @@ class TagSporderlist extends Base
                     $result['list'][$key]['details'][$kk]['arcurl'] = $arcurl;
                     $result['list'][$key]['details'][$kk]['has_deleted'] = $has_deleted;
                     $result['list'][$key]['details'][$kk]['msg_deleted'] = $msg_deleted;
+                    $result['list'][$key]['details'][$kk]['product_price'] = floatval($vv['product_price']);
 
                     // 图片处理
                     $result['list'][$key]['details'][$kk]['litpic'] = handle_subdir_pic(get_default_pic($vv['litpic']));
@@ -192,6 +209,9 @@ class TagSporderlist extends Base
                     // 跳转链接
                     $result['list'][$key]['PaymentUrl'] = urldecode(url('user/Pay/pay_recharge_detail',['paystr'=>$Paystr]));
                 }
+                
+                // 封装取消订单JS
+                $result['list'][$key]['CancelOrder']   = " onclick=\"CancelOrder('{$value['order_id']}');\" ";
 
                 // 获取订单状态
                 $order_status_arr = Config::get('global.order_status_arr');
@@ -217,6 +237,12 @@ class TagSporderlist extends Base
                  
                 // 封装确认收货JS
                 $result['list'][$key]['Confirm'] = " onclick=\"Confirm('{$value['order_id']}','{$value['order_code']}');\" ";
+                //售后
+                $result['list'][$key]['ServiceList'] = urldecode(url('user/Shop/service_list', ['order_id' => $value['order_id']]));
+
+                //评价
+                $result['list'][$key]['AddProduct'] = urldecode(url('user/ShopComment/comment_list', ['order_id' => $value['order_id']]));
+
 
                 // 封装查询物流链接
                 $result['list'][$key]['LogisticsInquiry'] = $MobileExpressUrl = '';
@@ -232,6 +258,10 @@ class TagSporderlist extends Base
                     // PC端，手机浏览器使用弹框方式进行物流查询
                     $result['list'][$key]['LogisticsInquiry'] = " onclick=\"LogisticsInquiry('{$ExpressUrl}');\" ";
                 }
+
+                $result['list'][$key]['order_amount'] = floatval($value['order_amount']);
+                $result['list'][$key]['order_total_amount'] = floatval($value['order_total_amount']);
+                $result['list'][$key]['shipping_fee'] = is_numeric($value['shipping_fee']) ? floatval($value['shipping_fee']) : $value['shipping_fee'];
 
                 // 默认为空
                 $result['list'][$key]['hidden'] = '';
@@ -250,6 +280,7 @@ class TagSporderlist extends Base
             }
 
             // 传入JS参数
+            $data['shop_order_cancel'] = url('user/Shop/shop_order_cancel', ['_ajax'=>1], true, false, 1, 1, 0);
             $data['shop_member_confirm'] = url('user/Shop/shop_member_confirm');
             $data['shop_order_remind']   = url('user/Shop/shop_order_remind');
             $data_json = json_encode($data);
@@ -259,7 +290,7 @@ class TagSporderlist extends Base
 <script type="text/javascript">
     var d62a4a8743a94dc0250be0c53f833b = {$data_json};
 </script>
-<script type="text/javascript" src="{$this->root_dir}/public/static/common/js/tag_sporderlist.js?v={$version}"></script>
+<script type="text/javascript" src="{$this->root_dir}/public/static/common/js/tag_sporderlist.js?t={$version}"></script>
 EOF;
             return $result;
         }else{
@@ -272,7 +303,7 @@ EOF;
         // 公用条件
         $Where = [
             'users_id' => $this->users_id,
-            'lang'     => $this->home_lang,
+            'lang'     => self::$home_lang,
         ];
         $ShopOrder = Db::name('shop_order')->where($Where)->field('order_status, is_comment')->select();
         $result['All'] = $result['PendingPayment'] = $result['PendingReceipt'] = $result['Completed'] = 0;

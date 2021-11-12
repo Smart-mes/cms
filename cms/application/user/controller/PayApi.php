@@ -93,6 +93,11 @@ class PayApi extends Base {
             $Order = $this->PayApiLogic->GetFindOrderData($post);
             /* END */
 
+            // 用于第三套，标记轮询来源于订单提交页
+            if (isset($post['submit_order_type'])) {
+                unset($post['submit_order_type']);
+            }
+
             /* 支付API配置信息查询 */
             $Config  = $this->PayApiLogic->GetPayApiConfig($post);
             $PayInfo = $Config['pay_info'];

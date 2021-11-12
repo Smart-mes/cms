@@ -333,4 +333,13 @@ return array (
     'primary' => false,
     'autoinc' => false,
   ),
+  'union_id' => 
+  array (
+    'name' => 'union_id',
+    'type' => 'varchar(50)',
+    'notnull' => false,
+    'default' => '',
+    'primary' => false,
+    'autoinc' => false,
+  ),
 );

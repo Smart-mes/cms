@@ -54,6 +54,20 @@
                             });
                         }
                     }
+                    // 自动远程图片本地化和自动清除本站链接
+                    var editor_addonFieldExt = '';
+                    $.each(res.data.htmltextField, function (index, value) {
+                        if ($('#editor_addonFieldExt')) {
+                            if (editor_addonFieldExt) {
+                                editor_addonFieldExt += ','+value;
+                            }else{
+                                editor_addonFieldExt = value;
+                            }
+                        }
+                    });
+                    if (editor_addonFieldExt) {
+                        $('#editor_addonFieldExt').val(editor_addonFieldExt);
+                    }
                 }
             },
             error: function(e){

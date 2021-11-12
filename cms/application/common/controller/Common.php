@@ -25,6 +25,7 @@ class Common extends Controller {
 
     public $users_id = 0;
     public $users = array();
+    public $usersConfig = [];
 
     /**
      * 析构函数
@@ -53,12 +54,28 @@ class Common extends Controller {
         header("Cache-control: private");  // history.back返回后输入框值丢失问题 
         $this->session_id = session_id(); // 当前的 session_id
         !defined('SESSION_ID') && define('SESSION_ID', $this->session_id); //将当前的session_id保存为常量，供其它方法调用
+        
+        if (!session('?users_id')) {
+            session('users_id', null);
+            session('users', null);
+            cookie('users_id', null);
+        }
 
         $global = tpCache('global'); 
 
         /*关闭网站*/
         if (in_array(MODULE_NAME, ['home']) && !empty($global['web_status']) && $global['web_status'] == 1) {
-            die("<div style='text-align:center; font-size:20px; font-weight:bold; margin:50px 0px;'>网站暂时关闭，维护中……</div>");
+            $web_status_tpl = !empty($global['web_status_tpl']) ? $global['web_status_tpl'] : 'public/close.html';
+            if (!empty($global['web_status_url'])) {
+                $this->redirect($global['web_status_url']);
+            } else if (!empty($web_status_tpl) && file_exists($web_status_tpl)) {
+                $fp      = fopen($web_status_tpl, 'r');
+                $html = fread($fp, filesize($web_status_tpl));
+                fclose($fp);
+                exit($html);
+            } else {
+                die("<div style='text-align:center; font-size:20px; font-weight:bold; margin:50px 0px;'>网站暂时关闭，维护中……</div>");
+            }
         }
         /*--end*/
 
@@ -79,16 +96,42 @@ class Common extends Controller {
         $this->theme_style_path = THEME_STYLE_PATH; // 模板目录
         //全局变量
         $this->eyou['global'] = $global;
-        // 多语言变量
-        try {
-            $langArr = include_once APP_PATH."lang/{$this->home_lang}.php";
-        } catch (\Exception $e) {
-            $this->home_lang = $this->main_lang;
-            $langCookieVar = \think\Config::get('global.home_lang');
-            \think\Cookie::set($langCookieVar, $this->home_lang);
-            $langArr = include_once APP_PATH."lang/{$this->home_lang}.php";
+
+        // 多城市站点
+        $site_info = [];
+        if (config('city_switch_on')) {
+            $where = [];
+            $site = input('param.site/s');
+            if (!empty($site)) {
+                $where = ['domain'=>$site];
+            } else if (!empty($global['site_default_home'])) {
+                $where = ['id'=>$global['site_default_home']];
+            }
+            if (!empty($where)) {
+                $site_info = Db::name('citysite')->field('add_time,update_time,sort_order', true)->where($where)->find();
+                cookie('site_info', $site_info);
+            }
         }
-        $this->eyou['lang'] = !empty($langArr) ? $langArr : [];
+        empty($site_info) && cookie('site_info', null);
+        $this->eyou['site'] = $site_info;
+
+        // 多语言变量
+        if (config('lang_switch_on')) {
+            try {
+                $langArr = include_once APP_PATH."lang/{$this->home_lang}.php";
+            } catch (\Exception $e) {
+                $this->home_lang = $this->main_lang;
+                $langCookieVar = \think\Config::get('global.home_lang');
+                \think\Cookie::set($langCookieVar, $this->home_lang);
+                $langArr = include_once APP_PATH."lang/{$this->home_lang}.php";
+            }
+            $this->eyou['lang'] = !empty($langArr) ? $langArr : [];
+            $lang_info = cookie('lang_info');
+            if (!empty($lang_info)) {
+                $this->eyou['global'] = array_merge($this->eyou['global'], $lang_info);
+            }
+        }
+
         /*电脑版与手机版的切换*/
         $v = I('param.v/s', 'pc');
         $v = trim($v, '/');
@@ -115,6 +158,22 @@ class Common extends Controller {
         // 判断是否开启注册入口
         $users_open_register = getUsersConfigData('users.users_open_register');
         $this->assign('users_open_register', $users_open_register);
+        
+        // 会员配置
+        $this->usersConfig = getUsersConfigData('all');
+        $this->assign('usersConfig', $this->usersConfig);
+        // 默认主题颜色
+        if (!empty($this->usersConfig['theme_color'])) {
+            $theme_color = $this->usersConfig['theme_color'];
+        } else {
+            if ($this->usersTplVersion == 'v1') {
+                $theme_color = '#ff6565';
+            } else {
+                $theme_color = '#fd8a27';
+            }
+        }
+        $this->usersConfig['theme_color'] = $theme_color;
+        $this->assign('theme_color', $theme_color);
     }
 
     /**

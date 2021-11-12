@@ -279,7 +279,15 @@ class EmailLogic
             //send the message, check for errors
             $result = $mail->send();
             if (!$result) {
-                return array('code'=>0 , 'msg'=>'发送失败:'.$mail->ErrorInfo);
+                $msg = $mail->ErrorInfo;
+                if (stristr($msg, 'smtp connect() failed')) {
+                    if (465 == $mail->Port) {
+                        $msg = '可能是php版本兼容问题，请切换php5.6/7.1，或者尝试其他版本。';
+                    } else {
+                        $msg = '请检查SMTP端口填写是否正确，一般默认是465端口，其次25端口，最后才是其他端口。';
+                    }
+                }
+                return array('code'=>0 , 'msg'=>'发送失败:'.$msg);
             } else {
                 return array('code'=>1 , 'msg'=>'发送成功');
             }

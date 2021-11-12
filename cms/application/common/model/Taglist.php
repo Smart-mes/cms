@@ -50,7 +50,7 @@ class Taglist extends Model
             'tid_arr'   => '',
         ];
         $result = Db::name('Taglist')->field($field)
-            ->where(array('aid'=>$aid, 'typeid'=>$typeid))
+            ->where(array('aid'=>$aid))
             ->order('aid asc')
             ->select();
         if ($result) {

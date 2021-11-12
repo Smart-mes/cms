@@ -168,7 +168,7 @@ class TagTagarclist extends Base
         // 是否显示会员权限
         $users_level_list = $users_level_list2 = [];
         if ('on' == $arcrank || stristr(','.$addfields.',', ',arc_level_name,')) {
-            $users_level_list = Db::name('users_level')->field('level_id,level_name,level_value')->where('lang',$this->home_lang)->order('is_system desc, level_value asc')->getAllWithIndex('level_value');
+            $users_level_list = Db::name('users_level')->field('level_id,level_name,level_value')->where('lang',self::$home_lang)->order('is_system desc, level_value asc')->getAllWithIndex('level_value');
             if (stristr(','.$addfields.',', ',arc_level_name,')) {
                 $users_level_list2 = convert_arr_key($users_level_list, 'level_id');
             }
@@ -184,7 +184,7 @@ class TagTagarclist extends Base
             ->alias('a')
             ->join('__ARCTYPE__ b', 'b.id = a.typeid', 'LEFT')
             ->where($where_str)
-            ->where('a.lang', $this->home_lang)
+            ->where('a.lang', self::$home_lang)
             ->orderRaw($orderby)
             ->limit($limit)
             ->select();

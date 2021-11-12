@@ -116,7 +116,13 @@ class Shop extends Base
     // 订单提交
     public function shop_under_order($error = true)
     {
-        if (empty($error)) $this->error('您的购物车还没有商品！');
+        if (empty($error)) {
+            if ($this->usersTplVersion == 'v3') {
+                $this->redirect(url('user/Shop/shop_cart_list'));
+            } else {
+                $this->error('您的购物车还没有商品！');
+            }
+        }
         // 获取当前页面URL，存入session，若操作添加地址后返回当前页面
         session($this->users_id.'_EyouShopOrderUrl', $this->request->url(true));
         // 数据由标签调取生成
@@ -168,12 +174,18 @@ class Shop extends Base
     // 收货地址管理列表
     public function shop_address_list()
     {
+        // 将当前URL存入 session ，使用微信获取收货地址时需要验签加密
+        session($this->users_id.'_EyouShopAddAddress', $this->request->url(true));
         // 获取当前页面URL，存入session，若操作添加地址后返回当前页面
         session($this->users_id.'_EyouShopOrderUrl', $this->request->url(true));
         // 指定返回上一级URL
         $gourl = input('param.gourl/s');
         $gourl = urldecode($gourl);
         $this->assign('gourl', $gourl);
+        $this->assign('add_addr_url', url("user/Shop/shop_get_wechat_addr"));
+        // 收货地址列入的来源入口
+        $type = input('param.type/s');
+        $this->assign('type', $type);
         // 数据由标签调取生成
         return $this->fetch('users/shop_address_list');
     }
@@ -291,14 +303,12 @@ class Shop extends Base
             $param = input('param.');
             // 商品是否已售罄
             $this->IsSoldOut($param);
-
             // 数量不可为空
-            if (empty($param['num']) || 0 > $param['num']) {
-                $this->error('请选择数量！');
-            }
+            if (empty($param['num']) || 0 > $param['num']) $this->error('请选择数量！');
+
             // 查询条件
             $archives_where = [
-                'arcrank' => array('egt','0'), //带审核稿件不查询
+                'arcrank' => ['egt', 0],
                 'aid'     => $param['aid'],
                 'lang'    => $this->home_lang,
             ];
@@ -311,20 +321,17 @@ class Shop extends Base
                     'product_id' => $param['aid'],
                     'lang'       => $this->home_lang,
                 ];
-
-                /*若开启多规格则执行*/
+                // 若开启多规格则执行
                 if (!empty($this->usersConfig['shop_open_spec']) && !empty($param['spec_value_id'])) {
                     $cart_where['spec_value_id'] = $param['spec_value_id'];
                 }
-                /* END */
-
                 $cartInfo = $this->shop_cart_db->field('product_num')->where($cart_where)->find();
                 if (!empty($cartInfo)) {
                     // 购物车内已有相同产品，进行数量更新。
                     $data['product_num'] = $param['num'] + intval($cartInfo['product_num']); //与购物车数量进行叠加
                     $data['update_time'] = getTime();
                     $cart_id = $this->shop_cart_db->where($cart_where)->update($data);
-                }else{
+                } else {
                     // 购物车内还未有相同产品，进行添加。
                     $data['users_id']    = $this->users_id;
                     $data['product_id']  = $param['aid'];
@@ -334,15 +341,15 @@ class Shop extends Base
                     $cart_id = $this->shop_cart_db->add($data);
                 }
                 if (!empty($cart_id)) {
-                    $this->success('加入购物车成功！');
-                }else{
-                    $this->error('加入购物车失败！');
+                    $this->success('加入购物车成功！', url('user/Shop/shop_cart_list'), ['code'=>1]);
+                } else {
+                    $this->error('加入购物车失败！', null, ['code'=>-1]);
                 }
-            }else{
-                $this->error('该商品不存在或已下架！');
+            } else {
+                $this->error('该商品不存在或已下架！', null, ['code'=>-1]);
             }
-        }else {
-            $this->error('非法访问！');
+        } else {
+            $this->error('非法访问！', null, ['code'=>-1]);
         }
     }
 
@@ -415,14 +422,14 @@ class Shop extends Base
                         $num_new += $value['product_num'];
                     }
                     $CartData['num']   = $num_new;
-                    $CartData['price'] = sprintf("%.2f", $spec_price + $users_price);
+                    $CartData['price'] = floatval(sprintf("%.2f", $spec_price + $users_price));
                     if (empty($CartData['num']) && empty($CartData['price'])) {
                         $CartData['num']   = '0';
-                        $CartData['price'] = '0.00';
+                        $CartData['price'] = '0';
                     }
-
+                    $CartAmountVal = $this->shop_cart_db->where([ 'users_id' => $this->users_id,'lang' => $this->home_lang])->sum('product_num');
                     if (!empty($cart_id)) {
-                        $this->success('操作成功！', null, ['NumberVal'=>$CartData['num'], 'AmountVal'=>$CartData['price']]);
+                        $this->success('操作成功！', null, ['NumberVal'=>$CartData['num'], 'AmountVal'=>$CartData['price'], 'CartAmountVal'=>$CartAmountVal]);
                     }
                 } else {
                     $this->error('商品数量最少为1', null, ['error'=>'0']);
@@ -437,11 +444,11 @@ class Shop extends Base
     public function cart_del()
     {
         if (IS_AJAX_POST) {
-            $cart_id = input('post.cart_id');
+            $cart_id = input('post.cart_id/s');
             if (!empty($cart_id)) {
                 // 删除条件
                 $cart_where = [
-                    'cart_id'  => $cart_id,
+                    'cart_id'  => ['IN', explode(',', $cart_id)],
                     'users_id' => $this->users_id,
                     'lang'     => $this->home_lang,
                 ];
@@ -889,12 +896,20 @@ class Shop extends Base
                     // 在微信端并且不在小程序中
                     if (isWeixin() && !isWeixinApplets()) {
                         // 跳转至收货地址添加选择页
-                        $get_addr_url = url('user/Shop/shop_get_wechat_addr');
+                        if ('v3' == $this->usersTplVersion) {
+                            $get_addr_url = url('user/Shop/shop_add_address', ['type'=>'order']);
+                        } else {
+                            $get_addr_url = url('user/Shop/shop_get_wechat_addr');
+                        }
                         $is_gourl['is_gourl'] = 1;
                         $this->success('101:选择添加地址方式', $get_addr_url, $is_gourl);
                     } else {
                         $paramNew['add_addr'] = 1;
-                        $this->error('订单生成失败，请添加收货地址！', null, $paramNew);
+                        $paramNew['is_mobile'] = $this->is_mobile;
+                        if ('v3' == $this->usersTplVersion) {
+                            $paramNew['url'] = url('user/Shop/shop_add_address', ['type'=>'order']);
+                        }
+                        $this->error('101:订单生成失败，请添加收货地址', null, $paramNew);
                     }
                 }
 
@@ -907,17 +922,25 @@ class Shop extends Base
                 if (empty($AddressData)) {
                     if (isWeixin() && !isWeixinApplets()) {
                         // 跳转至收货地址添加选择页
-                        $get_addr_url = url('user/Shop/shop_get_wechat_addr');
+                        if ('v3' == $this->usersTplVersion) {
+                            $get_addr_url = url('user/Shop/shop_add_address', ['type'=>'order']);
+                        } else {
+                            $get_addr_url = url('user/Shop/shop_get_wechat_addr');
+                        }
                         $is_gourl['is_gourl'] = 1;
                         $this->success('102:选择添加地址方式', $get_addr_url, $is_gourl);
                     } else {
                         $paramNew['add_addr'] = 1;
-                        $this->error('订单生成失败，请添加收货地址！', null, $paramNew);
+                        $paramNew['is_mobile'] = $this->is_mobile;
+                        if ('v3' == $this->usersTplVersion) {
+                            $paramNew['url'] = url('user/Shop/shop_add_address', ['type'=>'order']);
+                        }
+                        $this->error('102:订单生成失败，请添加收货地址', null, $paramNew);
                     }
                 }
 
                 $shop_open_shipping = getUsersConfigData('shop.shop_open_shipping');
-                $template_money = '0.00';
+                $template_money = 0;
                 if (!empty($shop_open_shipping)) {
                     // 通过省份获取运费模板中的运费价格
                     $template_money = $this->shipping_template_db->where('province_id', $AddressData['province'])->getField('template_money');
@@ -979,7 +1002,7 @@ class Shop extends Base
                     // 添加订单操作记录
                     AddOrderAction($OrderId, $this->users_id);
 
-                    if (getUsersTplVersion() == 'v1') { // 第一版会员中心
+                    if ($this->usersTplVersion == 'v1') { // 第一版会员中心
                         /*清除下单的Cookie数据*/
                         if (!empty($Md5Value)) Cookie::delete($Md5Value);
                         /* END */
@@ -1036,7 +1059,7 @@ class Shop extends Base
                                         'is_gourl'         => 1,
                                         'order_total_amount' => 0 // 好像没有用处了
                                     ];
-                                    if ($this->users['users_money'] <= '0.00') {
+                                    if ($this->users['users_money'] <= '0.00' || $this->usersTplVersion == 'v3') {
                                         // 余额为0
                                         $ReturnOrderData['is_gourl'] = 0;
                                         $this->success('订单已生成！', null, $ReturnOrderData);
@@ -1066,8 +1089,58 @@ class Shop extends Base
                             }
                         } else {
                             // PC端、手机浏览器端 -- 在线付款时执行
-                            if (getUsersTplVersion() == 'v2' && isset($post['payment_type'])) {
+                            if ($this->usersTplVersion == 'v2' && isset($post['payment_type'])) {
                                 // 第二套模板 -- 余额支付、微信支付、支付宝支付、其他第三方支付
+                                $payment_type = $post['payment_type'];
+                                if ('yezf_balance' == $payment_type) {
+                                    // 余额支付
+                                    if ($this->users['users_money'] < $OrderData['order_amount']) {
+                                        $url = url('user/Shop/shop_centre');
+                                        $this->error('余额不足，支付失败！', null, ['url'=>$url]);
+                                    } else {
+                                        $ret = Db::name('users')->where(['users_id'=>$this->users_id])->update([
+                                            'users_money' => Db::raw('users_money-'.$OrderData['order_amount']),
+                                            'update_time' => getTime(),
+                                        ]);
+                                        if (false !== $ret) {
+                                            $pay_details = [
+                                                'unified_id'        => $OrderData['order_id'],
+                                                'unified_number'    => $OrderData['order_code'],
+                                                'transaction_type'  => 2,
+                                                'payment_amount'    => $OrderData['order_amount'],
+                                                'payment_type'      => "余额支付",
+                                            ];
+                                            $returnData = pay_success_logic($this->users_id, $OrderData['order_code'], $pay_details, 'balance');
+                                            if (is_array($returnData)) {
+                                                if (1 == $returnData['code']) {
+                                                    $this->success($returnData['msg'], $returnData['url'], $returnData['data']);
+                                                } else {
+                                                    $this->error($returnData['msg'], null, ['url'=>url('user/Shop/shop_centre')]);
+                                                }
+                                            }
+                                        }
+                                    }
+                                } else if (in_array($payment_type, ['zxzf_wechat', 'zxzf_alipay'])) {
+                                    // 内置第三方在线支付
+                                    $payment_type_arr = explode('_', $payment_type);
+                                    $pay_mark = !empty($payment_type_arr[1]) ? $payment_type_arr[1] : '';
+                                    $payApiRow = Db::name('pay_api_config')->where(['pay_mark' => $pay_mark, 'lang' => $this->home_lang])->find();
+                                    if (empty($payApiRow)) $this->error('请选择正确的支付方式！');
+
+                                    // 返回支付所需参数
+                                    $data = [
+                                        'code'              => 'order_status_0',
+                                        'pay_id'            => $payApiRow['pay_id'],
+                                        'pay_mark'          => $pay_mark,
+                                        'unified_id'        => $OrderData['order_id'],
+                                        'unified_number'    => $OrderData['order_code'],
+                                        'transaction_type'  => 2,
+                                    ];
+                                    $this->success('正在支付中', url('user/Shop/shop_centre'), $data);
+                                }
+                            }
+                            else if ($this->usersTplVersion == 'v3' && isset($post['payment_type'])) {
+                                // 第三套模板 -- 余额支付、微信支付、支付宝支付、其他第三方支付
                                 $payment_type = $post['payment_type'];
                                 if ('yezf_balance' == $payment_type) {
                                     // 余额支付
@@ -1189,7 +1262,11 @@ class Shop extends Base
             $post['lang']     = $this->home_lang;
             if (isMobile() && isWeixin()) {
                 // 在手机微信端、小程序中则把新增的收货地址设置为默认地址
-                $post['is_default'] = 1;// 设置为默认地址
+                if ('v3' == $this->usersTplVersion) {
+                    $post['is_default'] = !empty($post['is_default']) ? 1 : 0;
+                } else {
+                    $post['is_default'] = 1;// 设置为默认地址
+                }
             } else {
                 $post['is_default'] = !empty($post['is_default']) ? 1 : 0;
             }
@@ -1208,7 +1285,7 @@ class Shop extends Base
                     $this->shop_address_db->where($AddressWhere)->update($data_new);
                 }
 
-                if (isMobile() && isWeixin()) {
+                if (isMobile() || isWeixin()) {
                     $ResultD = [
                         'url' => session($this->users_id.'_EyouShopOrderUrl')
                     ];
@@ -1248,6 +1325,10 @@ class Shop extends Base
             $this->error('非法来源！');
         }
 
+        $this->assign('is_mobile', $this->is_mobile);
+        $this->assign('add_addr_url', url("user/Shop/shop_get_wechat_addr"));
+        // 将当前URL存入 session ，使用微信获取收货地址时需要验签加密
+        session($this->users_id.'_EyouShopAddAddress', $this->request->url(true));
         return $this->fetch('users/shop_add_address');
     }
 
@@ -1256,6 +1337,7 @@ class Shop extends Base
     {
         if (IS_AJAX_POST) {
             $post = input('post.');
+
             if (empty($post['consignee'])) {
                 $this->error('收货人姓名不可为空！');
             }
@@ -1318,11 +1400,23 @@ class Shop extends Base
         if (empty($AddrData)) {
             $this->error('数据有误！');
         }
+        if ($this->usersTplVersion == 'v3') {
+            $AddrData['province_name'] = get_province_name($AddrData['province']);
+            $AddrData['city_name'] = get_city_name($AddrData['city']);
+            $AddrData['district_name'] = get_area_name($AddrData['district']);
+        }
+
         $AddrData['country']  = '中国'; //国家
         $AddrData['Province'] = get_province_list(); // 省份
         $AddrData['City']     = $this->region_db->where('parent_id',$AddrData['province'])->select(); // 城市
         $AddrData['District'] = $this->region_db->where('parent_id',$AddrData['city'])->select(); // 县/区/镇
         $AddrData['onDelAddress'] = " onclick=\"DelAddress('{$AddrId}', this);\" ";
+
+        $type = input('param.type/s', 'list');
+        $gourl = input('param.gourl/s', '', 'urldecode');
+        $delAddressUrl = url('Shop/shop_del_address', ['type'=>$type, 'gourl'=>$gourl]);
+        $AddrData['delAddressUrl'] = $delAddressUrl;
+
         $eyou = [
             'field' => $AddrData,
         ];
@@ -1342,7 +1436,13 @@ class Shop extends Base
             ];
             $return = $this->shop_address_db->where($Where)->delete();
             if ($return) {
-                $this->success('删除成功！');
+                $gourl = '';
+                $type = input('param.type/s', 'list');
+                if ('order' == $type) {
+                    $gourl = input('param.gourl/s', '', 'urldecode');
+                }
+                $url = url('Shop/shop_address_list', ['type'=>$type, 'gourl'=>$gourl]);
+                $this->success('删除成功！', null, ['url'=>$url]);
             }else{
                 $this->error('删除失败！');
             }
@@ -1392,6 +1492,11 @@ class Shop extends Base
             
             // 查询会员收货地址，获取省份
             $addr_id = input('post.addr_id');
+            if ($this->usersTplVersion == 'v3') { // 第三套小米的会员中心
+                if (empty($addr_id)) {
+                    $addr_id = Db::name('shop_address')->where(['users_id'=>$this->users_id])->order('addr_id asc')->value('addr_id');
+                }
+            }
             $where = [
                 'addr_id'  => $addr_id,
                 'users_id' => $this->users_id,
@@ -1401,10 +1506,11 @@ class Shop extends Base
 
             // 通过省份获取运费模板中的运费价格
             $template_money = $this->shipping_template_db->where('province_id', $province)->getField('template_money');
-            if ('0.00' == $template_money) {
+            if (0 == $template_money) {
                 // 省份运费价格为0时，使用统一的运费价格，固定ID为100000
                 $template_money = $this->shipping_template_db->where('province_id', '100000')->getField('template_money');
             }
+            $template_money = floatval($template_money);
             $this->success('查询成功！', '', $template_money);
         } else {
             $this->error('订单号错误');
@@ -1415,14 +1521,19 @@ class Shop extends Base
     public function get_region_data(){
         $parent_id  = input('param.parent_id/d');
         $RegionData = $this->region_db->where("parent_id",$parent_id)->select();
-        $html = '';
-        if($RegionData){
-            // 拼装下拉选项
-            foreach($RegionData as $value){
-                $html .= "<option value='{$value['id']}'>{$value['name']}</option>";
+        if ($this->usersTplVersion != 'v3') {
+            $html = '';
+            if($RegionData){
+
+                // 拼装下拉选项
+                foreach($RegionData as $value){
+                    $html .= "<option value='{$value['id']}'>{$value['name']}</option>";
+                }
             }
+            echo json_encode($html);
+        }else{
+            $this->success('查询成功！', '', $RegionData);
         }
-        echo json_encode($html);
     }
 
     // 会员提醒收货
@@ -1544,7 +1655,11 @@ class Shop extends Base
             $timestamp = time();
             $timestamp = "$timestamp";
             // 当前访问接口URL
-            $url       = $this->request->url(true);
+            if ($this->usersTplVersion == 'v3') {
+                $url = session($this->users_id . '_EyouShopAddAddress');
+            } else {
+                $url = $this->request->url(true);
+            }
             // 加密参数结束 ----->
             
             // 参数加密，顺序固定不可改变
@@ -1615,17 +1730,20 @@ class Shop extends Base
                     'lang'       => $this->home_lang,
                     'add_time'   => getTime(),
                 ];
+                if ($this->usersTplVersion == 'v3') $data['is_default'] = 0;
                 $addr_id = $this->shop_address_db->add($data);
                 if (!empty($addr_id)) {
-                    // 把对应会员下的所有地址改为非默认
-                    $AddressWhere = [
-                        'addr_id'  => array('NEQ',$addr_id),
-                        'users_id' => $this->users_id,
-                        'lang'     => $this->home_lang,
-                    ];
-                    $data_new['is_default']  = '0';// 设置为非默认地址
-                    $data_new['update_time'] = getTime();
-                    $this->shop_address_db->where($AddressWhere)->update($data_new);
+                    if ($this->usersTplVersion != 'v3') {
+                        // 把对应会员下的所有地址改为非默认
+                        $AddressWhere = [
+                            'addr_id'  => array('NEQ',$addr_id),
+                            'users_id' => $this->users_id,
+                            'lang'     => $this->home_lang,
+                        ];
+                        $data_new['is_default']  = '0';// 设置为非默认地址
+                        $data_new['update_time'] = getTime();
+                        $this->shop_address_db->where($AddressWhere)->update($data_new);
+                    }
                     $this->success('获取成功！',session($this->users_id.'_EyouShopOrderUrl'));
                 }else{
                     $this->success('获取失败，请刷新后重试！');
@@ -1673,6 +1791,41 @@ class Shop extends Base
         }
     }
 
+    // 申请退换货服务中转页
+    public function service_list()
+    {
+        $order_id = input('param.order_id/d');
+        if (empty($order_id)) $this->error('订单不存在！');
+        $order_details = Db::name('shop_order_details')->where('order_id',$order_id)->select();
+        foreach ($order_details as $k => $v){
+            $order_details[$k]['url'] = url('user/Shop/after_service_apply', ['details_id'=>$v['details_id']]);
+            // 规格
+            $product_spec = unserialize($v['data']);
+            if (!empty($product_spec['spec_value_id'])) {
+                $spec_value_id = explode('_', $product_spec['spec_value_id']);
+                if (!empty($spec_value_id)) {
+                    $product_spec_list = [];
+                    $SpecWhere = [
+                        'aid'           => $v['product_id'],
+                        'spec_value_id' => ['IN',$spec_value_id]
+                    ];
+                    $ProductSpecData = Db::name("product_spec_data")->where($SpecWhere)->field('spec_name, spec_value')->select();
+                    foreach ($ProductSpecData as $spec_value) {
+                        $product_spec_list[] = [
+                            'name' => $spec_value['spec_name'],
+                            'value' => $spec_value['spec_value'],
+                        ];
+                    }
+                    $order_details[$k]['product_spec_list'] = $product_spec_list;
+                }
+            }
+        }
+        $eyou = [
+            'field' => $order_details
+        ];
+        $this->assign('eyou', $eyou);
+        return $this->fetch('users/shop_after_service_list');
+    }
 
     /*------陈风任---2021-1-12---售后服务(退换货)------开始------*/
     // 申请退换货服务
@@ -1746,11 +1899,26 @@ class Shop extends Base
     public function after_service()
     {
         $order_code = input('param.order_code');
-        $ServiceInfo = $this->shop_model->GetAllServiceInfo($this->users_id, $order_code);
+        $status = input('param.status/s');
+        $keywords = input('param.keywords/s');
+        $ServiceInfo = $this->shop_model->GetAllServiceInfo($this->users_id, $order_code,$status,$keywords);
+
+        $where = [
+            'lang' => $this->home_lang,
+            'users_id' => $this->users_id
+        ];
+        //处理中
+        $where['status'] = ['in',[1,2,3,4,5]];
+        $ServicingTotal = $this->shop_order_service_db->where($where)->count();
+        //已完成
+        $where['status'] = ['in',[6,7,8]];
+        $ServicedTotal = $this->shop_order_service_db->where($where)->count();
         $eyou = [
             'field' => [
                'service' => $ServiceInfo['Service'],
                'pageStr' => $ServiceInfo['pageStr'],
+               'ServicingTotal' => $ServicingTotal,
+               'ServicedTotal' => $ServicedTotal,
             ],
         ];
         $this->assign('eyou', $eyou);
@@ -1805,7 +1973,7 @@ class Shop extends Base
 
         // 商户收货信息
         $maddr  = getUsersConfigData('addr');
-
+        $expressList = Db::name('shop_express')->select();
         // 加载模板
         $eyou = [
             'maddr'      => $maddr,
@@ -1813,6 +1981,7 @@ class Shop extends Base
             'ServiceUrl' => url('user/Shop/after_service_update', ['_ajax' => 1]),
             'StatusArr'  => [6, 7, 8],
             'StatusLog'  => $this->shop_model->GetOrderServiceLog($service_id, $this->users),
+            'ExpressList'  => $expressList,
         ];
 
         $this->assign('eyou', $eyou);
@@ -1824,6 +1993,9 @@ class Shop extends Base
     {
         if (IS_AJAX_POST) {
             if (empty($this->users_id)) $this->redirect('user/Login/login');
+            if ($this->usersTplVersion == 'v3') {
+                return $this->after_service_update_v3();
+            }
             $post = input('post.');
             if (empty($post['delivery']['cost'])) $post['delivery']['cost'] = 0;
 
@@ -1855,5 +2027,292 @@ class Shop extends Base
             }
         }
     }
+
+    // 第三套模板 更新服务单状态
+    public function after_service_update_v3()
+    {
+        if (IS_AJAX_POST) {
+            $post = input('post.');
+
+            /*查询条件*/
+            $Where = [
+                'users_id' => $this->users_id,
+                'service_id' => $post['service_id'],
+                'details_id' => $post['details_id'],
+            ];
+            /* END */
+
+            /*更新数据*/
+            $UpDate = [
+                'status' => 4,
+                'users_delivery' => serialize($post['delivery']),
+                'update_time' => getTime(),
+            ];
+            /* END */
+
+            $ResultID = $this->shop_order_service_db->where($Where)->update($UpDate);
+            if (!empty($ResultID)) {
+                /*添加记录单*/
+                $post['users_id'] = $this->users_id;
+                $this->shop_common->AddOrderServiceLog($post, 1);
+                /* END */
+
+                $this->success('操作成功！');
+            } else {
+                $this->error('操作失败！');
+            }
+        }
+    }
     /*------陈风任---2021-1-12---售后服务(退换货)------结束------*/
+
+    // 移动端订单列表瀑布流分页专业ajax加载接口 20210709大黄
+    public function ajax_shop_centre_page()
+    {
+        // 基础查询条件
+        $OrderWhere = [
+            'users_id' => $this->users_id,
+            'lang'     => $this->home_lang,
+        ];
+
+        // 应用搜索条件
+        $keywords = input('param.keywords/s');
+        if (!empty($keywords)) $OrderWhere['order_code'] = ['LIKE', "%{$keywords}%"];
+
+        // 订单状态搜索
+        $select_status = input('param.select_status');
+        $pagesize = input('param.pagesize',10);
+        if (!empty($select_status)) {
+            if ('daifukuan' === $select_status) $select_status = 0;
+            if (3 == $select_status) $OrderWhere['is_comment'] = 0;
+            $OrderWhere['order_status'] = $select_status;
+        }
+
+        // 分页查询逻辑
+        $paginate_type = isMobile() ? 'usersmobile' : 'userseyou';
+        $query_get = input('get.');
+        $paginate = array(
+            'type'     => $paginate_type,
+            'var_page' => config('paginate.var_page'),
+            'query'    => $query_get,
+        );
+
+        $pages = Db::name('shop_order')
+            ->field("*")
+            ->where($OrderWhere)
+            ->order('add_time desc')
+            ->paginate($pagesize, false, $paginate);
+        $result['list']  = $pages->items();
+        $result['pages'] = $pages;
+
+        // 搜索名称时，查询订单明细表商品名称
+        if (empty($result['list']) && !empty($keywords)) {
+            $Data = model('Shop')->QueryOrderList($pagesize, $this->users_id, $keywords, $query_get);
+            $result['list']  = $Data['list'];
+            $result['pages'] = $Data['pages'];
+        }
+
+        /*规格值ID预处理*/
+        $SpecValueArray = Db::name('product_spec_value')->field('aid,spec_value_id')->select();
+        $SpecValueArray = group_same_key($SpecValueArray, 'aid');
+        $ReturnData  = [];
+        foreach ($SpecValueArray as $key => $value) {
+            $ReturnData[$key] = [];
+            foreach ($value as $kk => $vv) {
+                array_push($ReturnData[$key], $vv['spec_value_id']);
+            }
+        }
+        /* END */
+
+        if (!empty($result['list'])) {
+            // 订单数据处理
+            $controller_name = 'Product';
+            // 获取当前链接及参数，用于手机端查询快递时返回页面
+            $OrderIds = [];
+            $ReturnUrl = request()->url(true);
+            foreach ($result['list'] as $key => $value) {
+                $DetailsWhere['a.users_id'] = $value['users_id'];
+                $DetailsWhere['a.order_id'] = $value['order_id'];
+                // 查询订单明细表数据
+                $result['list'][$key]['details'] = Db::name('shop_order_details')->alias('a')
+                    ->field('a.*, b.service_id, c.is_del')
+                    ->join('__SHOP_ORDER_SERVICE__ b', 'a.details_id = b.details_id', 'LEFT')
+                    ->join('__ARCHIVES__ c', 'a.product_id = c.aid', 'LEFT')
+                    ->order('a.product_price desc, a.product_name desc')
+                    ->where($DetailsWhere)
+                    ->select();
+                $array_new = get_archives_data($result['list'][$key]['details'], 'product_id');
+
+                foreach ($result['list'][$key]['details'] as $kk => $vv) {
+                    // 产品规格处理
+                    $spec_data = unserialize($vv['data']);
+                    if (!in_array($vv['order_id'], $OrderIds) && 0 == $value['order_status']) {
+                        if (!empty($spec_data['spec_value_id'])) {
+                            $spec_value_id = $spec_data['spec_value_id'];
+                            if (!in_array($spec_value_id, $ReturnData[$vv['product_id']])) {
+                                // 用于更新订单数据
+                                array_push($OrderIds, $vv['order_id']);
+                                // 修改循环内的订单状态进行逻辑计算
+                                $value['order_status'] = 4;
+                                // 修改主表数据，确保输出数据正确
+                                $result['list'][$key]['order_status'] = 4;
+                                // 用于追加订单操作记录
+                                $OrderIds_[]['order_id'] = $vv['order_id'];
+                            }
+                        }
+                    }
+
+                    $product_spec_list = [];
+                    if (!empty($spec_data['spec_value'])) {
+                        $spec_value_arr = explode('<br/>', htmlspecialchars_decode($spec_data['spec_value']));
+                        foreach ($spec_value_arr as $sp_key => $sp_val) {
+                            $sp_arr = explode('：', $sp_val);
+                            if (trim($sp_arr[0]) && !empty($sp_arr[0])) {
+                                $product_spec_list[] = [
+                                    'name'  => !empty($sp_arr[0]) ? trim($sp_arr[0]) : '',
+                                    'value' => !empty($sp_arr[1]) ? trim($sp_arr[1]) : '',
+                                ];
+                            }
+                        }
+                    }
+                    $result['list'][$key]['details'][$kk]['product_spec_list'] = $product_spec_list;
+
+                    // 产品内页地址
+                    if (!empty($array_new[$vv['product_id']]) && 0 == $vv['is_del']) {
+                        // 商品存在
+                        $arcurl = urldecode(arcurl('home/'.$controller_name.'/view', $array_new[$vv['product_id']]));
+                        $has_deleted = 0;
+                        $msg_deleted = '';
+                    } else {
+                        // 商品不存在
+                        $arcurl = urldecode(url('home/View/index', ['aid'=>$vv['product_id']]));
+                        $has_deleted = 1;
+                        $msg_deleted = '[商品已停售]';
+                    }
+                    $result['list'][$key]['details'][$kk]['arcurl'] = $arcurl;
+                    $result['list'][$key]['details'][$kk]['has_deleted'] = $has_deleted;
+                    $result['list'][$key]['details'][$kk]['msg_deleted'] = $msg_deleted;
+                    $result['list'][$key]['details'][$kk]['product_price'] = floatval($vv['product_price']);
+
+                    // 图片处理
+                    $result['list'][$key]['details'][$kk]['litpic'] = handle_subdir_pic(get_default_pic($vv['litpic']));
+
+                    // 申请退换货
+                    $result['list'][$key]['details'][$kk]['ApplyService'] = urldecode(url('user/Shop/after_service_apply', ['details_id' => $vv['details_id']]));
+
+                    // 查看售后详情单
+                    $result['list'][$key]['details'][$kk]['ViewAfterSale'] = urldecode(url('user/Shop/after_service_details', ['service_id' => $vv['service_id']]));
+
+                    // 商品评价
+                    $result['list'][$key]['details'][$kk]['CommentProduct'] = urldecode(url('user/ShopComment/product', ['details_id' => $vv['details_id']]));
+
+
+                }
+
+                if (empty($value['order_status'])) {
+                    // 付款地址处理，对ID和订单号加密，拼装url路径
+                    $Paydata = [
+                        'order_id'   => $value['order_id'],
+                        'order_code' => $value['order_code']
+                    ];
+
+                    // 先 json_encode 后 md5 加密信息
+                    $Paystr = md5(json_encode($Paydata));
+
+                    // 清除之前的 cookie
+                    Cookie::delete($Paystr);
+
+                    // 存入 cookie
+                    cookie($Paystr, $Paydata);
+
+                    // 跳转链接
+                    $result['list'][$key]['PaymentUrl'] = urldecode(url('user/Pay/pay_recharge_detail',['paystr'=>$Paystr]));
+                }
+
+                // 封装取消订单JS
+                $result['list'][$key]['CancelOrder']   = " onclick=\"CancelOrder('{$value['order_id']}');\" ";
+
+                // 获取订单状态
+                $order_status_arr = Config::get('global.order_status_arr');
+                $result['list'][$key]['order_status_name'] = $order_status_arr[$value['order_status']];
+
+                // 获取订单支付方式名称
+                $pay_method_arr = Config::get('global.pay_method_arr');
+                if (!empty($value['payment_method']) && !empty($value['pay_name'])) {
+                    $result['list'][$key]['pay_name'] = !empty($pay_method_arr[$value['pay_name']]) ? $pay_method_arr[$value['pay_name']] : '第三方支付';
+                } else {
+                    if (!empty($value['pay_name'])) {
+                        $result['list'][$key]['pay_name'] = !empty($pay_method_arr[$value['pay_name']]) ? $pay_method_arr[$value['pay_name']] : '第三方支付';
+                    } else {
+                        $result['list'][$key]['pay_name'] = '在线支付';
+                    }
+                }
+
+                // 封装订单查询详情链接
+                $result['list'][$key]['OrderDetailsUrl'] = urldecode(url('user/Shop/shop_order_details',['order_id'=>$value['order_id']]));
+
+                // 封装订单催发货JS
+                $result['list'][$key]['OrderRemind'] = " onclick=\"OrderRemind('{$value['order_id']}','{$value['order_code']}');\" ";
+
+                // 封装确认收货JS
+                $result['list'][$key]['Confirm'] = " onclick=\"Confirm('{$value['order_id']}','{$value['order_code']}');\" ";
+                //售后
+                $result['list'][$key]['ServiceList'] = urldecode(url('user/Shop/service_list', ['order_id' => $value['order_id']]));
+
+                //评价
+                $result['list'][$key]['AddProduct'] = urldecode(url('user/ShopComment/comment_list', ['order_id' => $value['order_id']]));
+
+
+                // 封装查询物流链接
+                $result['list'][$key]['LogisticsInquiry'] = $MobileExpressUrl = '';
+                if (('2' == $value['order_status'] || '3' == $value['order_status']) && empty($value['prom_type'])) {
+                    // 物流查询接口
+                    if (isMobile()) {
+                        $ExpressUrl = "https://m.kuaidi100.com/index_all.html?type=".$value['express_code']."&postid=".$value['express_order']."&callbackurl=".$ReturnUrl;
+                    } else {
+                        $ExpressUrl = "https://www.kuaidi100.com/chaxun?com=".$value['express_code']."&nu=".$value['express_order'];
+                    }
+                    // 微信端、小程序使用跳转方式进行物流查询
+                    $result['list'][$key]['MobileExpressUrl'] = $ExpressUrl;
+                    // PC端，手机浏览器使用弹框方式进行物流查询
+                    $result['list'][$key]['LogisticsInquiry'] = " onclick=\"LogisticsInquiry('{$ExpressUrl}');\" ";
+                }
+
+                $result['list'][$key]['order_amount'] = floatval($value['order_amount']);
+                $result['list'][$key]['order_total_amount'] = floatval($value['order_total_amount']);
+                $result['list'][$key]['shipping_fee'] = is_numeric($value['shipping_fee']) ? floatval($value['shipping_fee']) : $value['shipping_fee'];
+
+                // 默认为空
+                $result['list'][$key]['hidden'] = '';
+            }
+
+            // 更新产品规格异常的订单，更新为订单过期
+            if (!empty($OrderIds)) {
+                // 更新订单
+                $UpData = [
+                    'order_status' => 4,
+                    'update_time'  => getTime()
+                ];
+                Db::name('shop_order')->where('order_id', 'IN', $OrderIds)->update($UpData);
+                // 追加订单操作记录
+                AddOrderAction($OrderIds_, $this->users_id, 0, 4, 0, 0, '订单过期！', '规格更新后部分产品规格不存在，订单过期！');
+            }
+
+            // 传入JS参数
+            $data['shop_order_cancel'] = url('user/Shop/shop_order_cancel', ['_ajax'=>1], true, false, 1, 1, 0);
+            $data['shop_member_confirm'] = url('user/Shop/shop_member_confirm');
+            $data['shop_order_remind']   = url('user/Shop/shop_order_remind');
+            $data_json = json_encode($data);
+            $version   = getCmsVersion();
+            // 循环中第一个数据带上JS代码加载
+            $result['list'][0]['hidden'] = <<<EOF
+<script type="text/javascript">
+    var d62a4a8743a94dc0250be0c53f833b = {$data_json};
+</script>
+<script type="text/javascript" src="{$this->root_dir}/public/static/common/js/tag_sporderlist.js?v={$version}"></script>
+EOF;
+            $this->success('请求成功!','',$result);
+        }else{
+            $this->error('暂无数据!');
+        }
+    }
 }

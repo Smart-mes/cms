@@ -2170,7 +2170,7 @@ class Shop extends UserBase
 
         $pagesize = empty($pagesize) ? config('paginate.list_rows') : $pagesize;
         $args = [$goods_id,$page,$pagesize,$score];
-        $cacheKey = "plugins-model-DiyminiproMallShop-getGoodsCommentList-".md5(json_encode($args));
+        $cacheKey = "api-v1-model-DiyminiproMallShop-getGoodsCommentList-".md5(json_encode($args));
 //        $result = cache($cacheKey);
         if (true || empty($result)) {
             $paginate = array(
@@ -2306,7 +2306,7 @@ class Shop extends UserBase
         $pagesize = 10;
         $pagesize = empty($pagesize) ? config('paginate.list_rows') : $pagesize;
         $args = [$tid,$page,$pagesize];
-        $cacheKey = "plugins-model-DiyminiproMallShop-GetSharpIndex-".md5(json_encode($args));
+        $cacheKey = "api-v1-model-DiyminiproMallShop-GetSharpIndex-".md5(json_encode($args));
 //        $result = cache($cacheKey);
         if (true || empty($result)) {
             $paginate = array(

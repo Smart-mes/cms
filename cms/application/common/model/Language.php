@@ -171,6 +171,13 @@ class Language extends Model
         }
         /*--end*/
 
+        /*复制新产品参数分组表以及新产品参数表数据*/
+        $syn_status = $this->syn_shop_product_attrlist($mark, $post['copy_lang']);
+        if (false === $syn_status) {
+            return $syn_status;
+        }
+        /*--end*/
+
         /*复制友情链接分组表以及友情链接表数据*/
         $syn_status = $this->syn_links_group($mark, $post['copy_lang']);
         if (false === $syn_status) {
@@ -294,6 +301,12 @@ class Language extends Model
     public function afterDel($id_arr = [], $lang_list = [])
     {
         if (!empty($id_arr) && !empty($lang_list)) {
+            // 至少保留一个语言是开启状态
+            $row = Db::name('language')->where(['status'=>1])->select();
+            if (empty($row)) {
+                Db::name('language')->where(['is_home_default'=>1])->update(['status'=>1,'update_time'=>getTime()]);
+            }
+
             \think\Cache::clear('language');
             foreach ($lang_list as $key => $lang) {
                 delFile(RUNTIME_PATH.'cache'.DS.$lang, true);
@@ -330,6 +343,10 @@ class Language extends Model
             Db::name('single_content')->where("aid",'IN',$aids)->delete(); // 单页内容表
             /*同步删除产品属性表数据*/
             Db::name('product_attribute')->where("lang",'IN',$lang_list)->delete();
+            /*同步删除新产品参数分组表数据*/
+            Db::name('shop_product_attrlist')->where("lang",'IN',$lang_list)->delete();
+            /*同步删除新产品参数表数据*/
+            Db::name('shop_product_attribute')->where("lang",'IN',$lang_list)->delete();
             /*同步删除留言属性表数据*/
             Db::name('guestbook_attribute')->where("lang",'IN',$lang_list)->delete();
             /*同步删除广告表数据*/
@@ -612,6 +629,76 @@ class Language extends Model
     }
 
     /**
+     * 创建语言时，同步新产品参数分组以及新产品参数数据，并进行多语言关联绑定
+     *
+     * @param string $mark 新增语言
+     * @param string $copy_lang 复制语言
+     */
+    private function syn_shop_product_attrlist($mark = '', $copy_lang = 'cn')
+    {
+        $attrlist_db = Db::name('shop_product_attrlist');
+
+        /*删除新增语言之前的多余数据*/
+        $count = $attrlist_db->where('lang',$mark)->count();
+        if (!empty($count)) {
+            $attrlist_db->where("lang",$mark)->delete();
+        }
+        /*--end*/
+
+        // 新产品参数分组列表
+        $bindAttrlistArr = []; // 源新产品参数分组ID与目标新产品参数分组ID的对应数组
+        $attrlistRow = $attrlist_db->where([
+            'lang'=>$copy_lang
+            ])->order('list_id asc')
+            ->select();
+
+        if (empty($mark) || empty($attrlistRow)) {
+            return -1;
+        }
+
+        /*复制新产品参数表数据*/
+        $bindAttributeArr = []; // 源新产品参数ID与目标新产品参数ID的对应数组
+        $attribute_db = Db::name('shop_product_attribute');
+        $attributeRow = $attribute_db->where('lang',$copy_lang)
+            ->order('attr_id asc')
+            ->select();
+        $attributeRow = group_same_key($attributeRow, 'list_id');
+        /*--end*/
+
+        /*复制新产品参数分组表数据*/
+        foreach ($attrlistRow as $key => $val) {
+            $data = $val;
+            unset($data['list_id']);
+            $data['lang'] = $mark;
+            // $data['list_name'] = $mark.$data['list_name']; // 临时测试
+            $list_id = $attrlist_db->insertGetId($data);
+            if (empty($list_id)) {
+                return false; // 同步失败
+            }
+            $bindAttrlistArr[$val['list_id']] = $list_id;
+            /*复制新产品参数表数据*/
+            if (!empty($attributeRow[$val['list_id']])) {
+                foreach ($attributeRow[$val['list_id']] as $k2 => $v2) {
+                    $attributeArr = $v2;
+                    $attributeArr['list_id'] = $list_id;
+                    $attributeArr['lang'] = $mark;
+                    unset($attributeArr['attr_id']);
+                    // $attributeArr['attr_name'] = $mark.$attributeArr['attr_name']; // 临时测试
+                    $new_attr_id = $attribute_db->insertGetId($attributeArr);
+                    if (empty($new_attr_id)) {
+                        return false; // 同步失败
+                    }
+                    $bindAttributeArr[$v2['attr_id']] = $new_attr_id;
+                }
+            }
+            /*--end*/
+        }
+        /*--end*/
+
+        return true;
+    }
+
+    /**
      * 创建语言时，同步友链分组以及友情链接数据，并进行多语言关联绑定
      *
      * @param string $mark 新增语言
@@ -640,7 +727,6 @@ class Language extends Model
         }
 
         /*复制友情链接表数据*/
-        $bindLinksArr = []; // 源友情链接ID与目标友情链接ID的对应数组
         $links_db = Db::name('links');
         $linksRow = $links_db->where('lang',$copy_lang)
             ->order('id asc')
@@ -671,7 +757,6 @@ class Language extends Model
                     if (empty($new_links_id)) {
                         return false; // 同步失败
                     }
-                    $bindLinksArr[$v2['id']] = $new_links_id;
                 }
             }
             /*--end*/
@@ -683,22 +768,10 @@ class Language extends Model
         /*新增友情链接分组ID与源友情链接分组ID的绑定*/
         foreach ($bindLinksGroupArr as $key => $val) {
             $langAttrData[] = [
-                'attr_name' => 'linkgroup'.$key,
+                'attr_name' => 'linksgroup'.$key,
                 'attr_value'    => $val,
                 'lang'  => $mark,
                 'attr_group' => 'links_group',
-                'add_time'  => getTime(),
-                'update_time'  => getTime(),
-            ];
-        }
-        /*--end*/
-        /*新增友情链接ID与源友情链接ID的绑定*/
-        foreach ($bindLinksArr as $key => $val) {
-            $langAttrData[] = [
-                'attr_name' => 'links'.$key,
-                'attr_value'    => $val,
-                'lang'  => $mark,
-                'attr_group' => 'links',
                 'add_time'  => getTime(),
                 'update_time'  => getTime(),
             ];
@@ -715,5 +788,23 @@ class Language extends Model
         }
 
         return true;
+    }
+
+    public function isValidateStatus($id_name = '', $id_value = '', $field = '', $value = '')
+    {
+        $return = true;
+
+        $value = trim($value);
+        if ($value == 0 && $field == 'status') {
+            $count = Db::name('language')->where(['status'=>1])->count();
+            if ($count <= 1) {
+                $return = [
+                    'time'  => 2,
+                    'msg'   => '至少要开启一个语言',
+                ];
+            }
+        }
+
+        return $return;
     }
 }

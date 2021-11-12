@@ -9,6 +9,19 @@ function showErrorAlert(msg, icon){
     layer.alert(msg, {icon: icon, title: false, closeBtn: false});
 }
 
+function showMbErrorMsg(msg){
+    layer.open({
+        content: msg
+        ,skin: 'footer'
+    });
+}
+function showMbErrorAlert(msg){
+    layer.open({
+        content: '<font color="red">提示：'+msg+'</font>'
+        ,btn: '确定'
+    });
+}
+
 /*
  * 上传图片 后台专用
  * @access  public
@@ -53,7 +66,7 @@ function GetUploadify(num,elementid,path,callback,url,title,is_mobile)
             content: upurl
          });
     } else {
-        layer.alert('允许上传0张图片', {icon:5});
+        showErrorAlert('允许上传0张图片');
         return false;
     }
 }
@@ -123,6 +136,19 @@ function layer_loading(msg){
     return loading;
 }
 
+// 加载层
+function layer_loading_mini(icon){
+    //loading层
+    if (!icon) {
+        icon = 2;
+    }
+    var loading = layer.load(icon, {
+        shade: [0.2,'#000'] //0.1透明度的白色背景
+    });
+
+    return loading;
+}
+
 // 渲染编辑器
 function showEditor_1597892187(elemtid){
 
@@ -154,4 +180,45 @@ function showEditor_1597892187(elemtid){
     };
     
     eval("ue_"+elemtid+" = UE.getEditor(elemtid, options);ue_"+elemtid+".ready(function() {ue_"+elemtid+".setContent(content);});");
+}
+
+/**
+ * 设置cookie
+ * @param {[type]} name  [description]
+ * @param {[type]} value [description]
+ * @param {[type]} time  [description]
+ */
+function ey_setCookies(name, value, time)
+{
+    var cookieString = name + "=" + escape(value) + ";";
+    if (time != 0) {
+        var Times = new Date();
+        Times.setTime(Times.getTime() + time);
+        cookieString += "expires="+Times.toGMTString()+";"
+    }
+    document.cookie = cookieString+"path=/";
+}
+
+// 读取 cookie
+function ey_getCookie(c_name)
+{
+    if (document.cookie.length>0)
+    {
+        c_start = document.cookie.indexOf(c_name + "=")
+        if (c_start!=-1)
+        {
+            c_start=c_start + c_name.length+1
+            c_end=document.cookie.indexOf(";",c_start)
+            if (c_end==-1) c_end=document.cookie.length
+            return unescape(document.cookie.substring(c_start,c_end))
+        }
+    }
+    return "";
+}
+
+function getQueryString(name) {
+    var reg = new RegExp("(^|&)" + name + "=([^&]*)(&|$)", "i");
+    var r = window.location.search.substr(1).match(reg);
+    if (r != null) return unescape(r[2]);
+    return null;
 }

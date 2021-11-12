@@ -42,7 +42,7 @@ class TagTag extends Base
             $result = Db::name('taglist')
                 ->field('*, tid AS tagid')
                 ->where($condition)
-                ->where('lang', $this->home_lang)
+                ->where('lang', self::$home_lang)
                 ->limit($row)
                 ->select();
 
@@ -58,7 +58,7 @@ class TagTag extends Base
                 $tid_list = Db::name('taglist')
                     ->where([
                         'typeid'    => ['IN', $typeid],
-                        'lang'      => $this->home_lang,
+                        'lang'      => self::$home_lang,
                     ])
                     ->group('tid')
                     ->column('tid');
@@ -69,10 +69,11 @@ class TagTag extends Base
             else if($sort == 'month') $orderby=' a.monthcc DESC ';
             else if($sort == 'hot') $orderby=' a.count DESC ';
             else if($sort == 'total') $orderby=' a.total DESC ';
+            else if($sort == 'aid') $orderby=' a.id ASC ';
             else $orderby = 'a.add_time DESC  ';
 
             $condition['b.arcrank'] = ['gt', -1];
-            $condition['a.lang'] = $this->home_lang;
+            $condition['a.lang'] = self::$home_lang;
 
             $result = Db::name('tagindex')
                 ->alias('a')

@@ -108,6 +108,7 @@ class Ask extends Base
             // 清理session并回到首页
             session('users_id', null);
             session('users', null);
+            cookie('users_id', null);
             $this->error($msg, $logut_redirect_url);
         }
         /* END */

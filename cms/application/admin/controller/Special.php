@@ -592,9 +592,9 @@ class Special extends Base
         }
     
         // SEO描述
-        if (!empty($info['seo_description'])) {
-            $info['seo_description'] = @msubstr(checkStrHtml($info['seo_description']), 0, config('global.arc_seo_description_length'), false);
-        }
+        // if (!empty($info['seo_description'])) {
+        //     $info['seo_description'] = @msubstr(checkStrHtml($info['seo_description']), 0, config('global.arc_seo_description_length'), false);
+        // }
 
         $assign_data['field'] = $info;
 

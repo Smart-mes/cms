@@ -59,6 +59,8 @@ class View extends Base
         }
         $map['a.is_del'] = 0; // 回收站功能
         $field        = 'a.aid, a.typeid, a.channel, a.users_price, a.users_free, b.nid, b.ctl_name, c.level_id, c.level_name, c.level_value';
+        // 多城市站点
+        // $field        = 'a.aid, a.typeid, a.channel, a.users_price, a.users_free, a.province_id, a.city_id, a.area_id, b.nid, b.ctl_name, c.level_id, c.level_name, c.level_value';
         $archivesInfo = Db::name('archives')->field($field)
             ->alias('a')
             ->join('__CHANNELTYPE__ b', 'a.channel = b.id', 'LEFT')
@@ -67,8 +69,35 @@ class View extends Base
             ->find();
         if (empty($archivesInfo) || !in_array($archivesInfo['channel'], config('global.allow_release_channel'))) {
             abort(404, '页面不存在');
-            // $this->redirect('/public/static/errpage/404.html', 301);
         }
+
+        /*校验多城市站点*/
+        // if (config('city_switch_on')) {
+        //     $site = input('param.site/s');
+        //     if (!empty($site) && (empty($archivesInfo['province_id']) && empty($archivesInfo['city_id']) && empty($archivesInfo['area_id']))) { // 全国文档
+        //         // abort(404, '页面不存在');
+        //     } else if (empty($site) && (!empty($archivesInfo['province_id']) || !empty($archivesInfo['city_id']) || !empty($archivesInfo['area_id']))) { // 非全国文档
+        //         // abort(404, '页面不存在');
+        //     } else if (!empty($site)) {
+        //         $siteInfo = Db::name('citysite')->where(['domain'=>$site])->find();
+        //         if (!empty($siteInfo)) {
+        //             if (!empty($archivesInfo['area_id'])) {
+        //                 if ($archivesInfo['area_id'] != $siteInfo['id']) {
+        //                     abort(404, '页面不存在');
+        //                 }
+        //             } else if (!empty($archivesInfo['city_id'])) {
+        //                 if ($archivesInfo['city_id'] != $siteInfo['id']) {
+        //                     abort(404, '页面不存在');
+        //                 }
+        //             } else if (!empty($archivesInfo['province_id'])) {
+        //                 if ($archivesInfo['province_id'] != $siteInfo['id']) {
+        //                     abort(404, '页面不存在');
+        //                 }
+        //             }
+        //         }
+        //     }
+        // }
+
         $aid             = $archivesInfo['aid'];
         $this->nid       = $archivesInfo['nid'];
         $this->channel   = $archivesInfo['channel'];
@@ -134,23 +163,44 @@ class View extends Base
         $result = array_merge($arctypeInfo, $result);
 
         // 文档链接
-        $result['arcurl'] = $result['pageurl'] = '';
+        $result['arcurl'] = $result['pageurl'] = $result['pageurl_m'] = '';
         if ($result['is_jump'] != 1) {
             $result['arcurl'] = arcurl('home/'.$this->modelName.'/view', $result, true, true);
             $result['pageurl'] = $this->request->url(true);
+            $result['pageurl_m'] = pc_to_mobile_url($result['pageurl'], $result['typeid'], $result['aid']); // 获取当前页面对应的移动端URL
         }
         /*--end*/
 
+        // 移动端域名
+        $result['mobile_domain'] = '';
+        if (!empty($this->eyou['global']['web_mobile_domain_open']) && !empty($this->eyou['global']['web_mobile_domain'])) {
+            $result['mobile_domain'] = $this->eyou['global']['web_mobile_domain'] . '.' . $this->request->rootDomain(); 
+        }
+
         $result['seo_title']       = set_arcseotitle($result['title'], $result['seo_title'], $result['typename'], $result['typeid']);
-        $result['seo_description'] = @msubstr(checkStrHtml($result['seo_description']), 0, config('global.arc_seo_description_length'), false);
+        $result['seo_description'] = checkStrHtml($result['seo_description']);
         $result['tags'] = !empty($result['tags']['tag_arr']) ? $result['tags']['tag_arr'] : '';
         $result['litpic'] = handle_subdir_pic($result['litpic']); // 支持子目录
         $result = view_logic($aid, $this->channel, $result, true); // 模型对应逻辑
         $result = $this->fieldLogic->getChannelFieldList($result, $this->channel); // 自定义字段的数据格式处理
 
+        if (!empty($result['users_id'])){
+            $users_where['a.users_id'] = $result['users_id'];
+        }elseif (!empty($result['admin_id'])){
+            $users_where['a.admin_id'] = $result['admin_id'];
+        }else {
+            $users_where['a.admin_id'] = ['>',0];
+        }
+        $users = Db::name('users')->alias('a')->field('a.username,a.nickname,a.head_pic,b.level_name,b.level_value')->where($users_where)->join('users_level b','a.level = b.level_id','left')->find();
+        if (!empty($users)) {
+            $users['head_pic']  = get_default_pic($users['head_pic']);
+            empty($users['nickname']) && $users['nickname'] = $users['username'];
+        }
+
         $eyou = array(
             'type'  => $arctypeInfo,
             'field' => $result,
+            'users' => $users,
         );
 
         $this->eyou = array_merge($this->eyou, $eyou);
@@ -162,14 +212,17 @@ class View extends Base
             : 'view_' . $this->nid;
         /*--end*/
 
-        /*多语言内置模板文件名*/
-        if (!empty($this->home_lang)) {
+        if (config('city_switch_on') && !empty($this->home_site)) { // 多站点内置模板文件名
+            $viewfilepath = TEMPLATE_PATH . $this->theme_style_path . DS . $viewfile . "_{$this->home_site}." . $this->view_suffix;
+            if (file_exists($viewfilepath)) {
+                $viewfile .= "_{$this->home_site}";
+            }
+        } else if (config('lang_switch_on') && !empty($this->home_lang)) { // 多语言内置模板文件名
             $viewfilepath = TEMPLATE_PATH . $this->theme_style_path . DS . $viewfile . "_{$this->home_lang}." . $this->view_suffix;
             if (file_exists($viewfilepath)) {
                 $viewfile .= "_{$this->home_lang}";
             }
         }
-        /*--end*/
 
         $emptyhtml = '';
         if ($this->eyou['field']['arcrank'] > 0) { // 若需要会员权限则执行
@@ -335,7 +388,7 @@ EOF;
         $map     = array(
             'file_id' => $file_id,
         );
-        $result  = Db::name('download_file')->field('aid,file_url,file_mime,uhash')->where($map)->find();
+        $result  = Db::name('download_file')->field('aid,file_url,file_mime,file_name,uhash')->where($map)->find();
         if (!empty($result['uhash']) && $uhash != $result['uhash']) {
             $this->error('下载地址出错！');
         }
@@ -354,7 +407,7 @@ EOF;
             cookie($file_id.$uhash_mch, null);
         }
 
-        download_file($result['file_url'], $result['file_mime']);
+        download_file($result['file_url'], $result['file_mime'], $result['file_name']);
         exit;
     }
 

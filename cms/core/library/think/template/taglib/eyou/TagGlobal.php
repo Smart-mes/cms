@@ -63,6 +63,13 @@ class TagGlobal extends Base
                         $value = !empty($this->root_dir) ? $this->root_dir : '/';
                     }
                     break;
+                    
+                case 'web_title':
+                case 'web_keywords':
+                case 'web_description':
+                    // $value = $this->site_seo($name, $value, $globalData);
+                    break;
+
                 case 'web_cmsurl':
                     {
                         $request = Request::instance();
@@ -73,7 +80,7 @@ class TagGlobal extends Base
                         //     }
                         // } && $value = url('home/Index/index');
 
-                        /*URL全局参数（比如：可视化uiset、多模板v、多语言lang）*/
+                        /*URL全局参数（比如：可视化uiset、多模板v、多语言lang、多城市站点site）*/
                         $urlParam = $request->param();
                         foreach ($urlParam as $key => $val) {
                             if (in_array($key, Config::get('global.parse_url_param'))) {
@@ -117,8 +124,16 @@ class TagGlobal extends Base
                                     $value .= http_build_query($urlParam);
                                 }
                             } else {
-                                if (get_default_lang() != get_home_lang()) {
-                                    $value = rtrim(url('home/Index/index'), '/');
+                                if (!empty(self::$city_switch_on)) { // 多城市站点
+                                    if ($request->subDomain() == get_home_site()) {
+                                        $value = request()->domain().$this->root_dir;
+                                    } else if (get_default_site() != get_home_site()) {
+                                        $value = rtrim(url('home/Index/index'), '/');
+                                    }
+                                } else {
+                                    if (get_default_lang() != get_home_lang()) {
+                                        $value = rtrim(url('home/Index/index'), '/');
+                                    }
                                 }
                             }
                         }
@@ -153,7 +168,7 @@ class TagGlobal extends Base
                     break;
 
                 case 'ey_common_hidden':
-                    $baseFile = $this->request->baseFile();
+                    $baseFile = self::$request->baseFile();
                     $value = <<<EOF
     <script type="text/javascript">
         var __eyou_basefile__ = '{$baseFile}';
@@ -196,6 +211,72 @@ EOF;
             $value = htmlspecialchars_decode($value);
         }
         
+        return $value;
+    }
+
+    /**
+     * 多城市站点SEO逻辑
+     * @param  [type] $name       [description]
+     * @param  string $value      [description]
+     * @param  array  $globalData [description]
+     * @return [type]             [description]
+     */
+    private function site_seo($name, $value = '', $globalData = [])
+    {
+        static $city_switch_on = null;
+        null === $city_switch_on && $city_switch_on = config('city_switch_on');
+        if (true !== $city_switch_on) {
+            return $value;
+        }
+
+        $site_info = self::$site_info;
+        $seoset = !empty($site_info['seoset']) ? intval($site_info['seoset']) : 0;
+        if (empty($seoset)) { // 当前分站启用分站的SEO
+            if (!empty($globalData['site_seoset'])) { // 启用分站SEO
+                if ('web_title' == $name) {
+                    $value = !empty($globalData['site_seo_title']) ? $globalData['site_seo_title'] : '';
+                } else if ('web_keywords' == $name) {
+                    $value = !empty($globalData['site_seo_keywords']) ? $globalData['site_seo_keywords'] : '';
+                } else if ('web_description' == $name) {
+                    $value = !empty($globalData['site_seo_description']) ? $globalData['site_seo_description'] : '';
+                }
+            }
+        } else if (1 == $seoset) { // 当前分站启用自定义SEO
+            if ('web_title' == $name) {
+                $value = self::$site_info['seo_title'];
+            } else if ('web_keywords' == $name) {
+                $value = self::$site_info['seo_keywords'];
+            } else if ('web_description' == $name) {
+                $value = self::$site_info['seo_description'];
+            }
+        }
+
+        if (!empty($value)) {
+            if (stristr($value, "{region}")) {
+                $value = str_replace('{region}', self::$site_info['name'], $value);
+            }
+            if (stristr($value, "{regionAll}") || stristr($value, "{parent}") || stristr($value, "{top}")) {
+                static $citysiteList = null;
+                if (null === $citysiteList) {
+                    $citysiteList = get_citysite_list();
+                }
+
+                $topName = !empty($citysiteList[self::$site_info['topid']]) ? $citysiteList[self::$site_info['topid']]['name'] : '';
+                $parentName = !empty($citysiteList[self::$site_info['parent_id']]) ? $citysiteList[self::$site_info['parent_id']]['name'] : '';
+                if (1 == self::$site_info['level']) {
+                    $topName = $parentName = '';
+                } else if (2 == self::$site_info['level']) {
+                    $topName = '';
+                } else {
+                    $topName = !empty($citysiteList[self::$site_info['topid']]) ? $citysiteList[self::$site_info['topid']]['name'] : '';
+                    $parentName = !empty($citysiteList[self::$site_info['parent_id']]) ? $citysiteList[self::$site_info['parent_id']]['name'] : '';
+                }
+                $value = str_replace('{parent}', $parentName, $value);
+                $value = str_replace('{top}', $topName, $value);
+                $value = str_replace('{regionAll}', $topName.$parentName.self::$site_info['name'], $value);
+            }
+        }
+
         return $value;
     }
 }

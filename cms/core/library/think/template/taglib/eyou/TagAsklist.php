@@ -85,20 +85,20 @@ class TagAsklist extends Base
                 $orderby = "a.click {$orderway}";
                 break;
 
-            case 'id': // 兼容织梦的写法
+            case 'id': // 兼容写法
             case 'aid':
             case 'ask_id':
                 $orderby = "a.ask_id {$orderway}";
                 break;
 
             case 'now':
-            case 'new': // 兼容织梦的写法
-            case 'pubdate': // 兼容织梦的写法
+            case 'new': // 兼容写法
+            case 'pubdate': // 兼容写法
             case 'add_time':
                 $orderby = "a.add_time {$orderway}";
                 break;
 
-            case 'sortrank': // 兼容织梦的写法
+            case 'sortrank': // 兼容写法
             case 'sort_order':
                 $orderby = "a.sort_order {$orderway}";
                 break;

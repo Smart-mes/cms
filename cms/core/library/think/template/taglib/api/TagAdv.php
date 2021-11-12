@@ -45,7 +45,7 @@ class TagAdv extends Base
                 break;
 
             case 'now':
-            case 'new': // 兼容织梦的写法
+            case 'new': // 兼容写法
                 $orderby = 'a.add_time desc';
                 break;
                 

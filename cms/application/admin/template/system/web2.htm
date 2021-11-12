@@ -91,6 +91,38 @@
                     </div>
                 </dd>
             </dl>
+            <dl class="row">
+                <dt class="tit">
+                    <label for="other_pcwapjs">pc跳转手机端js</label>
+                </dt>
+                <dd class="opt">
+                    <div class="onoff">
+                        <label for="other_pcwapjs0" class="cb-enable {if condition='empty($other_pcwapjs)'}selected{/if}">追加</label>
+                        <label for="other_pcwapjs1" class="cb-disable {if condition='!empty($other_pcwapjs)'}selected{/if}">关闭</label>
+                        <input id="other_pcwapjs0" name="other_pcwapjs" value="0" type="radio" {if condition="empty($other_pcwapjs)"} checked="checked"{/if}>
+                        <input id="other_pcwapjs1" name="other_pcwapjs" value="1" type="radio" {if condition='!empty($other_pcwapjs)'} checked="checked"{/if}>
+                    </div>
+                    <p class="notic">追加之后，生成静态模式下，自动在PC端模板头部head标签出现一段PC跳转手机端的JS代码，当在手机端访问PC端URL时，自动跳到相应的手机端URL。</p>
+                </dd>
+            </dl>
+            <!-- 
+            {if condition="$php_servicemeal >= 2"}
+            <dl class="row">
+                <dt class="tit">
+                    <label for="web_citysite_open">多站点</label>
+                </dt>
+                <dd class="opt">
+                    <div class="onoff">
+                        <label for="web_citysite_open1" class="cb-enable {if condition='isset($config.web_citysite_open) && $config.web_citysite_open eq 1'}selected{/if}">开启</label>
+                        <label for="web_citysite_open0" class="cb-disable {if condition='empty($config.web_citysite_open)'}selected{/if}">关闭</label>
+                        <input id="web_citysite_open1" name="web_citysite_open" value="1" type="radio" {if condition="isset($config.web_citysite_open) && $config.web_citysite_open eq 1"} checked="checked"{/if}>
+                        <input id="web_citysite_open0" name="web_citysite_open" value="0" type="radio" {if condition="empty($config.web_citysite_open)"} checked="checked"{/if}>
+                    </div>
+                    <p class="notic">开启之后，如果当前URL模式是静态页面，系统自动切换动态URL，多城市目前仅支持动态URL、伪静态这两种模式。</p>
+                </dd>
+            </dl>
+            {/if}
+             -->
             <dl class="row none">
                 <dt class="tit">
                     <label for="web_cmspath">系统安装目录</label>
@@ -210,6 +242,33 @@
                     $('label[for=web_is_https0]').addClass('selected');
                     $('#web_is_https0').attr('checked','checked');
                     layer.close(index);
+                });
+            }
+        });
+
+        $('input[name="web_citysite_open"]').click(function(){
+            if (1 == $(this).val()) {
+                $.ajax({
+                    type : 'get',
+                    url : "{:url('System/ajax_check_language_open', ['_ajax'=>1])}",
+                    data : {},
+                    dataType : 'json',
+                    success : function(res){
+                        if (res.code == 0) {
+                            $('label[for=web_citysite_open1]').removeClass('selected');
+                            $('#web_citysite_open1').attr('checked','');
+                            $('label[for=web_citysite_open0]').addClass('selected');
+                            $('#web_citysite_open0').attr('checked','checked');
+                            layer.confirm('当前已开启多语言功能，不支持多城市站点！', {
+                                title: false,
+                                closeBtn: false,
+                                btn: ['知道了'] //按钮
+                            });
+                        }
+                    },
+                    error: function(e){
+                        showErrorAlert(e.responseText);
+                    }
                 });
             }
         });

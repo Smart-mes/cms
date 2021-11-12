@@ -203,7 +203,7 @@ class Article extends Base
             $post['tags'] = implode(',', $post['tags']);
 
             $content = input('post.addonFieldExt.content', '', null);
-            if (!empty($post['users_price']) && 0 < $post['users_price']) {
+            if (!empty($post['restric_type']) && 0 < $post['restric_type']) {
                 $content = input('post.free_content', '', null);
             }
 
@@ -275,6 +275,12 @@ class Article extends Base
             if ($admin_info['role_id'] > 0 && $auth_role_info['check_oneself'] < 1) {
                 $post['arcrank'] = -1;
             }
+
+            // 付费限制模式与之前三个字段 arc_level_id、 users_pricem、 users_free 组合逻辑兼容
+            $restricData = restric_type_logic($post);
+            if (isset($restricData['code']) && empty($restricData['code'])) {
+                $this->error($restricData['msg']);
+            }
             
             // 存储数据
             $newData = array(
@@ -303,7 +309,7 @@ class Article extends Base
             $aid = Db::name('archives')->insertGetId($data);
             if (!empty($aid)) {
                 $_POST['aid'] = $aid;
-                if (!empty($post['users_price']) && 0 < $post['users_price']) {
+                if (!empty($post['restric_type']) && 0 < $post['restric_type']) {
                     if (empty($post['size'])) {$post['size'] = 1;}
                     $free_content = $post['free_content'];
                     if (2 == $post['part_free']){
@@ -350,12 +356,17 @@ class Article extends Base
         // 模板列表
         $archivesLogic = new \app\admin\logic\ArchivesLogic;
         $templateList = $archivesLogic->getTemplateList($this->nid);
-        $this->assign('templateList', $templateList);
+        $assign_data['templateList'] = $templateList;
 
         // 默认模板文件
         $tempview = 'view_'.$this->nid.'.'.config('template.view_suffix');
         !empty($arctypeInfo['tempview']) && $tempview = $arctypeInfo['tempview'];
-        $this->assign('tempview', $tempview);
+        $assign_data['tempview'] = $tempview;
+        
+        // 会员等级信息
+        $field = 'level_id, level_name, level_value';
+        $UsersLevel = Db::name('users_level')->field($field)->where('lang', $this->admin_lang)->select();
+        $assign_data['users_level'] = $UsersLevel;
 
         // 文档默认浏览量
         $other_config = tpCache('other');
@@ -410,7 +421,7 @@ class Article extends Base
 
             $typeid = input('post.typeid/d', 0);
             $content = input('post.addonFieldExt.content', '', null);
-            if (!empty($post['users_price']) && 0 < $post['users_price']) {
+            if (!empty($post['restric_type']) && 0 < $post['restric_type']) {
                 $content = input('post.free_content', '', null);
             }
 
@@ -490,6 +501,12 @@ class Article extends Base
                 }
             }
 
+            // 付费限制模式与之前三个字段 arc_level_id、 users_pricem、 users_free 组合逻辑兼容
+            $restricData = restric_type_logic($post);
+            if (isset($restricData['code']) && empty($restricData['code'])) {
+                $this->error($restricData['msg']);
+            }
+
             // 存储数据
             $newData = array(
                 'typeid'=> $typeid,
@@ -512,7 +529,7 @@ class Article extends Base
             $data = array_merge($post, $newData);
             $r = Db::name('archives')->where(['aid' => $data['aid'], 'lang'  => $this->admin_lang])->update($data);
             if (!empty($r)) {
-                if (!empty($post['users_price']) && 0 < $post['users_price']) {
+                if (!empty($post['restric_type']) && 0 < $post['restric_type']) {
                     if (empty($post['size'])) {$post['size'] = 1;}
                     $free_content = $post['free_content'];
                     if (2 == $post['part_free']){
@@ -578,9 +595,9 @@ class Article extends Base
         }
     
         // SEO描述
-        if (!empty($info['seo_description'])) {
-            $info['seo_description'] = @msubstr(checkStrHtml($info['seo_description']), 0, config('global.arc_seo_description_length'), false);
-        }
+        // if (!empty($info['seo_description'])) {
+        //     $info['seo_description'] = @msubstr(checkStrHtml($info['seo_description']), 0, config('global.arc_seo_description_length'), false);
+        // }
 
         $assign_data['field'] = $info;
 
@@ -595,12 +612,17 @@ class Article extends Base
         // 模板列表
         $archivesLogic = new \app\admin\logic\ArchivesLogic;
         $templateList = $archivesLogic->getTemplateList($this->nid);
-        $this->assign('templateList', $templateList);
+        $assign_data['templateList'] = $templateList;
 
         // 默认模板文件
         $tempview = $info['tempview'];
         empty($tempview) && $tempview = $arctypeInfo['tempview'];
-        $this->assign('tempview', $tempview);
+        $assign_data['tempview'] = $tempview;
+
+        // 会员等级信息
+        $field = 'level_id, level_name, level_value';
+        $UsersLevel = Db::name('users_level')->field($field)->where('lang', $this->admin_lang)->select();
+        $assign_data['users_level'] = $UsersLevel;
 
         // URL模式
         $tpcache = config('tpcache');

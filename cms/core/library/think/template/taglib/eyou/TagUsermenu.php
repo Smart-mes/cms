@@ -47,7 +47,7 @@ class TagUsermenu extends Base
     {
         $map = array();
         $map['status'] = 1;
-        $map['lang'] = $this->home_lang;
+        $map['lang'] = self::$home_lang;
         $map['version'] = ['IN', ['weapp','v1']];
 
         $menuRow = Db::name("users_menu")->where($map)
@@ -87,7 +87,7 @@ class TagUsermenu extends Base
     {
         $map = array();
         $map['status'] = 1;
-        $map['lang'] = $this->home_lang;
+        $map['lang'] = self::$home_lang;
         $map['version'] = ['IN', ['v2']];
 
         $menuRow = Db::name("users_menu")->where($map)

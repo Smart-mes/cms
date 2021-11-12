@@ -473,17 +473,9 @@ class Users extends Model
 
                     case 'img':
                     {
-                        $val[$val['name'].'_eyou_is_remote'] = 0;
-                        $val[$val['name'].'_eyou_remote'] = '';
-                        $val[$val['name'].'_eyou_local'] = '';
                         if (isset($addonRow[$val['name']])) {
-                            if (is_http_url($addonRow[$val['name']])) {
-                                $val[$val['name'].'_eyou_is_remote'] = 1;
-                                $val[$val['name'].'_eyou_remote'] = handle_subdir_pic($addonRow[$val['name']]);
-                            } else {
-                                $val[$val['name'].'_eyou_is_remote'] = 0;
-                                $val[$val['name'].'_eyou_local'] = handle_subdir_pic($addonRow[$val['name']]);
-                            }
+                            $val[$val['name']] = handle_subdir_pic($addonRow[$val['name']]);
+                            $val['info'] = handle_subdir_pic($addonRow[$val['name']]);
                         }
                         break;
                     }

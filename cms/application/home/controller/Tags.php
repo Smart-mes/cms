@@ -25,6 +25,12 @@ class Tags extends Base
     public function index()
     {
         $result['pageurl'] = $this->request->url(true); // 获取当前页面URL
+        $result['pageurl_m'] = pc_to_mobile_url($result['pageurl']); // 获取当前页面对应的移动端URL
+        // 移动端域名
+        $result['mobile_domain'] = '';
+        if (!empty($this->eyou['global']['web_mobile_domain_open']) && !empty($this->eyou['global']['web_mobile_domain'])) {
+            $result['mobile_domain'] = $this->eyou['global']['web_mobile_domain'] . '.' . $this->request->rootDomain(); 
+        }
         $result['seo_title'] = !empty($this->eyou['global']['tag_seo_title']) ? $this->eyou['global']['tag_seo_title'] : '标签页_'.$this->eyou['global']['web_name'];
         $result['seo_keywords'] = !empty($this->eyou['global']['tag_seo_keywords']) ? $this->eyou['global']['tag_seo_keywords'] : '';
         $result['seo_description'] = !empty($this->eyou['global']['tag_seo_description']) ? $this->eyou['global']['tag_seo_description'] : '';
@@ -38,14 +44,17 @@ class Tags extends Base
         $viewfile = 'index_tags';
         /*--end*/
 
-        /*多语言内置模板文件名*/
-        if (!empty($this->home_lang)) {
+        if (config('city_switch_on') && !empty($this->home_site)) { // 多站点内置模板文件名
+            $viewfilepath = TEMPLATE_PATH.$this->theme_style_path.DS.$viewfile."_{$this->home_site}.".$this->view_suffix;
+            if (file_exists($viewfilepath)) {
+                $viewfile .= "_{$this->home_site}";
+            }
+        } else if (config('lang_switch_on') && !empty($this->home_lang)) { // 多语言内置模板文件名
             $viewfilepath = TEMPLATE_PATH.$this->theme_style_path.DS.$viewfile."_{$this->home_lang}.".$this->view_suffix;
             if (file_exists($viewfilepath)) {
                 $viewfile .= "_{$this->home_lang}";
             }
         }
-        /*--end*/
 
         return $this->fetch(":{$viewfile}");
     }
@@ -132,14 +141,17 @@ class Tags extends Base
         $viewfile = 'lists_tags';
         /*--end*/
 
-        /*多语言内置模板文件名*/
-        if (!empty($this->home_lang)) {
+        if (config('city_switch_on') && !empty($this->home_site)) { // 多站点内置模板文件名
+            $viewfilepath = TEMPLATE_PATH.$this->theme_style_path.DS.$viewfile."_{$this->home_site}.".$this->view_suffix;
+            if (file_exists($viewfilepath)) {
+                $viewfile .= "_{$this->home_site}";
+            }
+        } else if (config('lang_switch_on') && !empty($this->home_lang)) { // 多语言内置模板文件名
             $viewfilepath = TEMPLATE_PATH.$this->theme_style_path.DS.$viewfile."_{$this->home_lang}.".$this->view_suffix;
             if (file_exists($viewfilepath)) {
                 $viewfile .= "_{$this->home_lang}";
             }
         }
-        /*--end*/
 
         return $this->fetch(":{$viewfile}");
     }

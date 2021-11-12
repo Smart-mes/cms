@@ -36,19 +36,19 @@ if (!function_exists('adminLog'))
      * @param $log_info 记录信息
      */
     function adminLog($log_info = ''){
-        $admin_id = session('admin_id');
-        $admin_id = !empty($admin_id) ? $admin_id : -1;
-        $add['log_time'] = getTime();
-        $add['admin_id'] = $admin_id;
-        $add['log_info'] = $log_info;
-        $add['log_ip'] = clientIP();
-        $add['log_url'] = request()->baseUrl() ;
-        M('admin_log')->add($add);
-        
         // 只保留最近一个月的操作日志
         try {
             $ajaxLogic = new \app\admin\logic\AjaxLogic;
             $ajaxLogic->del_adminlog();
+            
+            $admin_id = session('admin_id');
+            $admin_id = !empty($admin_id) ? $admin_id : -1;
+            $add['log_time'] = getTime();
+            $add['admin_id'] = $admin_id;
+            $add['log_info'] = $log_info;
+            $add['log_ip'] = clientIP();
+            $add['log_url'] = request()->baseUrl() ;
+            M('admin_log')->add($add);
         } catch (\Exception $e) {
             
         }
@@ -458,7 +458,7 @@ if (!function_exists('sitemap_xml'))
                 }
             }
             /*end*/
-            $field = "aid, channel, is_jump, jumplinks, add_time, update_time, typeid, aid AS loc, add_time AS lastmod, 'daily' AS changefreq, '0.5' AS priority";
+            $field = "aid, channel, is_jump, jumplinks, htmlfilename, add_time, update_time, typeid, aid AS loc, add_time AS lastmod, 'daily' AS changefreq, '0.5' AS priority";
             $result_archives = M('archives')->field($field)
                 ->where($map)
                 ->order('aid desc')
@@ -844,6 +844,19 @@ if (!function_exists('get_arcurl'))
                 $arcurl = ROOT_DIR."/index.php?m=home&c=View&a=index&aid={$arcview_info['aid']}&lang={$lang}&admin_id=".session('admin_id');
             } else {
                 $arcurl = arcurl("home/{$ctl_name}/view", $arcview_info, true, $domain, $seo_pseudo, $seo_dynamic_format);
+                if (config('city_switch_on')) {
+                    $url_path = parse_url($arcurl, PHP_URL_PATH);
+                    $url_path = str_replace('.html', '', $url_path);
+                    $url_path = '/'.trim($url_path, '/').'/';
+                    preg_match_all('/\/site\/([^\/]+)\//', $url_path, $matches);
+                    $site_domain = !empty($matches[1][0]) ? $matches[1][0] : '';
+                    if (!empty($site_domain)) {
+                        $url_path_new = str_replace("/site/{$site_domain}/", '', $url_path);
+                        $root_dir_str = str_replace('/', '\/', ROOT_DIR);
+                        $url_path_new = preg_replace("/^{$root_dir_str}\//", ROOT_DIR."/{$site_domain}/", $url_path_new);
+                        $arcurl = str_replace(rtrim($url_path, '/'), $url_path_new, $arcurl);
+                    }
+                }
                 // 自动隐藏index.php入口文件
                 $arcurl = auto_hide_index($arcurl);
                 if (stristr($arcurl, '?')) {

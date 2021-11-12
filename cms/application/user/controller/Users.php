@@ -46,7 +46,7 @@ class Users extends Base
             return action('user/Users/index2');
         }
         
-        if (getUsersTplVersion() == 'v1') {
+        if ($this->usersTplVersion == 'v1') {
             return action('user/Users/info');
         }
 
@@ -165,7 +165,7 @@ EOF;
         $html = $this->fetch('users_centre');
 
         // 会员模板版本号
-        if (getUsersTplVersion() == 'v1') {
+        if ($this->usersTplVersion == 'v1') {
             /*第三方注册的用户，无需修改登录密码*/
             if (!empty($this->users['thirdparty'])) {
                 $html = str_ireplace('onclick="ChangePwdMobile();"', 'onclick="ChangePwdMobile();" style="display: none;"', $html);
@@ -241,9 +241,12 @@ EOF;
 
                 if (isset($this->usersConfig['users_open_website_login']) && empty($this->usersConfig['users_open_website_login'])) {
                     $this->redirect($ReturnUrl);
-                    exit;
                 } else {
-                    $this->success('授权成功！', $ReturnUrl);
+                    if (IS_AJAX_POST) {
+                        $this->success('授权成功！', $ReturnUrl);
+                    } else {
+                        $this->redirect($ReturnUrl);
+                    }
                 }
             }
             $this->error('非手机端微信、小程序，不可以使用微信登陆，请选择本站登陆！');
@@ -269,19 +272,45 @@ EOF;
         if (empty($WeChatData) || (!empty($WeChatData['errcode']) && !empty($WeChatData['errmsg']))) {
             $this->error('AppSecret错误或已过期', $this->root_dir.'/');
         }
+
+        // 获取会员信息
+        $get_userinfo = 'https://api.weixin.qq.com/sns/userinfo?access_token=' . $WeChatData["access_token"] . '&openid=' . $WeChatData["openid"] . '&lang=zh_CN';
+        $UserInfo     = httpRequest($get_userinfo);
+        $UserInfo     = json_decode($UserInfo, true);
+        if (empty($UserInfo['nickname']) && empty($UserInfo['headimgurl'])) {
+            $this->error('用户授权异常，建议清理手机缓存再进行登录', $this->root_dir.'/');
+        }
+        $UserInfo['unionid'] = !empty($UserInfo['unionid']) ? $UserInfo['unionid'] : '';
         
-        // 查询这个openid是否已注册
-        $where = [
-            'open_id' => $WeChatData['openid'],
-            'lang'    => $this->home_lang,
-        ];
-        $Users = $this->users_db->where($where)->find();
+        $Users = [];
+        if (!empty($UserInfo['unionid'])){
+            // 查询这个unionid是否已注册
+            $where = [
+                'union_id' => $UserInfo['unionid'],
+                'lang'    => $this->home_lang,
+            ];
+            $Users = $this->users_db->where($where)->find();
+        }
+        if (empty($Users)){
+            //根据openid和空union_id查询是否为老用户
+            $where = [
+                'open_id' => $UserInfo['openid'],
+                'lang'    => $this->home_lang,
+            ];
+            $Users = $this->users_db->where($where)->find();
+        }
         if (!empty($Users)) {
+            if (empty($Users['union_id']) && !empty($UserInfo['unionid'])){
+                $this->users_db->where('users_id', $Users['users_id'])->update(['union_id'=>$UserInfo['unionid'],'update_time'=>getTime()]);
+            }
+
             // 已注册
+            $eyou_referurl = session('eyou_referurl');
             session('users_id', $Users['users_id']);
             session('users', $Users);
+            session('eyou_referurl', '');
             cookie('users_id', $Users['users_id']);
-            $this->redirect(session('eyou_referurl'));
+            $this->redirect($eyou_referurl);
         } else {
             // 未注册
             $username = substr($WeChatData['openid'], 6, 8);
@@ -290,18 +319,10 @@ EOF;
             if (!empty($result)) {
                 $username = $username . rand('100,999');
             }
-            // 获取会员信息
-            $get_userinfo = 'https://api.weixin.qq.com/sns/userinfo?access_token=' . $WeChatData["access_token"] . '&openid=' . $WeChatData["openid"] . '&lang=zh_CN';
-            $UserInfo     = httpRequest($get_userinfo);
-            $UserInfo     = json_decode($UserInfo, true);
-            if (empty($UserInfo['nickname']) && empty($UserInfo['headimgurl'])) {
-                $this->error('用户授权异常，建议清理手机缓存再进行登录', $this->root_dir.'/');
-            }
-
             // 新增会员和微信绑定
             $UsersData = [
                 'username'       => $username,
-                'nickname'       => $UserInfo['nickname'],
+                'nickname'       => filterNickname($UserInfo['nickname']),
                 'open_id'        => $WeChatData['openid'],
                 'password'       => '', // 密码默认为空
                 'last_ip'        => clientIP(),
@@ -311,6 +332,7 @@ EOF;
                 'register_place' => 2, // 前台微信注册会员
                 'login_count'    => Db::raw('login_count+1'),
                 'head_pic'       => $UserInfo['headimgurl'],
+                'union_id'       => $UserInfo['unionid'],
                 'lang'           => $this->home_lang,
             ];
             // 查询默认会员级别，存入会员表
@@ -322,12 +344,18 @@ EOF;
 
             $users_id = $this->users_db->add($UsersData);
             if (!empty($users_id)) {
+                if (6 > strlen($users_id)){
+                    $users_id = sprintf("%06d",$users_id);//不足6位补0
+                }
+                $this->users_db->where('users_id', $users_id)->update(['username'=>'U'.$users_id,'update_time'=>getTime()]);
                 // 新增成功，将会员信息存入session
+                $eyou_referurl = session('eyou_referurl');
                 $GetUsers = $this->users_db->where('users_id', $users_id)->find();
                 session('users_id', $GetUsers['users_id']);
                 session('users', $GetUsers);
+                session('eyou_referurl', '');
                 cookie('users_id', $GetUsers['users_id']);
-                $this->redirect(session('eyou_referurl'));
+                $this->redirect($eyou_referurl);
             } else {
                 $this->error('未知错误，无法继续！');
             }
@@ -338,12 +366,20 @@ EOF;
     public function login()
     {
         // 若已登录则重定向
-        if ($this->users_id > 0) {
-            $this->redirect('user/Users/centre');
-            exit;
+        if ($this->users_id > 0) $this->redirect('user/Users/centre');
+
+        // 回跳路径
+        $referurl = input('param.referurl/s', null, 'htmlspecialchars_decode,urldecode');
+        if (empty($referurl)) {
+            if (isset($_SERVER['HTTP_REFERER']) && stristr($_SERVER['HTTP_REFERER'], $this->request->host())) {
+                $referurl = $_SERVER['HTTP_REFERER'];
+            } else {
+                $referurl = url("user/Users/centre");
+            }
         }
-        
-        // 若为微信端并且开启微商城模式则重定向
+        session('eyou_referurl', $referurl);
+
+        // 若为微信端并且开启微商城模式则重定向直接使用微信登录
         if (isWeixin() && !empty($this->usersConfig['shop_micro'])) {
             $WeChatLoginConfig = !empty($this->usersConfig['wechat_login_config']) ? unserialize($this->usersConfig['wechat_login_config']) : [];
             if (!empty($WeChatLoginConfig)) {
@@ -351,12 +387,9 @@ EOF;
             }
         }
 
-        // 若为微信端则重定向
+        // 若为微信端并且没有开启微商城模式则重定向到登录选择页
         $website = input('param.website/s');
-        if (isWeixin() && empty($website)) {
-            $this->redirect('user/Users/users_select_login');
-            exit;
-        }
+        if (isWeixin() && empty($website)) $this->redirect('user/Users/users_select_login');
 
         // 默认开启验证码
         $is_vertify          = 1;
@@ -391,6 +424,13 @@ EOF;
                 'is_del'   => 0,
                 'lang'     => $this->home_lang,
             ])->find();
+
+            $uc_uid = 0;
+            if (is_dir('./weapp/UCenter/')) {
+                $ucenter = new \weapp\UCenter\logic\UCenterLogic();
+                $uc_uid = $ucenter->uc_login_synlogin($post, $users);
+            }
+
             if (!empty($users)) {
                 if (!empty($users['admin_id'])) {
                     // 后台账号不允许在前台通过账号密码登录，只能后台登录时同步到前台
@@ -402,7 +442,7 @@ EOF;
                 }
 
                 $users_id = $users['users_id'];
-                if (strval($users['password']) === strval(func_encrypt($post['password']))) {
+                if ($uc_uid > 0 || strval($users['password']) === strval(func_encrypt($post['password']))) {
 
                     // 处理判断验证码
                     if (1 == $is_vertify) {
@@ -429,9 +469,7 @@ EOF;
                     // 会员users_id存入session
                     model('EyouUsers')->loginAfter($users);
 
-                    // 回跳路径
-                    $url = input('post.referurl/s', null, 'htmlspecialchars_decode,urldecode');
-                    $this->success('登录成功', $url);
+                    $this->success('登录成功', $referurl);
                 } else {
                     $this->error('密码不正确！', null, ['status' => 1]);
                 }
@@ -508,15 +546,6 @@ EOF;
             $this->assign('type', $type);
         }
 
-        // 跳转链接
-        $referurl = input('param.referurl/s', null, 'htmlspecialchars_decode,urldecode');
-        if (empty($referurl)) {
-            if (isset($_SERVER['HTTP_REFERER']) && stristr($_SERVER['HTTP_REFERER'], $this->request->host())) {
-                $referurl = $_SERVER['HTTP_REFERER'];
-            } else {
-                $referurl = url("user/Users/centre");
-            }
-        }
         cookie('referurl', $referurl);
         $this->assign('referurl', $referurl);
         return $this->fetch('users_login');
@@ -626,6 +655,11 @@ EOF;
                 if (!$verify->check($post['vertify'], "users_reg")) {
                     $this->error('图片验证码错误', null, ['status' => 'vertify']);
                 }
+            }
+
+            if (is_dir('./weapp/UCenter/')) {
+                $ucenter = new \weapp\UCenter\logic\UCenterLogic();
+                $ucenter->uc_reg_synlogin($post, $RequiredData);
             }
 
             if (!empty($RequiredData['email'])) {
@@ -900,7 +934,7 @@ EOF;
     {
         if (IS_AJAX_POST) {
             $post = input('post.');
-            if (getUsersTplVersion() != 'v1') {
+            if ($this->usersTplVersion != 'v1') {
                 if (isset($post['password_edit']) && !empty($post['password_edit'])) {
                     $password_new = func_encrypt($post['password_edit']);
                 }
@@ -1332,7 +1366,8 @@ EOF;
     {
         if (IS_AJAX_POST) {
             $head_pic_url = input('param.filename/s', '');
-            if (!empty($head_pic_url) && !is_http_url($head_pic_url)) {
+            if (!empty($head_pic_url) && !is_http_url($head_pic_url) && file_exists('.'.handle_subdir_pic($head_pic_url, 'img', false, true))) {
+                $old_head_pic = Db::name('users')->where(['users_id'=>$this->users_id])->value('head_pic');
                 $usersData['head_pic']    = $head_pic_url;
                 $usersData['update_time'] = getTime();
                 $return                   = $this->users_db->where([
@@ -1350,10 +1385,12 @@ EOF;
                     /*end*/
 
                     /*删除之前的头像文件*/
-                    if (!stristr($this->users['head_pic'], '/public/static/common/images/')) {
-                        @unlink('.'.preg_replace('#^(/[/\w]+)?(/public/upload/|/public/static/|/uploads/)#i', '$2', $this->users['head_pic']));
+                    if (stristr($old_head_pic, "/uploads/user/{$this->users_id}/allimg/")) {
+                        @unlink('.'.handle_subdir_pic($old_head_pic, 'img', false, true));
                     }
                     /*end*/
+
+                    $head_pic_url = func_thumb_img($head_pic_url, 200, 200);
 
                     $this->success('上传成功', null, ['head_pic'=>$head_pic_url]);
                 }
@@ -1750,16 +1787,19 @@ EOF;
         $Page = $pager = new Page($count, config('paginate.list_rows'));// 实例化分页类 传入总记录数和每页显示的记录数
 
         $result['data'] = Db::name('users_collection')
-            ->field('d.*, a.*')
+            ->field('d.*, a.*,c.*')
             ->alias('a')
             ->join('__ARCTYPE__ d', 'a.typeid = d.id', 'LEFT')
+            ->join('archives c', 'a.aid = c.aid', 'LEFT')
             ->where($condition)
             ->order('a.id desc')
             ->limit($Page->firstRow.','.$Page->listRows)
             ->select();
         foreach ($result['data'] as $key => $value) {
-            $result['data'][$key]['litpic'] = handle_subdir_pic($result['data'][$key]['litpic']); // 支持子目录
-            $result['data'][$key]['arcurl']  = arcurl('home/View/index', $value);
+            $value['users_price'] = floatval($value['users_price']);
+            $value['litpic'] = handle_subdir_pic($value['litpic']); // 支持子目录
+            $value['arcurl']  = arcurl('home/View/index', $value);
+            $result['data'][$key] = $value;
         }
 
         $result['delurl']  = url('user/Users/collection_del');

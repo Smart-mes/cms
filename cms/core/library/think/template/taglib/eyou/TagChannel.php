@@ -29,12 +29,11 @@ class TagChannel extends Base
         parent::_initialize();
         /*应用于文档列表*/
         if ($this->aid > 0) {
-            $cacheKey = 'tagChannel_'.strtolower('home_'.CONTROLLER_NAME.'_'.ACTION_NAME);
-            $cacheKey .= "_{$this->aid}";
+            $cacheKey = 'tagChannel_'.strtolower('home_'.CONTROLLER_NAME.'_'.ACTION_NAME).'_'.$this->aid;
             $this->tid = cache($cacheKey);
             if ($this->tid == false) {
                 $this->tid = Db::name('archives')->where('aid', $this->aid)->getField('typeid');
-                cache($cacheKey, $this->tid);
+                cache($cacheKey, $this->tid, null, 'archives');
             }
         }
         /*--end*/
@@ -55,7 +54,7 @@ class TagChannel extends Base
         if (!empty($typeid)) {
             $typeid = model('LanguageAttr')->getBindValue($typeid, 'arctype');
             if (empty($typeid)) {
-                echo '标签channel报错：找不到与第一套【'.$this->main_lang.'】语言关联绑定的属性 typeid 值 。';
+                echo '标签channel报错：找不到与第一套【'.self::$main_lang.'】语言关联绑定的属性 typeid 值 。';
                 return false;
             }
         }
@@ -160,7 +159,7 @@ class TagChannel extends Base
             ->alias('c')
             ->join('__ARCTYPE__ s','s.parent_id = c.id','LEFT')
             ->where($map)
-            ->where('c.lang', $this->home_lang)
+            ->where('c.lang', self::$home_lang)
             ->group('c.id')
             ->order('c.parent_id asc, c.sort_order asc, c.id')
             ->cache(true,EYOUCMS_CACHE_TIME,"arctype")
@@ -281,7 +280,7 @@ class TagChannel extends Base
         );
         $res = Db::name('arctype')->field('parent_id')
             ->where($map)
-            ->where('lang', $this->home_lang)
+            ->where('lang', self::$home_lang)
             ->group('parent_id')
             ->select();
         /*--end*/

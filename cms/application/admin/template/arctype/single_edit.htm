@@ -32,6 +32,7 @@
             <div class="bot">
                 <input type="hidden" name="gourl" value="{$gourl|default=''}">
                 <input type="hidden" name="typeid" id="typeid" value="{$info.id|default=''}">
+                <input type="hidden" id="editor_addonFieldExt" value="{$editor_addonFieldExt}">
                 <a href="JavaScript:void(0);" onclick="check_submit();" class="ncap-btn-big ncap-btn-green" id="submitBtn">确认提交</a>
             </div>
         </div> 
@@ -40,7 +41,10 @@
 <script type="text/javascript">
     function check_submit(){
         layer_loading('正在处理');
-        $('#post_form').submit();
+        setTimeout(function (){
+            editor_auto_210607();
+            $('#post_form').submit();
+        }, 1);
     }
 
     /* 生成静态页面代码 */

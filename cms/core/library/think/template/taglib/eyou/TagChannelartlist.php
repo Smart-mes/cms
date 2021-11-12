@@ -21,20 +21,17 @@ use think\Db;
  */
 class TagChannelartlist extends Base
 {
-    public $tid = '';
-    
     //初始化
     protected function _initialize()
     {
         parent::_initialize();
         /*应用于文档列表*/
         if ($this->aid > 0) {
-            $cacheKey = 'tagChannelartlist_'.strtolower('home_'.CONTROLLER_NAME.'_'.ACTION_NAME);
-            $cacheKey .= "_{$this->aid}";
+            $cacheKey = 'tagChannelartlist_'.strtolower('home_'.CONTROLLER_NAME.'_'.ACTION_NAME).'_'.$this->aid;
             $this->tid = cache($cacheKey);
             if ($this->tid == false) {
                 $this->tid = Db::name('archives')->where('aid', $this->aid)->getField('typeid');
-                cache($cacheKey, $this->tid);
+                cache($cacheKey, $this->tid, null, 'archives');
             }
         }
         /*--end*/
@@ -57,7 +54,7 @@ class TagChannelartlist extends Base
         if (!empty($typeid)) {
             $typeid = model('LanguageAttr')->getBindValue($typeid, 'arctype');
             if (empty($typeid)) {
-                echo '标签channelartlist报错：找不到与第一套【'.$this->main_lang.'】语言关联绑定的属性 typeid 值 。';
+                echo '标签channelartlist报错：找不到与第一套【'.self::$main_lang.'】语言关联绑定的属性 typeid 值 。';
                 return false;
             }
         }
@@ -136,7 +133,7 @@ class TagChannelartlist extends Base
         $map['is_del'] = 0;
         $result = Db::name('arctype')->field('*, id as typeid')
             ->where($map)
-            ->where('lang', $this->home_lang)
+            ->where('lang', self::$home_lang)
             ->order('sort_order asc')
             ->select();
 
@@ -181,7 +178,7 @@ class TagChannelartlist extends Base
         );
         $result = Db::name('arctype')->field('*, id as typeid')
             ->where($map)
-            ->where('lang', $this->home_lang)
+            ->where('lang', self::$home_lang)
             ->order('sort_order asc')
             ->select();
 
@@ -221,7 +218,7 @@ class TagChannelartlist extends Base
         );
         $result = Db::name('arctype')->field('*, id as typeid')
             ->where($map)
-            ->where('lang', $this->home_lang)
+            ->where('lang', self::$home_lang)
             ->order('sort_order asc')
             ->select();
 

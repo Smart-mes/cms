@@ -15,8 +15,8 @@
                                 </div>
                                 <div class="on-off_btn_r">
                                     <input type="checkbox" name="web[web_users_switch]" lay-skin="switch" lay-text="开启|关闭" lay-filter="switchTest"
-                                           data-authortoken="{$is_eyou_authortoken}" data-is_online="{$is_online}" {eq name="$globalConfig.web_users_switch" value="1"}checked="" {/eq}
-                                           data-type="web" data-name="web_users_switch" data-lmenuid="Member_users_index" value="{$globalConfig.web_users_switch}">
+                                           data-authortoken="{$is_eyou_authortoken}" data-is_online="{$is_online}" {eq name="$global.web_users_switch" value="1"}checked="" {/eq}
+                                           data-type="web" data-name="web_users_switch" data-lmenuid="Member_users_index" value="{$global.web_users_switch}">
                                 </div>
                             </div>
                         </li>
@@ -88,8 +88,8 @@
                                     </div>
                                     <div class="on-off_btn_r">
                                         <input type="checkbox" name="web[web_weapp_switch]" lay-skin="switch" lay-text="开启|关闭" lay-filter="switchTest2"
-                                               data-type="web" data-name="web_weapp_switch" data-lmenuid="Weapp_index" value="{$globalConfig.web_weapp_switch}"
-                                               {eq name="$globalConfig.web_weapp_switch" value="1"}checked="" {/eq}>
+                                               data-type="web" data-name="web_weapp_switch" data-lmenuid="Weapp_index" value="{$global.web_weapp_switch}"
+                                               {eq name="$global.web_weapp_switch" value="1"}checked="" {/eq}>
                                     </div>
                                 </div>
                             </li>
@@ -105,8 +105,8 @@
                                     </div>
                                     <div class="on-off_btn_r">
                                         <input type="checkbox" name="web[web_language_switch]" lay-skin="switch" lay-text="开启|关闭" lay-filter="switchTest"
-                                               data-type="web" data-name="web_language_switch" data-lmenuid="Language_index" value="{$globalConfig.web_language_switch}"
-                                               {eq name="$globalConfig.web_language_switch" value="1"}checked="" {/eq}>
+                                               data-type="web" data-name="web_language_switch" data-lmenuid="Language_index" value="{$global.web_language_switch}"
+                                               {eq name="$global.web_language_switch" value="1"}checked="" {/eq}>
                                     </div>
                                 </div>
                             </li>
@@ -147,6 +147,12 @@
 
                         {eq name="'Tags@index'|is_check_access" value="1"}
                         <li class="more_li"><a href="javascript:void(0);" data-href="{:url('Tags/index')}" data-leftmenu="Index_switch_map" onclick="gourl2(this,1);"><img src="__SKIN__/images/map_icon_tag.png?v={$version}" ><span>TAG管理</span></a></li>
+                        {/eq}
+
+                        {eq name="'Navigation@index'|is_check_access" value="1"}
+                            {eq name='$main_lang' value='$admin_lang'}
+                            <li class="more_li"><a href="javascript:void(0);" data-href="{:url('Navigation/index')}" data-leftmenu="Index_switch_map" onclick="gourl2(this,1);"><img src="__SKIN__/images/map_icon_navigation.png?v={$version}" ><span>导航管理</span></a></li>
+                            {/eq}
                         {/eq}
                     </ul>
                 </div>
@@ -192,9 +198,11 @@
                     {eq name="'Filemanager@index'|is_check_access" value="1"}
                     <li class="more_li"><a href="javascript:void(0);" data-href="{:url('Filemanager/index')}" data-leftmenu="Index_switch_map" onclick="gourl2(this,1);"><img src="__SKIN__/images/map_icon_moban.png?v={$version}" ><span>模板管理</span></a></li>
                     {/eq}
-                    <!-- {eq name="'Notify@index'|is_check_access" value="1"}
-                    <li class="more_li"><a href="javascript:void(0);" data-href="{:url('Notify/index')}" data-leftmenu="Index_switch_map" onclick="gourl2(this,1);"><i class="fa fa-volume-up"></i><span>通知管理</span></a></li>
-                    {/eq} -->
+                    {eq name="'Citysite@index'|is_check_access" value="1"}
+                        {notempty name="$global.web_citysite_open"}
+                        <li class="more_li"><a href="javascript:void(0);" data-href="{:url('Citysite/index')}" data-leftmenu="Index_switch_map" onclick="gourl2(this,1);"><img src="__SKIN__/images/map_icon_citysite.png?v={$version}" ><span>城市分站</span></a></li>
+                        {/notempty}
+                    {/eq}
                 </ul>
             </div>
             <script type="text/javascript">
@@ -342,6 +350,7 @@
                                 window.open('https://www.eyoucms.com/buy');
                             });
                         } else {
+                            value = 0;
                             _parent.layer.closeAll();
                             _parent.layer.alert(res.msg, {icon: 5, title:false, closeBtn:false}, function(){
                                 _parent.layer.closeAll();

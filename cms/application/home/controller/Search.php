@@ -33,9 +33,14 @@ class Search extends Base
 
         $result = $param = input('param.');
 
-        /*获取当前页面URL*/
-        $result['pageurl'] = request()->url(true);
-        /*--end*/
+        $result['pageurl'] = request()->url(true); // 获取当前页面URL
+        $result['pageurl_m'] = pc_to_mobile_url($result['pageurl']); // 获取当前页面对应的移动端URL
+        // 移动端域名
+        $result['mobile_domain'] = '';
+        if (!empty($this->eyou['global']['web_mobile_domain_open']) && !empty($this->eyou['global']['web_mobile_domain'])) {
+            $result['mobile_domain'] = $this->eyou['global']['web_mobile_domain'] . '.' . $this->request->rootDomain(); 
+        }
+        
         !isset($result['keywords']) && $result['keywords'] = '';
         $eyou = array(
             'field' => $result,
@@ -45,8 +50,17 @@ class Search extends Base
 
         $viewfile = 'index_search';
 
-        /*多语言内置模板文件名*/
-        if (!empty($this->home_lang)) {
+        if (config('city_switch_on') && !empty($this->home_site)) { // 多站点内置模板文件名
+            $viewfilepath = TEMPLATE_PATH.$this->theme_style_path.DS.$viewfile.".".$this->view_suffix;
+            if (!file_exists($viewfilepath)) {
+                $viewfilepath = TEMPLATE_PATH.$this->theme_style_path.DS.$viewfile."_{$this->home_site}.".$this->view_suffix;
+                if (file_exists($viewfilepath)) {
+                    $viewfile .= "_{$this->home_site}";
+                } else {
+                    return $this->lists();
+                }
+            }
+        } else if (config('lang_switch_on') && !empty($this->home_lang)) { // 多语言内置模板文件名
             $viewfilepath = TEMPLATE_PATH.$this->theme_style_path.DS.$viewfile.".".$this->view_suffix;
             if (!file_exists($viewfilepath)) {
                 $viewfilepath = TEMPLATE_PATH.$this->theme_style_path.DS.$viewfile."_{$this->home_lang}.".$this->view_suffix;
@@ -62,7 +76,6 @@ class Search extends Base
                 return $this->lists();
             }
         }
-        /*--end*/
 
         return $this->fetch(":{$viewfile}");
     }
@@ -75,6 +88,9 @@ class Search extends Base
         $param = input('param.');
 
         /*记录搜索词*/
+        if (!isset($param['keywords'])) {
+            die('标签调用错误：缺少属性 name="keywords"，请查看标签教程修正 <a href="https://www.eyoucms.com/plus/view.php?aid=521" target="_blank">前往查看</a>');
+        }
         $word = $this->request->param('keywords');
         if(empty($word)){
             $this->error('关键词不能为空！');
@@ -132,14 +148,17 @@ class Search extends Base
         $viewfile = 'lists_search';
         /*--end*/
 
-        /*多语言内置模板文件名*/
-        if (!empty($this->home_lang)) {
+        if (config('city_switch_on') && !empty($this->home_site)) { // 多站点内置模板文件名
+            $viewfilepath = TEMPLATE_PATH.$this->theme_style_path.DS.$viewfile."_{$this->home_site}.".$this->view_suffix;
+            if (file_exists($viewfilepath)) {
+                $viewfile .= "_{$this->home_site}";
+            }
+        } else if (config('lang_switch_on') && !empty($this->home_lang)) { // 多语言内置模板文件名
             $viewfilepath = TEMPLATE_PATH.$this->theme_style_path.DS.$viewfile."_{$this->home_lang}.".$this->view_suffix;
             if (file_exists($viewfilepath)) {
                 $viewfile .= "_{$this->home_lang}";
             }
         }
-        /*--end*/
 
         return $this->fetch(":{$viewfile}");
     }

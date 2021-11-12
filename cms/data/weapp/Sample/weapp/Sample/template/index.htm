@@ -7,13 +7,13 @@
     <div class="flexigrid">
         <div class="mDiv">
             <div class="ftitle">
-				<div class="fbutton">
-				    <a href="{:weapp_url('Sample/Sample/add')}">
-				        <div class="add" title="新增">
-				            <span class="red"><i class="fa fa-plus"></i>新增</span>
-				        </div>
-				    </a>
-				</div>
+                <div class="fbutton">
+                    <a href="javascript:void(0);" data-href="{:weapp_url('Sample/Sample/add')}" onclick="openFullframe(this, '新增链接');">
+                        <div class="add" title="新增链接">
+                            <span><i class="layui-icon layui-icon-addition"></i>新增链接</span>
+                        </div>
+                    </a>
+                </div>
             </div>
             <form class="navbar-form form-inline" action="{:weapp_url('Sample/Sample/index')}" method="get" onsubmit="layer_loading('正在处理');">
                 {$searchform.hidden|default=''}
@@ -158,8 +158,6 @@
             </div>
             <div style="clear:both"></div>
         </div>
-        <!--分页位置-->
-        {$pageStr}
     </div>
 </div>
 <script>

@@ -101,7 +101,7 @@ class PayApiLogic extends Model
             'pay_mark' => $post['pay_mark']
         ];
         $Config = $this->pay_api_config_db->where($where)->find();
-        if (empty($Config) || empty($Config['pay_info'])) $this->error('【支付接口】-【'.$Config['pay_name'].'】配置信息不全');
+        if (empty($Config) || empty($Config['pay_info'])) $this->error('请在后台【接口配置】完善【'.$Config['pay_name'].'】配置信息');
         $Config['pay_info'] = unserialize($Config['pay_info']);
 
         if (1 == $post['pay_id']) {
@@ -124,6 +124,7 @@ class PayApiLogic extends Model
     // 订单查询
     public function GetFindOrderData($post = [], $is_up_order = false)
     {
+        $submit_order_type = isset($post['submit_order_type']) ? intval($post['submit_order_type']) : -1;
         if (empty($post['unified_id']) || empty($post['unified_number']) || empty($post['transaction_type'])) $this->error('订单异常，请刷新重试');
 
         if (1 == $post['transaction_type']) {
@@ -188,6 +189,11 @@ class PayApiLogic extends Model
             // 判断订单状态，1已付款(待发货)，2已发货(待收货)，3已完成(确认收货)，-1订单取消(已关闭)，4订单过期
             $url = urldecode(url('user/Shop/shop_order_details', ['order_id' => $OrderData['order_id']]));
             if (in_array($OrderData['order_status'], [1, 2, 3])) {
+                if ('v3' == getUsersTplVersion()) {
+                    if (0 <= $submit_order_type && 1 == $OrderData['order_status']) {
+                        $url = urldecode(url('user/Shop/shop_centre'));
+                    }
+                }
                 $this->success('订单已支付，即将跳转', $url, true);
             } else if ($OrderData['order_status'] == 4) {
                 $this->success('订单已过期，即将跳转', $url, true);
@@ -221,6 +227,7 @@ class PayApiLogic extends Model
                     $update['wechat_pay_type'] = $wechat_pay_type;
                 }
                 $this->shop_order_db->where($where)->update($update);
+                $OrderData['pay_name'] = $post['pay_mark'];
             }
         } else if (3 == $post['transaction_type']) {
             // 获取会员升级订单
@@ -325,7 +332,8 @@ class PayApiLogic extends Model
                 Db::name('article_order')->where($where)->update($update);
             }
         }
-
+        
+        $OrderData['transaction_type'] = $post['transaction_type'];
         return $OrderData;
     }
 
@@ -552,7 +560,7 @@ class PayApiLogic extends Model
         } else if (2 == $Post['transaction_type']) {
             // 付款成功后，订单并未修改状态时，修改订单状态并返回
             if (empty($Order['order_status'])) {
-                $returnData = pay_success_logic($this->users_id, $Order['order_code'], $PayDetails, 'wechat');
+                $returnData = pay_success_logic($this->users_id, $Order['order_code'], $PayDetails, $Order['pay_name']);
                 if (is_array($returnData)) {
                     if (1 == $returnData['code']) {
                         $this->success($returnData['msg'], $returnData['url'], $returnData['data']);
@@ -560,6 +568,14 @@ class PayApiLogic extends Model
                         $this->error($returnData['msg']);
                     }
                 }
+            } else {
+                $returnData = [];
+                $users = \think\Db::name('users')->field('*')->find($Order['users_id']);
+                // 邮箱发送
+                $returnData['email'] = GetEamilSendData(tpCache('smtp'), $users, $Order, 1, $Order['pay_name']);
+                // 手机发送
+                $returnData['mobile'] = GetMobileSendData(tpCache('sms'), $users, $Order, 1, $Order['pay_name']);
+                $this->success('已支付', url('user/Shop/shop_centre'), $returnData);
             }
         } else if (3 == $Post['transaction_type']) {
             // 付款成功后，订单并未修改状态时，修改订单状态并返回
@@ -748,8 +764,17 @@ class PayApiLogic extends Model
                     $UpUsersData = $this->GetUpUsersData($UsersTypeData, true);
                     $ReturnID = $this->users_db->where($Where)->update($UpUsersData);
                     if (!empty($ReturnID)) {
+                        // 跳转链接
+                        $referurl = input('param.referurl/s', null, 'htmlspecialchars_decode,urldecode');
+                        if (empty($referurl)) {
+                            $referurl = cookie('referurl');
+                            if (empty($referurl)) {
+                                $referurl = url('user/Level/level_centre');
+                            }
+                        }
+                        cookie('referurl', null);
                         // 支付完成返回
-                        $ReturnData = $this->GetReturnData(0, 1, '余额支付完成！', url('user/Level/level_centre'));
+                        $ReturnData = $this->GetReturnData(0, 1, '余额支付完成！', $referurl);
                         $this->success($ReturnData);
                     }
                 }
@@ -1091,12 +1116,14 @@ class PayApiLogic extends Model
 
         $time = getTime();
         // 拼装数组存入会员购买等级表
+        $UsersMoney =  strval($this->users['users_money']) - strval($UsersTypeData['price']);
         $AddMoneyData = [
             'users_id'     => $this->users_id,
             // 订单生成规则
             'order_number' => date('Ymd') . $time . rand(10,100),
             // 金额
             'money'        => $UsersTypeData['price'],
+            'users_money'  => sprintf("%.2f", $UsersMoney),
             // 购买的产品等级ID(level_id)
             'cause'        => serialize($UsersTypeData),
             // 购买消费标记

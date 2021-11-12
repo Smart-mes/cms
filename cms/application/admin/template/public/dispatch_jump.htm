@@ -47,7 +47,7 @@
                 $post = array_merge($post, $data);
             }
             $data = $post;
-            $row = \think\DB::name('archives')
+            $row = \think\Db::name('archives')
                 ->field("b.*, a.*, a.aid as aid, c.ifsystem")
                 ->alias('a')
                 ->join('__ARCTYPE__ b', 'a.typeid = b.id', 'LEFT')
@@ -79,10 +79,12 @@
             }
             if (0 > $row['click'] && -1 < $arcrank) {
                 $push_zzbaidu_type = 'add';
-                \think\DB::name('archives')
+                \think\Db::name('archives')
                     ->where('aid', 'eq', $data['aid'])
                     ->update(['click'=>mt_rand(500, 1000), 'update_time'=>getTime()]);
             }
+            $zzbaidutoken = config('tpcache.sitemap_zzbaidutoken');//不为空则实时推送Url的token
+            $bdminipro = \think\Db::name('weapp')->where(['code'=>'BdDiyminipro','status'=>1])->find();//是否安装百度小程序
         {/php}
         <div class="system-message">
             <div class="tit">
@@ -143,10 +145,16 @@
                             layer.closeAll();
                             $('#tips').html('');
                             if (arcrank >= 0) {
+                                {notempty name='$zzbaidutoken'}
                                 // 百度自动推送
                                 push_zzbaidu('{$arcurl_home}', '{$push_zzbaidu_type}');
+                                {/notempty}
                                 // 更新sitemap.xml地图
                                 update_sitemap('{$ctl_name}', '{$push_zzbaidu_type}');
+                                {notempty name='$bdminipro'}
+                                //百度小程序 API 提交 (自动推送)
+                                push_bdminipro(aid, 1);
+                                {/notempty}
                             }
                         },
                         error: function(e){
@@ -177,10 +185,16 @@
         var aid = {$data['aid']|default=0};
         var arcrank = {$arcrank|default=0};
         if(aid > 0 && arcrank >= 0){
+            {notempty name='$zzbaidutoken'}
             // 百度自动推送
             push_zzbaidu('{$arcurl_home}', '{$push_zzbaidu_type}');
+            {/notempty}
             // 更新sitemap.xml地图
             update_sitemap('{$ctl_name}', '{$push_zzbaidu_type}');
+            {notempty name='$bdminipro'}
+            //百度小程序 API 提交 (自动推送)
+            push_bdminipro(aid, 1);
+            {/notempty}
         }
         /* end */
         </script>

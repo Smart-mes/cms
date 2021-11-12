@@ -35,7 +35,7 @@
                     <p class="notic">保持唯一性，不可重复</p>
                 </dd>
             </dl>
-            <dl class="row" id="dl_dirname">
+            <dl class="row {if $is_diyseo_htmlpath == 1} none {/if}" id="dl_dirname">
                 <dt class="tit">
                     <label for="dirname">目录名称</label>
                 </dt>
@@ -72,12 +72,22 @@
             </dl>
             {/gt}
             <input type="hidden" name="parent_id" id="parent_id" value="{$parent_id|default=''}" />
-            <dl class="row none" id="row_url">
+            <dl class="row {if $is_diyseo_htmlpath == 0} none {/if}">
+                <dt class="tit">
+                    <label for="diy_dirpath">文件保存目录</label>
+                </dt>
+                <dd class="opt">
+                    {$seo_html_arcdir}<input type="text" value="{$predirpath}" name="diy_dirpath" id="diy_dirpath" class="w350" onkeyup="this.value=this.value.replace(/[^0-9a-zA-Z\/-]/g,'');" onbeforepaste="clipboardData.setData('text',clipboardData.getData('text').replace(/[^0-9a-zA-Z\/-]/g,''));">
+                    &nbsp;<a href="javascript:void(0);" onclick="get_dirpinyin(this);" class="ncap-btn ncap-btn-green">获取拼音</a>
+                    <p class="notic">生成的文章HTML页面会存放在该目录下</p>
+                </dd>
+            </dl>
+            <dl class="row none">
                 <dt class="tit">
                     <label for="dirpath">文件保存目录</label>
                 </dt>
                 <dd class="opt">
-                    <input type="text" value="{$predirpath}" name="dirpath" id="dirpath" class="input-txt" onkeyup="this.value=this.value.replace(/[^0-9a-zA-Z\/-]/g,'');" onbeforepaste="clipboardData.setData('text',clipboardData.getData('text').replace(/[^0-9a-zA-Z\/-]/g,''));">&nbsp;<a href="javascript:void(0);" onclick="get_dirpinyin(this);" class="ncap-btn ncap-btn-green">获取拼音</a>
+                    {$seo_html_arcdir}<input type="text" value="{$predirpath}" name="dirpath" id="dirpath" class="w350" onkeyup="this.value=this.value.replace(/[^0-9a-zA-Z\/-]/g,'');" onbeforepaste="clipboardData.setData('text',clipboardData.getData('text').replace(/[^0-9a-zA-Z\/-]/g,''));">
                     <p class="notic">生成的文章HTML页面会存放在该目录下</p>
                 </dd>
             </dl>
@@ -159,13 +169,13 @@
             </dl>
             <dl class="row" id="dl_templist">
                 <dt class="tit">
-                    <label for="templist"><em>*</em>列表模板</label>
+                    <label for="templist"><em>*</em>栏目模板</label>
                 </dt>
                 <dd class="opt">
                     <select name="templist" id="templist">
                     </select>
                     <span class="err"></span>
-                    <p class="notic">列表模板命名规则：<br/>lists_<font class="font_nid">模型标识</font>.htm<br/>lists_<font class="font_nid">模型标识</font>_自定义.htm</p>
+                    <p class="notic">栏目模板命名规则：<br/>lists_<font class="font_nid">模型标识</font>.htm<br/>lists_<font class="font_nid">模型标识</font>_自定义.htm</p>
                     &nbsp;<a href="javascript:void(0);" onclick="newtpl('lists');" class="ncap-btn ncap-btn-green">新建模板</a>
                 </dd>
             </dl>
@@ -179,6 +189,24 @@
                     <span class="err"></span>
                     <p class="notic">文档模板命名规则：<br/>view_<font class="font_nid">模型标识</font>.htm<br/>view_<font class="font_nid">模型标识</font>_自定义.htm</p>
                     &nbsp;<a href="javascript:void(0);" onclick="newtpl('view');" class="ncap-btn ncap-btn-green">新建模板</a>
+                </dd>
+            </dl>
+            <dl class="row {if $is_diyseo_htmlpath == 0 || $seo_html_listname != 4} none {/if}" id="dl_rulelist">
+                <dt class="tit">
+                    <label for="dirpath">栏目名规则</label>
+                </dt>
+                <dd class="opt">
+                    <input type="text" value="{$rulelist}" name="rulelist" id="rulelist" class="input-txt" >
+                    <p class="notic2">1、{tid} 栏目ID<br/>2、{page} 栏目的页码，如果没有该变量，第1页以后的html页面将不存在</p>
+                </dd>
+            </dl>
+            <dl class="row {if $is_diyseo_htmlpath == 0 || $seo_html_pagename != 4} none {/if}" id="dl_ruleview">
+                <dt class="tit">
+                    <label for="dirpath">文档名规则</label>
+                </dt>
+                <dd class="opt">
+                    <input type="text" value="{$ruleview}" name="ruleview" id="ruleview" class="input-txt" >&nbsp;
+                    <p class="notic2">1、{Y}、{M}、{D} 年月日<br/>2、{aid} 文档ID</p>
                 </dd>
             </dl>
             <dl class="row">
@@ -250,6 +278,7 @@
 
     /*根据模型ID获取模板文件名*/
     function ajax_get_template() {
+        var is_diyseo_htmlpath = {$is_diyseo_htmlpath|default=0};
         var obj = $('#current_channel');
         var channel = parseInt($(obj).find('option:selected').val());
         var js_allow_channel_arr = {$js_allow_channel_arr};
@@ -259,7 +288,11 @@
             $('#dl_dirname').hide();
         }else{
             $("#type_attr").show();
-            $('#dl_dirname').show();
+            if (is_diyseo_htmlpath == 1) {
+                $('#dl_dirname').hide();
+            } else {
+                $('#dl_dirname').show();
+            }
         }
 
         // 重新定义模板变量，专用于新建模板功能
@@ -291,11 +324,19 @@
                 $('#dl_templist').find('label[for=templist]').html('<em>*</em>留言模板');
             }else if (51 == channel) {
                 $('#dl_templist').hide();
+                $('#dl_rulelist').hide();
             }
             $('#dl_tempview').hide();
+            $('#dl_ruleview').hide();
         } else {
-            $('#dl_templist').find('label[for=templist]').html('<em>*</em>列表模板');
+            $('#dl_templist').find('label[for=templist]').html('<em>*</em>栏目模板');
             $('#dl_tempview').show();
+
+            var is_diyseo_htmlpath = {$is_diyseo_htmlpath|default=0};
+            var seo_html_pagename = {$seo_html_pagename|default=2};
+            if (is_diyseo_htmlpath == 1 && seo_html_pagename == 4) {
+                $('#dl_ruleview').show();
+            }
         }
         $('#tempview').html(templateList[channel]['view']);
 
@@ -321,9 +362,9 @@
             data: {typename: typename},
             success: function(res){
                 $(obj).html('获取拼音');
-                if (res.status == 1) {
-                    dirpath = $('#dirpath').val() + '/' + res.msg;
-                    $('#dirpath').val(dirpath);
+                if (res.code == 1) {
+                    var diy_dirpath = $('#dirpath').val() + '/' + res.data.pinyin;
+                    $('#diy_dirpath').val(diy_dirpath);
                     return true;
                 } else {
                     showErrorMsg('操作失败');
@@ -332,7 +373,7 @@
             },
             error: function(e){
                 $(obj).html('获取拼音');
-                showErrorMsg(ey_unknown_error);
+                showErrorMsg(e.responseText);
                 return false;
             }
         });
@@ -355,7 +396,7 @@
                 }
             },
             error: function(e){
-                showErrorMsg(ey_unknown_error);
+                showErrorMsg(e.responseText);
                 return false;
             }
         });
@@ -397,7 +438,7 @@
             $($('.tab-base').find('.tab').get(1)).addClass('current');
             $('.tab_div_1').hide();
             $('.tab_div_2').show();
-            showErrorMsg('请选择列表模板');
+            showErrorMsg('请选择栏目模板');
             $('#templist').focus();
             return false;
         }
@@ -469,7 +510,7 @@
         url += 'type='+type+'&nid='+nid;
 
         if ('lists' == type) {
-            var title = '新建列表模板';
+            var title = '新建栏目模板';
         } else {
             var title = '新建文档模板';
         }

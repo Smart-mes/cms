@@ -13,6 +13,7 @@
 
 namespace app\home\controller;
 
+use think\Db;
 use app\user\logic\PayLogic;
 
 class Index extends Base
@@ -56,9 +57,13 @@ class Index extends Base
             }
         }
 
-        /*获取当前页面URL*/
-        $result['pageurl'] = request()->url(true);
-        /*--end*/
+        $result['pageurl'] = $this->request->url(true); // 获取当前页面URL
+        $result['pageurl_m'] = pc_to_mobile_url($result['pageurl']); // 获取当前页面对应的移动端URL
+        // 移动端域名
+        $result['mobile_domain'] = '';
+        if (!empty($this->eyou['global']['web_mobile_domain_open']) && !empty($this->eyou['global']['web_mobile_domain'])) {
+            $result['mobile_domain'] = $this->eyou['global']['web_mobile_domain'] . '.' . $this->request->rootDomain(); 
+        }
         $eyou = array(
             'field' => $result,
         );
@@ -69,14 +74,17 @@ class Index extends Base
         $viewfile = 'index';
         /*--end*/
 
-        /*多语言内置模板文件名*/
-        if (!empty($this->home_lang)) {
+        if (config('city_switch_on') && !empty($this->home_site)) { // 多站点内置模板文件名
+            $viewfilepath = TEMPLATE_PATH.$this->theme_style_path.DS.$viewfile."_{$this->home_site}.".$this->view_suffix;
+            if (file_exists($viewfilepath)) {
+                $viewfile .= "_{$this->home_site}";
+            }
+        } else if (config('lang_switch_on') && !empty($this->home_lang)) { // 多语言内置模板文件名
             $viewfilepath = TEMPLATE_PATH.$this->theme_style_path.DS.$viewfile."_{$this->home_lang}.".$this->view_suffix;
             if (file_exists($viewfilepath)) {
                 $viewfile .= "_{$this->home_lang}";
             }
         }
-        /*--end*/
 
         $html = $this->fetch(":{$viewfile}");
         
@@ -91,6 +99,16 @@ class Index extends Base
         // 获取回调的参数
         $InputXml = file_get_contents("php://input");
         if (!empty($InputXml)) {
+            $pay_info = Db::name('pay_api_config')->where('pay_mark', 'wechat')->value('pay_info');
+            if (!empty($pay_info)) {
+                $pay_info = unserialize($pay_info);
+                if (empty($pay_info['appid']) || !stristr($InputXml, "[{$pay_info['appid']}]")) {
+                    return true;
+                }
+            } else {
+                return true;
+            }
+            
             // 解析参数
             $JsonXml = json_encode(simplexml_load_string($InputXml, 'SimpleXMLElement', LIBXML_NOCDATA));
             // 转换数组

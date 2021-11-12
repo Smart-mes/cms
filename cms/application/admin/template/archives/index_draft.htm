@@ -32,10 +32,13 @@
                             <div style="text-align: left;" class="text-l10">标题</div>
                         </th>
                         <th abbr="article_time" axis="col6" class="w110">
+                            <div class="tc">发布人</div>
+                        </th>
+                        <th abbr="article_time" axis="col6" class="w110">
                             <div class="tc">栏目</div>
                         </th>
                         <th abbr="article_time" axis="col6" class="w60">
-                            <div class="tc sort_style"><a href="{:getArchivesSortUrl('arcrank')}">审核&nbsp;<i {eq name='$Request.param.orderway' value='asc'}class="asc"{else /}class="desc"{/eq}></i></a></div>
+                            <div class="tc sort_style"><a href="{:getArchivesSortUrl('arcrank')}">审核&nbsp;<i {eq name='$Request.param.orderby' value='arcrank'}{eq name='$Request.param.orderway' value='asc'}class="asc"{else /}class="desc"{/eq}{/eq}></i></a></div>
                         </th>
                         <th abbr="article_time" axis="col6" class="w60">
                             <div class="tc">点击</div>
@@ -52,7 +55,7 @@
                             <div class="tc">操作</div>
                         </th>
                         <th abbr="article_time" axis="col6" class="w60">
-                            <div class="tc">排序</div>
+                            <div class="tc sort_style"><a href="{:getArchivesSortUrl('sort_order')}">排序&nbsp;<i {eq name='$Request.param.orderby' value='sort_order'}{eq name='$Request.param.orderway' value='asc'}class="asc"{else /}class="desc"{/eq}{/eq}></i></a></div>
                         </th>
                     </tr>
                     </thead>
@@ -101,6 +104,11 @@
                                         <i style="font-size: 12px;">{$vo1['small_name']}</i>
                                         {eq name='$i' value='$showArcFlagData|count'}]</span>{/eq}
                                     {/volist}
+                                </div>
+                            </td>
+                            <td>
+                                <div class="tc w110">
+                                    {$vo.username|default='匿名'}
                                 </div>
                             </td>
                             <td class="">
@@ -173,7 +181,7 @@
             </span>
             <div class="nav-dropup">
                 <button class="layui-btn layui-btn-primary dropdown-bt">批量操作<i class="layui-icon layui-icon-up"></i></button>
-                <div class="dropdown-menus" style="display:none; {if condition='0 < $pager->totalRows && ($pager->totalRows < 4 || $pager->listRows < 4)'}top:30px;bottom:unset;border-bottom:1px solid rgba(0,0,0,.15);border-top:none;{/if}">
+                <div class="dropdown-menus" style="display:none; {if condition='0 < $pager->totalRows && ($pager->totalRows < 4 || $pager->listRows < 4)'}top:28px;bottom:unset;border-bottom:1px solid rgba(0,0,0,.15);border-top:none;min-height: 250px;{/if}">
                     {eq name="'Archives@batch_attr'|is_check_access" value="1"}
                     <a href="javascript:void(0);" onclick="batch_attr(this, 'ids', '批量新增属性');" data-url="{:url('Archives/batch_attr', ['opt'=>'add'])}">新增属性</a>
                     <a href="javascript:void(0);" onclick="batch_attr(this, 'ids', '批量删除属性');" data-url="{:url('Archives/batch_attr', ['opt'=>'del'])}">删除属性</a>

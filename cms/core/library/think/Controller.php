@@ -1,4 +1,13 @@
 <?php
+// +----------------------------------------------------------------------
+// | ThinkPHP [ WE CAN DO IT JUST THINK ]
+// +----------------------------------------------------------------------
+// | Copyright (c) 2006~2018 http://thinkphp.cn All rights reserved.
+// +----------------------------------------------------------------------
+// | Licensed ( http://www.apache.org/licenses/LICENSE-2.0 )
+// +----------------------------------------------------------------------
+// | Author: liu21st <liu21st@gmail.com>
+// +----------------------------------------------------------------------
 
 namespace think;
 
@@ -72,6 +81,11 @@ class Controller
     public $is_mobile = 0;
 
     /**
+     * 前台当前站点
+     */
+    public $home_site = '';
+
+    /**
      * 构造方法
      * @access public
      * @param Request $request Request 对象
@@ -89,6 +103,10 @@ class Controller
         $this->home_lang = get_home_lang();
         $this->admin_lang = get_admin_lang();
         $this->main_lang = get_main_lang();
+        /*多城市*/
+        if (config('city_switch_on')) {
+            $this->home_site = get_home_site();
+        }
         null === $this->version && $this->version = getCmsVersion();
 
         $returnData = $this->pc_to_mobile($this->request);
@@ -149,7 +167,7 @@ class Controller
             $this->is_mobile = 1;
         }
 
-        if($this->is_mobile == 1 && file_exists(ROOT_PATH.'template/'.$this->tpl_theme.'mobile')) {
+        if($this->is_mobile == 1 && file_exists(ROOT_PATH.'template/'.$this->tpl_theme.'mobile/index.htm')) {
             !defined('THEME_STYLE') && define('THEME_STYLE', 'mobile'); // 手机端标识
             !defined('THEME_STYLE_PATH') && define('THEME_STYLE_PATH', $this->tpl_theme.THEME_STYLE); // 手机端模板根目录
         } else {
@@ -175,6 +193,7 @@ class Controller
         $this->assign('version', $this->version);
         $this->assign('is_mobile', $this->is_mobile);
         $this->assign('tpl_theme', $this->tpl_theme);
+        $this->assign('home_site', $this->home_site);
         /*--end*/
         
         $param = $this->request->param();

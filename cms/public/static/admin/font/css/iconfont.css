@@ -1,8 +1,8 @@
 @font-face {
   font-family: "iconfont"; /* Project id 2552404 */
-  src: url('../fonts/iconfont.woff2?t=1621320660472') format('woff2'),
-       url('../fonts/iconfont.woff?t=1621320660472') format('woff'),
-       url('../fonts/iconfont.ttf?t=1621320660472') format('truetype');
+  src: url('../fonts/iconfont.woff2?t=1626148002888') format('woff2'),
+       url('../fonts/iconfont.woff?t=1626148002888') format('woff'),
+       url('../fonts/iconfont.ttf?t=1626148002888') format('truetype');
 }
 
 .iconfont {
@@ -11,6 +11,54 @@
   font-style: normal;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+.e-weixin:before {
+  content: "\e7e5";
+}
+
+.e-qq:before {
+  content: "\e6af";
+}
+
+.e-weibo:before {
+  content: "\e7e4";
+}
+
+.e-fuwuqixinxi:before {
+  content: "\e629";
+}
+
+.e-neirongtongji:before {
+  content: "\e62a";
+}
+
+.e-kuaijiedaohang:before {
+  content: "\e62b";
+}
+
+.e-tianjia:before {
+  content: "\e62c";
+}
+
+.e-zhengdianmiaosha:before {
+  content: "\e62d";
+}
+
+.e-xitongxinxi:before {
+  content: "\e62e";
+}
+
+.e-youhuiquan:before {
+  content: "\e62f";
+}
+
+.e-yincang:before {
+  content: "\e638";
+}
+
+.e-zhengkai:before {
+  content: "\e63a";
 }
 
 .e-yanzhengma:before {

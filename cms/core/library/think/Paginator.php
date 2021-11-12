@@ -1,4 +1,13 @@
 <?php
+// +----------------------------------------------------------------------
+// | ThinkPHP [ WE CAN DO IT JUST THINK ]
+// +----------------------------------------------------------------------
+// | Copyright (c) 2006~2018 http://thinkphp.cn All rights reserved.
+// +----------------------------------------------------------------------
+// | Licensed ( http://www.apache.org/licenses/LICENSE-2.0 )
+// +----------------------------------------------------------------------
+// | Author: zhangyajun <448901948@qq.com>
+// +----------------------------------------------------------------------
 
 namespace think;
 
@@ -158,6 +167,7 @@ abstract class Paginator implements ArrayAccess, Countable, IteratorAggregate, J
                         1 < $page && $url = preg_replace('/\.html$/i', "_{$page}.html", $url);
                     }
                     unset($parameters[$this->options['var_page']]);
+                    unset($parameters['tagid']);
                     unset($this->options['query']['tagid']);
                 }
                 

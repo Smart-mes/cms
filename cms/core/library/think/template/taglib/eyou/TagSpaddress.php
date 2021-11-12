@@ -21,18 +21,22 @@ use think\Db;
  */
 class TagSpaddress extends Base
 {
+    public $usersTplVersion    = '';
+    
     //初始化
     protected function _initialize()
     {
         parent::_initialize();
+        $this->usersTplVersion = getUsersTplVersion();
     }
 
     /**
      * 获取地址管理数据
      */
-    public function getSpaddress($type = '')
+    public function getSpaddress($opt = '')
     {
-        if ($type == 'add') {
+        $sourceType = input('param.type/s', 'list');
+        if ($opt == 'add') {
             $UlHtmlId = 'UlHtml';
             // 封装添加收货地址JS
             $AddressData[0]['UlHtmlId']    = " id=\"{$UlHtmlId}\" ";
@@ -45,20 +49,28 @@ class TagSpaddress extends Base
             $data['shop_edit_address'] = url('user/Shop/shop_edit_address');
             $data['shop_del_address']  = url('user/Shop/shop_del_address');
             $data['shop_set_default']  = url('user/Shop/shop_set_default_address');
-            $data['addr_width']  = '350px';
-            $data['addr_height'] = '480px';
+            $data['addr_width']  = '660px';
+            $data['addr_height'] = '363px';
+            $data['sourceType'] = $sourceType;
+            $data['is_wap'] = 0;
             if (isWeixin() || isMobile()) {
                 $data['addr_width']  = '100%';
                 $data['addr_height'] = '100%';
+                $data['is_wap'] = 1;
             }
             $data_json = json_encode($data);
             $version   = getCmsVersion();
+            if (empty($this->usersTplVersion) || 'v1' == $this->usersTplVersion) {
+                $jsfile = "tag_spaddress.js";
+            } else {
+                $jsfile = "tag_spaddress_{$this->usersTplVersion}.js";
+            }
             // 循环中第一个数据带上JS代码加载
             $AddressData[0]['hidden'] = <<<EOF
 <script type="text/javascript">
     var aeb461fdb660da59b0bf4777fab9eea = {$data_json};
 </script>
-<script type="text/javascript" src="{$this->root_dir}/public/static/common/js/tag_spaddress.js?v={$version}"></script>
+<script type="text/javascript" src="{$this->root_dir}/public/static/common/js/{$jsfile}?t={$version}"></script>
 EOF;
             return $AddressData;
             exit;
@@ -67,7 +79,7 @@ EOF;
         // 查询条件
         $AddressWhere = [
             'users_id' => session('users_id'),
-            'lang'     => $this->home_lang,
+            'lang'     => self::$home_lang,
         ];
         $AddressData = Db::name("shop_address")->where($AddressWhere)->order('is_default desc, addr_id asc')->select();
         if (empty($AddressData)) return false;
@@ -110,7 +122,11 @@ EOF;
             $AddressData[$key]['MobileId'] = " id=\"{$value['addr_id']}_mobile\" ";
 
             // 封装收货地址信息
-            $AddressData[$key]['Info'] = $AddressData[$key]['country'].' '.$AddressData[$key]['province'].' '.$AddressData[$key]['city'].' '.$AddressData[$key]['district'];
+            if (getUsersTplVersion() == 'v3') {
+                $AddressData[$key]['Info'] = $AddressData[$key]['province'].' '.$AddressData[$key]['city'].' '.$AddressData[$key]['district'];
+            } else {
+                $AddressData[$key]['Info'] = $AddressData[$key]['country'].' '.$AddressData[$key]['province'].' '.$AddressData[$key]['city'].' '.$AddressData[$key]['district'];
+            }
 
             // 封装收货地址信息ID
             $AddressData[$key]['InfoId'] = " id=\"{$value['addr_id']}_info\" ";

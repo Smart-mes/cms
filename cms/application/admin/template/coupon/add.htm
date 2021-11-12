@@ -1,5 +1,4 @@
 {include file="public/layout" /}
-<script type="text/javascript" src="__PUBLIC__/plugins/laydate/laydate.js"></script>
 <script type="text/javascript" src="__PUBLIC__/plugins/colpick/js/colpick.js"></script>
 <link href="__PUBLIC__/plugins/colpick/css/colpick.css" rel="stylesheet" type="text/css"/>
 <style type="text/css">
@@ -278,13 +277,27 @@
             $("#valid_days_2").attr('disabled',true);
         }
     }
+    layui.use('laydate', function() {
+        var laydate = layui.laydate;
 
+        laydate.render({
+            elem: '#start_date'
+            ,type: 'datetime'
+        });
+        laydate.render({
+            elem: '#end_date'
+            ,type: 'datetime'
+        });
+        laydate.render({
+            elem: '#use_start_time'
+            ,type: 'datetime'
+        });
+        laydate.render({
+            elem: '#use_end_time'
+            ,type: 'datetime'
+        });
+    })
     $(function () {
-        $('#start_date').layDate();
-        $('#end_date').layDate();
-        $('#use_start_time').layDate();
-        $('#use_end_time').layDate();
-
         $('input[name=coupon_type]').click(function() {
             if (3 == $(this).val()) {
                 $('#arctype_id').parent().parent().show();

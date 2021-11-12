@@ -43,7 +43,15 @@ class System extends Base
             $param = input('post.');
             $param['web_keywords'] = str_replace('，', ',', $param['web_keywords']);
             $param['web_description'] = filter_line_return($param['web_description']);
-            
+            $param['web_status_url'] = trim($param['web_status_url']);
+            $web_status_tpl = trim($param['web_status_tpl']);
+            $web_status_tpl = trim($web_status_tpl, '/');
+            if (!empty($this->root_dir)) {
+                $web_status_tpl = preg_replace('#^'.$this->root_dir.'/#i', '', '/'.$web_status_tpl);
+                $web_status_tpl = trim($web_status_tpl, '/');
+            }
+            $param['web_status_tpl'] = $web_status_tpl;
+
             if (1 == $param['web_status']) {
                 /*多语言 - 不知为何v1.4.0新增该逻辑【在静态模式下，关闭网站会自动切换为动态URL模式】*/
                 // $seo_pseudo = tpCache('seo.seo_pseudo');
@@ -213,6 +221,15 @@ class System extends Base
 
             tpSetting('recycle', ['recycle_switch' => $param['recycle_switch']]);//回收站开关
 
+            $web_language_switch = tpCache('web.web_language_switch');
+            if (!empty($web_language_switch)) {
+                $param['web_citysite_open'] = 0;
+            }
+
+            $other_pcwapjs = $param['other_pcwapjs'];
+            unset($param['other_pcwapjs']);
+
+            $seo_pseudo = tpCache('seo.seo_pseudo');
             /*多语言*/
             if (is_language()) {
                 $langRow = \think\Db::name('language')->order('id asc')
@@ -221,12 +238,25 @@ class System extends Base
                 foreach ($langRow as $key => $val) {
                     tpCache($inc_type,$param,$val['mark']);
                     write_global_params($val['mark']); // 写入全局内置参数
+                    if (!empty($param['web_citysite_open']) && 2 == $seo_pseudo) {
+                        tpCache('seo', ['seo_pseudo'=>1, 'seo_dynamic_format'=>1], $val['mark']);
+                    }
+                    // pc/wap跳转js
+                    tpCache('other', ['other_pcwapjs'=>$other_pcwapjs], $val['mark']);
                 }
             } else {
                 tpCache($inc_type,$param);
                 write_global_params($this->admin_lang); // 写入全局内置参数
+                if (!empty($param['web_citysite_open']) && 2 == $seo_pseudo) {
+                    tpCache('seo', ['seo_pseudo'=>1, 'seo_dynamic_format'=>1]);
+                }
+                // pc/wap跳转js
+                tpCache('other', ['other_pcwapjs'=>$other_pcwapjs]);
             }
             /*--end*/
+
+            // 多城市开关
+            model('Citysite')->setCitysiteOpen();
 
             /*更改session会员设置 - session有效期（后台登录超时）*/
             $session_conf = [];
@@ -323,6 +353,10 @@ class System extends Base
         $this->assign('config',$config);//当前配置项
         $recycle_switch = tpSetting('recycle.recycle_switch');
         $this->assign('recycle_switch', $recycle_switch);//回收站
+
+        // pc/wap跳转js
+        $other_pcwapjs = tpCache('other.other_pcwapjs');
+        $this->assign('other_pcwapjs', $other_pcwapjs);
 
         return $this->fetch();
     }
@@ -464,7 +498,12 @@ class System extends Base
 
             // 编辑器选项配置
             if (!empty($param['editor_select'])) {
-                tpSetting('editor', ['editor_select' => $param['editor_select']]);
+                $editor_arr = [
+                    'editor_select' => $param['editor_select'],
+                    'editor_remote_img_local' => $param['editor_remote_img_local'],
+                    'editor_img_clear_link' => $param['editor_img_clear_link'],
+                ];
+                tpSetting('editor', $editor_arr);
             }
 
             $this->success('操作成功', url('System/basic'));
@@ -862,11 +901,11 @@ class System extends Base
         }
         foreach (['sms_appkey','sms_secretkey','sms_appkey_tx','sms_appid_tx'] as $key => $val) {
             if (2 == $sms_type) {
-                if (preg_match('/^sms_(.*)_tx$/i', $val) && empty($sms_arr[$val])) {
+                if (preg_match('/^sms_(.*)_tx$/i', $val) && isset($sms_arr[$val]) && empty($sms_arr[$val])) {
                     $is_conf = 0;
                 }
             } else {
-                if (preg_match('/^sms_/i', $val) && empty($sms_arr[$val])) {
+                if (preg_match('/^sms_/i', $val) && isset($sms_arr[$val]) && empty($sms_arr[$val])) {
                     $is_conf = 0;
                 }
             }
@@ -1065,6 +1104,14 @@ class System extends Base
             if (!empty($lang) && $lang != get_main_lang()) {
                 $gourl .= "?lang={$lang}";
             }
+
+            /*清除大数据缓存表 -- 陈风任*/
+            Db::name('sql_cache_table')->execute('TRUNCATE TABLE '.config('database.prefix').'sql_cache_table');
+            model('SqlCacheTable')->InsertSqlCacheTable(true);
+            // $web_cmsmode = tpCache('web.web_cmsmode');
+            // $web_cmsmode = isset($web_cmsmode) ? $web_cmsmode : 2;
+            // if (2 === intval($web_cmsmode)) {}
+            /* END */
             $this->success('操作成功', $gourl, '', 1, [], '_parent');
         }
         
@@ -1579,5 +1626,17 @@ EOF;
     public function web_m()
     {
         return $this->fetch();
+    }
+
+    public function ajax_check_language_open()
+    {
+        if (IS_AJAX) {
+            $web_language_switch = tpCache('web.web_language_switch');
+            if (!empty($web_language_switch)) {
+                $this->error('已开启多语言');
+            } else {
+                $this->success('未开启多语言');
+            }
+        }
     }
 }

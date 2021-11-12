@@ -102,6 +102,30 @@
                     <p class="notic"></p>
                 </dd>
             </dl>
+            <dl class="row">
+                <dt class="tit">自动远程图片本地化</dt>
+                <dd class="opt">
+                    <div class="onoff">
+                        <label for="editor_remote_img_local1" class="cb-enable {if condition='isset($editor.editor_remote_img_local) && $editor.editor_remote_img_local eq 1'}selected{/if}" >开启</label>
+                        <label for="editor_remote_img_local0" class="cb-disable {if condition='!isset($editor.editor_remote_img_local) || $editor.editor_remote_img_local == 0'}selected{/if}" >关闭</label>
+                        <input id="editor_remote_img_local1" name="editor_remote_img_local" value="1" {if condition="isset($editor.editor_remote_img_local) && $editor.editor_remote_img_local == 1"}checked{/if} type="radio">
+                        <input id="editor_remote_img_local0" name="editor_remote_img_local" value="0" {if condition="!isset($editor.editor_remote_img_local) || $editor.editor_remote_img_local == 0"}checked{/if} type="radio">
+                    </div>
+                    <p class="notic">开启后,提交保存文档时将先自动执行远程图片本地化操作</p>
+                </dd>
+            </dl>
+            <dl class="row">
+                <dt class="tit">自动清除非本站链接</dt>
+                <dd class="opt">
+                    <div class="onoff">
+                        <label for="editor_img_clear_link1" class="cb-enable {if condition='isset($editor.editor_img_clear_link) && $editor.editor_img_clear_link eq 1'}selected{/if}" >开启</label>
+                        <label for="editor_img_clear_link0" class="cb-disable {if condition='!isset($editor.editor_img_clear_link) || $editor.editor_img_clear_link == 0'}selected{/if}" >关闭</label>
+                        <input id="editor_img_clear_link1" name="editor_img_clear_link" value="1" {if condition="isset($editor.editor_img_clear_link) && $editor.editor_img_clear_link == 1"}checked{/if} type="radio">
+                        <input id="editor_img_clear_link0" name="editor_img_clear_link" value="0" {if condition="!isset($editor.editor_img_clear_link) || $editor.editor_img_clear_link == 0"}checked{/if} type="radio">
+                    </div>
+                    <p class="notic">开启后,提交保存文档时将先自动执行清除非本站链接操作</p>
+                </dd>
+            </dl>
             {/eq}
             <div class="bot">
                 <input type="hidden" name="max_filesize" id="max_filesize" value="{$max_filesize}">

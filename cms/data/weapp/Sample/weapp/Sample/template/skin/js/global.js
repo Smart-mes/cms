@@ -779,3 +779,90 @@ function click_to_eyou_1575506523(url,title) {
         content: url
     });
 }
+
+//在iframe内打开页面操作
+function openFullframe(obj,title,width,height) {
+    //iframe窗
+    var url = '';
+    if (typeof(obj) == 'string' && obj.indexOf("?m=admin&c=") != -1) {
+        url = obj;
+    } else {
+        url = $(obj).data('href');
+    }
+    if (!width) width = '80%';
+    if (!height) height = '80%';
+    var iframes = layer.open({
+        type: 2,
+        title: title,
+        fixed: true, //不固定
+        shadeClose: false,
+        shade: 0.3,
+        // maxmin: true, //开启最大化最小化按钮
+        area: [width, height],
+        content: url,
+        end: function() {
+            if (1 == $(obj).data('closereload')) window.location.reload();
+        }
+    });
+    if (width == '100%' && height == '100%') {
+        layer.full(iframes);
+    }
+}
+
+/**
+ * 选择每页数量进行检索
+ * @param  {[type]} obj [description]
+ * @return {[type]}     [description]
+ */
+function ey_selectPagesize(obj)
+{
+    layer_loading('正在处理');
+    var pagesize = $(obj).val();
+    var thisURL = ey_updateUrlParam('pagesize', pagesize);
+    thisURL = thisURL.replace(/&p=\d+/, '&p=1');
+    window.location.href = thisURL;
+}
+
+/**
+ * 添加 或者 修改 url中参数的值
+ * @param {[type]} name [description]
+ * @param {[type]} val  [description]
+ */
+function ey_updateUrlParam(name, val) {
+    var thisURL = document.location.href;
+
+    // 如果 url中包含这个参数 则修改
+    if (thisURL.indexOf(name+'=') > 0) {
+        var v = ey_getUrlParam(name);
+        if (v != null) {
+            // 是否包含参数
+            thisURL = thisURL.replace(name + '=' + v, name + '=' + val);
+
+        }
+        else {
+            thisURL = thisURL.replace(name + '=', name + '=' + val);
+        }
+        
+    } // 不包含这个参数 则添加
+    else {
+        if (thisURL.indexOf("?") > 0) {
+            thisURL = thisURL + "&" + name + "=" + val;
+        }
+        else {
+            thisURL = thisURL + "?" + name + "=" + val;
+        }
+    }
+    return thisURL;
+}
+
+/**
+ * 获取url参数值的方法
+ * @param  {[type]} name [description]
+ * @return {[type]}      [description]
+ */
+function ey_getUrlParam(name)
+{
+    var reg = new RegExp("(^|&)"+ name +"=([^&]*)(&|$)");
+    var r = window.location.search.substr(1).match(reg);
+    if (r!=null) return unescape(r[2]); return null;
+}

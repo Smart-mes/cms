@@ -93,23 +93,25 @@ if (!function_exists('set_typeseotitle'))
         static $lang = null;
         $lang === null && $lang = get_home_lang();
         if (empty($seo_title)) { // 针对没有自定义SEO标题的列表
-            $web_name = tpCache('web.web_name');
-            $seo_liststitle_format = tpCache('seo.seo_liststitle_format');
+            static $web_name = null;
+            $web_name === null && $web_name = tpCache('web.web_name');
+            static $seo_liststitle_format = null;
+            $seo_liststitle_format === null && $seo_liststitle_format = tpCache('seo.seo_liststitle_format');
+            $page = I('param.page/d', 1);
+            if ($page > 1) {
+                if (in_array($lang, ['cn'])) {
+                    $typename .= "_第{$page}页";
+                } else {
+                    $typename .= "_{$page}";
+                }
+            }
             switch ($seo_liststitle_format) {
                 case '1':
-                    $seo_title = $typename.'_'.$web_name;
+                    $seo_title = $typename;
                     break;
                 
                 case '2':
                 default:
-                    $page = I('param.page/d', 1);
-                    if ($page > 1) {
-                        if (in_array($lang, ['cn'])) {
-                            $typename .= "_第{$page}页";
-                        } else {
-                            $typename .= "_{$page}";
-                        }
-                    }
                     $seo_title = $typename.'_'.$web_name;
                     break;
             }
@@ -159,5 +161,22 @@ if (!function_exists('set_tagseotitle'))
         }
 
         return $seo_title;
+    }
+}
+
+if (!function_exists('getArcLevelName')) 
+{
+    /**
+     * 获取文档会员权限对应的名称
+     */
+    function getArcLevelName($arc_level_id = 0)
+    {
+        $level_name = '';
+        static $arc_level_id_tmp = null;
+        if ($arc_level_id_tmp !== $arc_level_id) {
+            $level_name = \think\Db::name('users_level')->where(['level_id'=>$arc_level_id])->value('level_name');
+            $arc_level_id_tmp = $arc_level_id;
+        }
+        return $level_name;
     }
 }

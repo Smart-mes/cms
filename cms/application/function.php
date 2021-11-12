@@ -147,7 +147,8 @@ if (!function_exists('serverIP')) {
      */
     function serverIP()
     {
-        return gethostbyname($_SERVER["SERVER_NAME"]);
+        // return gethostbyname($_SERVER["SERVER_NAME"]);
+        return $_SERVER['SERVER_ADDR'];
     }
 }
 
@@ -767,12 +768,12 @@ if (!function_exists('getFirstCharter')) {
         if (empty($str)) {
             return '';
         }
-        $fchar = ord($str{0});
-        if ($fchar >= ord('A') && $fchar <= ord('z')) return strtoupper($str{0});
+        $fchar=ord($str[0]);
+        if($fchar>=ord('A')&&$fchar<=ord('z')) return strtoupper($str[0]);
         $s1  = @iconv('UTF-8', 'gb2312', $str);
         $s2  = @iconv('gb2312', 'UTF-8', $s1);
-        $s   = $s2 == $str ? $s1 : $str;
-        $asc = ord($s{0}) * 256 + ord($s{1}) - 65536;
+        $s=$s2==$str?$s1:$str;
+        $asc=ord($s[0])*256+ord($s[1])-65536;
         if ($asc >= -20319 && $asc <= -20284) return 'A';
         if ($asc >= -20283 && $asc <= -19776) return 'B';
         if ($asc >= -19775 && $asc <= -19219) return 'C';
@@ -1219,6 +1220,7 @@ if (!function_exists('saveRemote')) {
 
         $imgUrl = htmlspecialchars($fieldName);
         $imgUrl = str_replace("&amp;", "&", $imgUrl);
+        $imgUrl = preg_replace('/#/', '', $imgUrl);
 
         //http开头验证
         if (strpos($imgUrl, "http") !== 0) {
@@ -1322,12 +1324,20 @@ if (!function_exists('func_common')) {
      * @param     string $file_type 图片后缀名
      * @return    string
      */
-    function func_common($fileElementId = 'uploadImage', $path = 'temp', $file_type = "")
+    function func_common($fileElementId = 'uploadImage', $path = 'allimg', $file_type = "")
     {
+        $lang = get_current_lang();
         $file = request()->file($fileElementId);
 
         if (empty($file)) {
-            return ['errcode' => 1, 'errmsg' => '请选择上传图片'];
+            if ($lang == 'cn') {
+                $errmsg = '请选择上传图片';
+            } else if ($lang == 'zh') {
+                $errmsg = '請選擇上傳圖片';
+            } else {
+                $errmsg = 'Please select upload picture';
+            }
+            return ['errcode' => 1, 'errmsg' => $errmsg];
         }
 
         $validate = array();
@@ -1342,7 +1352,14 @@ if (!function_exists('func_common')) {
         //拓展名
         $ext = pathinfo($file->getInfo('name'), PATHINFO_EXTENSION);
         if (!in_array($ext, $validate['ext'])) {
-            return ['errcode' => 1, 'errmsg' => '上传图片后缀名必须为' . $validate_ext];
+            if ($lang == 'cn') {
+                $errmsg = '上传图片后缀名必须为';
+            } else if ($lang == 'zh') {
+                $errmsg = '上傳圖片后綴名必須為';
+            } else {
+                $errmsg = 'Upload image suffix must be ';
+            }
+            return ['errcode' => 1, 'errmsg' => $errmsg . $validate_ext];
         }
         /*拓展名验证end*/
 
@@ -1357,7 +1374,14 @@ if (!function_exists('func_common')) {
 
         /*验证图片一句话木马*/
         if (false === check_illegal($_FILES[$fileElementId]['tmp_name'])) {
-            return ['errcode'=>1,'errmsg'=>'疑似木马图片！'];
+            if ($lang == 'cn') {
+                $errmsg = '疑似木马图片';
+            } else if ($lang == 'zh') {
+                $errmsg = '疑似木馬圖片';
+            } else {
+                $errmsg = 'Suspected Trojan images';
+            }
+            return ['errcode'=>1,'errmsg'=>$errmsg];
         }
         /*--end*/
 
@@ -1371,7 +1395,7 @@ if (!function_exists('func_common')) {
         // 过滤后的新文件名
         $fileName = $newfileName . '.' . $file_ext;
 
-        if (session('?users_id')) {
+        if (session('?users_id') && 'admin' != request()->module()) {
             $users_id = session('users_id');
             $savePath = UPLOAD_PATH.'user/'.session('users_id').'/';
         } else {
@@ -1382,7 +1406,7 @@ if (!function_exists('func_common')) {
         $return_url = "";
         $info = $file->rule(function ($file) {
             $users_id_tmp = 1;
-            if (session('?users_id')) {
+            if (session('?users_id') && 'admin' != request()->module()) {
                 $users_id_tmp = session('users_id');
             } else if (session('?admin_id')) {
                 $users_id_tmp = session('admin_id');
@@ -1398,9 +1422,24 @@ if (!function_exists('func_common')) {
         }
 
         if ($return_url) {
-            return ['errcode' => 0, 'errmsg' => '上传成功', 'img_url' => $return_url];
-        } else {
-            return ['errcode' => 1, 'errmsg' => '上传失败'];
+            if ($lang == 'cn') {
+                $errmsg = '上传成功';
+            } else if ($lang == 'zh') {
+                $errmsg = '上傳成功';
+            } else {
+                $errmsg = 'Upload succeeded';
+            }
+            return ['errcode' => 0, 'errmsg' => $errmsg, 'img_url' => $return_url];
+        }
+        else {
+            if ($lang == 'cn') {
+                $errmsg = '上传失败';
+            } else if ($lang == 'zh') {
+                $errmsg = '上傳失敗';
+            } else {
+                $errmsg = 'Upload failed';
+            }
+            return ['errcode' => 1, 'errmsg' => $errmsg];
         }
     }
 }
@@ -1414,11 +1453,19 @@ if (!function_exists('func_common_doc')) {
      * @param     string $file_type 文件后缀名
      * @return    string
      */
-    function func_common_doc($fileElementId = 'uploadFile', $path = 'temp', $file_type = "")
+    function func_common_doc($fileElementId = 'uploadFile', $path = 'soft', $file_type = "")
     {
+        $lang = get_current_lang();
         $file = request()->file($fileElementId);
         if (empty($file)) {
-            return ['errcode' => 1, 'errmsg' => '请选择上传文件'];
+            if ($lang == 'cn') {
+                $errmsg = '请选择上传文件';
+            } else if ($lang == 'zh') {
+                $errmsg = '請選擇上傳文件';
+            } else {
+                $errmsg = 'Please select upload file';
+            }
+            return ['errcode' => 1, 'errmsg' => $errmsg];
         }
 
         $validate = array();
@@ -1433,7 +1480,14 @@ if (!function_exists('func_common_doc')) {
         //拓展名
         $ext = pathinfo($file->getInfo('name'), PATHINFO_EXTENSION);
         if (!in_array($ext, $validate['ext'])) {
-            return ['errcode' => 1, 'errmsg' => '上传文件后缀名必须为' . $validate_ext];
+            if ($lang == 'cn') {
+                $errmsg = '上传文件后缀名必须为';
+            } else if ($lang == 'zh') {
+                $errmsg = '上傳文件后綴名必須為';
+            } else {
+                $errmsg = 'Upload file suffix must be ';
+            }
+            return ['errcode' => 1, 'errmsg' => $errmsg . $validate_ext];
         }
         /*拓展名验证end*/
 
@@ -1464,7 +1518,7 @@ if (!function_exists('func_common_doc')) {
         $info = $file->rule(function ($file) {
             // return md5(mt_rand());
             $users_id = 1;
-            if (session('?users_id')) {
+            if (session('?users_id') && 'admin' != request()->module()) {
                 $users_id = session('users_id');
             } else if (session('?admin_id')) {
                 $users_id = session('admin_id');
@@ -1476,9 +1530,24 @@ if (!function_exists('func_common_doc')) {
         }
 
         if ($return_url) {
-            return ['errcode' => 0, 'errmsg' => '上传成功', 'img_url' => $return_url];
-        } else {
-            return ['errcode' => 1, 'errmsg' => '上传失败'];
+            if ($lang == 'cn') {
+                $errmsg = '上传成功';
+            } else if ($lang == 'zh') {
+                $errmsg = '上傳成功';
+            } else {
+                $errmsg = 'Upload succeeded';
+            }
+            return ['errcode' => 0, 'errmsg' => $errmsg, 'img_url' => $return_url];
+        }
+        else {
+            if ($lang == 'cn') {
+                $errmsg = '上传失败';
+            } else if ($lang == 'zh') {
+                $errmsg = '上傳失敗';
+            } else {
+                $errmsg = 'Upload failed';
+            }
+            return ['errcode' => 1, 'errmsg' => $errmsg];
         }
     }
 }
@@ -1841,15 +1910,15 @@ if (!function_exists('getVersion')) {
      *
      * @return string
      */
-    function getVersion($filename = 'version', $ver = 'v1.0.0')
+    function getVersion($filename = 'version', $ver = 'v1.0.0', $is_write = false)
     {
         $version_txt_path = ROOT_PATH . 'data/conf/' . $filename . '.txt';
-        if (file_exists($version_txt_path)) {
+        if (file_exists($version_txt_path) && false === $is_write) {
             $fp      = fopen($version_txt_path, 'r');
             $content = fread($fp, filesize($version_txt_path));
             fclose($fp);
             $ver = $content ? $content : $ver;
-        } else {
+        } else if (!file_exists($version_txt_path) || true === $is_write) {
             $r = tp_mkdir(dirname($version_txt_path));
             if ($r) {
                 $fp = fopen($version_txt_path, "w+") or die("请设置" . $version_txt_path . "的权限为777");
@@ -1893,7 +1962,7 @@ if (!function_exists('strip_sql')) {
     function strip_sql($string)
     {
         $pattern_arr = array(
-            "/\bunion\b/i",
+            "/(\s+)union(\s+)/i",
             "/\bselect\b/i",
             "/\bupdate\b/i",
             "/\bdelete\b/i",
@@ -2484,6 +2553,7 @@ if (!function_exists('remote_to_local')) {
 
         foreach ($img_array as $key => $value) {
             $imgUrl = trim($value);
+            $imgUrl = preg_replace('/#/', '', $imgUrl);
             // 本站图片
             if (preg_match("#" . $basehost . "#i", $imgUrl)) {
                 continue;
@@ -2567,9 +2637,9 @@ if (!function_exists('remote_to_local')) {
             }
 
             $fileurl = ROOT_DIR . substr($file['fullName'], 1);
-            if ($is_weixin_img == true) {
-                $fileurl .= "?";
-            }
+            // if ($is_weixin_img == true) {
+            //     $fileurl .= "?";
+            // }
 
             /*            $search  = array("'".$imgUrl."'", '"'.$imgUrl.'"');
                         $replace = array($fileurl, $fileurl);
@@ -2675,7 +2745,7 @@ if (!function_exists('print_water')) {
                         }
                         $transparency = intval((100 - $water['mark_degree']) * (127 / 100));
                         $color        .= dechex($transparency);
-                        $image->open($imgresource)->text($water['mark_txt'], $ttf, $size, $color, $water['mark_sel'])->save($imgresource);
+                        $image->text($water['mark_txt'], $ttf, $size, $color, $water['mark_sel'])->save($imgresource);
                     }
                 } else {
                     /*支持子目录*/
@@ -2691,7 +2761,7 @@ if (!function_exists('print_water')) {
                             $quality       = $water['mark_quality'] ? $water['mark_quality'] : 80;
                             $waterTempPath = dirname($waterPath) . '/temp_' . basename($waterPath);
                             $image->open($waterPath)->save($waterTempPath, null, $quality);
-                            $image->open($imgresource)->water($waterTempPath, $water['mark_sel'], $water['mark_degree'])->save($imgresource);
+                            $image->water($waterTempPath, $water['mark_sel'], $water['mark_degree'])->save($imgresource);
                             @unlink($waterTempPath);
                         }
                     }

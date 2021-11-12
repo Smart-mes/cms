@@ -36,7 +36,7 @@ class TagCollect extends Base
      * 在内容页模板追加显示浏览量
      * @author wengxianhu by 2018-4-20
      */
-    public function getCollect($aid = 0,$collect='',$cancel='')
+    public function getCollect($aid = 0,$collect='',$cancel='',$class='off')
     {
         $aid = !empty($aid) ? intval($aid) : $this->aid;
         if (empty($aid)) {
@@ -45,16 +45,18 @@ class TagCollect extends Base
 
         $version = getCmsVersion();
         $result['cancel'] = $cancel;
-        $result['onclick'] = ' href="javascript:void(0);" id="ey_1606378141_'.$aid.'" onclick="ey_1606378141('.$aid.',this);" ';
+        $result['onclick'] = ' href="javascript:void(0);" id="ey_1606378141_'.$aid.'" onclick="ey_1606378141('.$aid.',\''.$class.'\',this);" ';
         $result['numId'] = ' id="ey_cnum_1606379494_'.$aid.'" ';
+        $loginurl = url('user/Users/login');
         $result['hidden'] = <<<EOF
         <script type="text/javascript">
-        var collected_1606379494 = "{$collect}";
-        var cancel_1606379494 = "{$cancel}";
+        var collected_1606379494_{$aid} = "{$collect}";
+        var cancel_1606379494_{$aid} = "{$cancel}";
         var root_dir_1606379494 = '{$this->root_dir}';
+        var loginurl_1606379494 = '{$loginurl}';
 </script>
-<script type="text/javascript" src="{$this->root_dir}/public/static/common/js/tag_collection_list.js?v={$version}"></script>
-    <script type="text/javascript">ey_1609377550("{$aid}");</script>
+<script type="text/javascript" src="{$this->root_dir}/public/static/common/js/tag_collection_list.js?t={$version}"></script>
+    <script type="text/javascript">ey_1609377550("{$aid}","{$class}");</script>
 EOF;
         return $result;
     }

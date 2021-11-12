@@ -66,7 +66,7 @@ class TagAttribute extends Base
                 ->join('__PRODUCT_ATTRIBUTE__ b', 'a.attr_id = b.attr_id', 'LEFT')
                 ->where([
                     'a.aid'     => $aid,
-                    'b.lang'    => $this->home_lang,
+                    'b.lang'    => self::$home_lang,
                     'b.is_del'  => 0,
                 ])
                 ->order('b.sort_order asc, a.attr_id asc')
@@ -76,7 +76,7 @@ class TagAttribute extends Base
                 return $result;
             } else {
                 /*获取多语言关联绑定的值*/
-                $row = model('LanguageAttr')->getBindValue($row, 'product_attribute', $this->main_lang); // 多语言
+                $row = model('LanguageAttr')->getBindValue($row, 'product_attribute', self::$main_lang); // 多语言
                 /*--end*/
 
                 if ('default' == $type) {

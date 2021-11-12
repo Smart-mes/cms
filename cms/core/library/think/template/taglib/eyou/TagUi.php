@@ -69,15 +69,15 @@ class TagUi extends Base
             $webConfig = tpCache('web');
             $web_adminbasefile = !empty($webConfig['web_adminbasefile']) ? $webConfig['web_adminbasefile'] : $this->root_dir.'/login.php'; // 后台入口文件路径
             $iframe = input('param.iframe/d');
-            $parseStr .= "<script type='text/javascript' src='{$this->root_dir}/public/plugins/layer-v3.1.0/layer.js?v={$version}'></script>";
-            $parseStr .= "<script type='text/javascript'>var admin_basefile = '{$web_adminbasefile}'; var v = '{$v}'; var __lang__ = '{$this->home_lang}'; var __root_dir__ = '{$this->root_dir}'; var __urltypeid__ = '{$this->tid}'; var __urlaid__ = '{$this->aid}'; var __iframe__ = '{$iframe}';</script>";
+            $parseStr .= "<script type='text/javascript' src='{$this->root_dir}/public/plugins/layer-v3.1.0/layer.js?t={$version}'></script>";
+            $parseStr .= "<script type='text/javascript'>var admin_basefile = '{$web_adminbasefile}'; var v = '{$v}'; var __lang__ = '".self::$home_lang."'; var __root_dir__ = '{$this->root_dir}'; var __urltypeid__ = '".$this->tid."'; var __urlaid__ = '".$this->aid."'; var __iframe__ = '{$iframe}';</script>";
 
             if ($v == 'mobile' && 1 == $iframe) {
-                $parseStr .= "<link rel='stylesheet' type='text/css' href='{$this->root_dir}/public/static/common/css/eyou_m.css?v={$version}' />";
-                $parseStr .= "<script type='text/javascript' src='{$this->root_dir}/public/static/common/js/eyou_m.js?v={$version}'></script>";
+                $parseStr .= "<link rel='stylesheet' type='text/css' href='{$this->root_dir}/public/static/common/css/eyou_m.css?t={$version}' />";
+                $parseStr .= "<script type='text/javascript' src='{$this->root_dir}/public/static/common/js/eyou_m.js?t={$version}'></script>";
             } else {
-                $parseStr .= "<link rel='stylesheet' type='text/css' href='{$this->root_dir}/public/static/common/css/eyou.css?v={$version}' />";
-                $parseStr .= "<script type='text/javascript' src='{$this->root_dir}/public/static/common/js/eyou.js?v={$version}'></script>";
+                $parseStr .= "<link rel='stylesheet' type='text/css' href='{$this->root_dir}/public/static/common/css/eyou.css?t={$version}' />";
+                $parseStr .= "<script type='text/javascript' src='{$this->root_dir}/public/static/common/js/eyou.js?t={$version}'></script>";
             }
         }
 

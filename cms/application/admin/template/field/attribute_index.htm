@@ -265,9 +265,24 @@
             var contentdiv = '<div class="dialog_content" style="margin: 0px; padding: 0px;"><dl style="padding:10px 30px;line-height:30px;"><dd>属性名称：</dd>';
             contentdiv += '<dd><input type="text" style=" width:400px;margin-bottom:10px;" value="{$'+'field.itemname_'+attr_id+'}"></dd>';
             contentdiv += '<dd>表单调用代码：</dd>';
-            contentdiv += '<dd><textarea rows="4" cols="60" style="width:400px;height:110px;">' + liststr + '</textarea></dd>';
-            contentdiv += '<dd style="border-top: dotted 1px #E7E7E7; color:red; ">特别注意：请在前台模板的留言标签里追加 {$'+'field.hidden_'+attr_id+'} 到 &lt;form  &gt;表单里。</dd>'
-            height = '300px';
+            contentdiv += '<dd><textarea rows="4" cols="60" style="width:400px;height:180px;">' + liststr + '</textarea></dd>';
+            contentdiv += '<dd style="border-top: dotted 1px #E7E7E7; color:red; ">特别注意：请在前台模板的留言标签里追加 {$'+'field.hidden_'+attr_id+'} 到 &lt;form  &gt;表单里。</dd>';
+            height = '460px';
+        }else if (10 == attr_input_type) { // 时间
+            var liststr = "<input type=\"text\" name='{$"+"field."+fieldname+"}' id='{$"+"field."+fieldname+"}' placeholder='{$"+"field.itemname_"+attr_id+"}' autocomplete=\"off\">\n\n" +
+                "{"+"eyou:static file='/public/plugins/laydate-v5.3.1/laydate.js' /}\n" +
+                "<script type='text/javascript'>\n" +
+                "    laydate.render({\n" +
+                "       elem: '#{$"+"field."+fieldname+"}'\n" +
+                "       ,type: 'datetime'\n" +
+                "    });\n" +
+                "<"+"/script>";
+            var contentdiv = '<div class="dialog_content" style="margin: 0px; padding: 0px;"><dl style="padding:10px 30px;line-height:30px;"><dd>属性名称：</dd>';
+            contentdiv += '<dd><input type="text" style=" width:400px;margin-bottom:10px;" value="{$'+'field.itemname_'+attr_id+'}"></dd>';
+            contentdiv += '<dd>表单调用代码：</dd>';
+            contentdiv += '<dd><textarea rows="4" cols="60" style="width:400px;height:180px;">' + liststr + '</textarea></dd>';
+            contentdiv += '<dd style="border-top: dotted 1px #E7E7E7; color:red; ">特别注意：在弹窗表单里，可能遇到日期插件无法使用，请自行更换其他日期插件处理，谢谢。</dd>';
+            height = '470px';
         }
         else {
             var contentdiv = '<div class="dialog_content" style="margin: 0px; padding: 0px;"><dl style="padding:10px 30px;line-height:30px;"><dd>属性名称：</dd>'

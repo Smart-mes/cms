@@ -38,7 +38,7 @@ class TagAdv extends Base
         /*多语言*/
         $pid = model('LanguageAttr')->getBindValue($pid, 'ad_position');
         if (empty($pid)) {
-            echo '标签adv报错：找不到与第一套【'.$this->main_lang.'】语言关联绑定的属性 pid 值。';
+            echo '标签adv报错：找不到与第一套【'.self::$main_lang.'】语言关联绑定的属性 pid 值。';
             return false;
         }
         /*--end*/
@@ -56,7 +56,7 @@ class TagAdv extends Base
                     break;
 
                 case 'now':
-                case 'new': // 兼容织梦的写法
+                case 'new': // 兼容写法
                     $orderby = 'a.add_time desc';
                     break;
                     
@@ -83,7 +83,7 @@ class TagAdv extends Base
                 ->field("a.*")
                 ->join('__AD_POSITION__ b', 'b.id = a.pid', 'LEFT')
                 ->where($where)
-                ->where('b.lang', $this->home_lang)
+                ->where('b.lang', self::$home_lang)
                 ->orderRaw($orderby)
                 ->cache(true,EYOUCMS_CACHE_TIME,"ad")
                 ->select();
@@ -96,7 +96,7 @@ class TagAdv extends Base
                     break;
 
                 case 'now':
-                case 'new': // 兼容织梦的写法
+                case 'new': // 兼容写法
                     $orderby = 'add_time desc';
                     break;
                     
@@ -120,7 +120,7 @@ class TagAdv extends Base
             }
             $result = M("ad")->field("*")
                 ->where($where)
-                ->where('lang', $this->home_lang)
+                ->where('lang', self::$home_lang)
                 ->orderRaw($orderby)
                 ->cache(true,EYOUCMS_CACHE_TIME,"ad")
                 ->select();

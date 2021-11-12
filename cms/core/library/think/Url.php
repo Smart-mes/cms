@@ -1,4 +1,13 @@
 <?php
+// +----------------------------------------------------------------------
+// | ThinkPHP [ WE CAN DO IT JUST THINK ]
+// +----------------------------------------------------------------------
+// | Copyright (c) 2006~2018 http://thinkphp.cn All rights reserved.
+// +----------------------------------------------------------------------
+// | Licensed ( http://www.apache.org/licenses/LICENSE-2.0 )
+// +----------------------------------------------------------------------
+// | Author: liu21st <liu21st@gmail.com>
+// +----------------------------------------------------------------------
 
 namespace think;
 
@@ -27,8 +36,7 @@ class Url
         $module = $request->module();
 
         $mca = !empty($url) ? explode('/', $url) : []; // by 小虎哥
-        static $main_lang = null;
-        null == $main_lang && $main_lang = get_main_lang(); // 主语言 by 小虎哥
+        $main_lang = get_main_lang(); // 主语言 by 小虎哥
 
         /*自动识别系统环境隐藏入口文件 by 小虎哥*/
         self::root($request->baseFile().'/');
@@ -42,42 +50,59 @@ class Url
         }
         /*--end*/
 
-        /*多语言*/
         // 解析参数 by 小虎哥
         if (is_string($vars)) {
-            // aaa=1&bbb=2 转换成数组
             parse_str($vars, $vars);
         }
 
-        $is_language = is_language();
-        if ($is_language) {
-            if (empty($vars['lang'])) {
-                $lang = $request->param('lang/s', '');
-                if ('admin' == $module) {
-                    $system_home_default_lang = config('ey_config.system_home_default_lang');
-                    if (!empty($lang) && $lang != $system_home_default_lang) {
-                        $vars['lang']   = $lang;
-                    }
-                } else {
-                    $lang = get_current_lang();
-                    $default_lang = get_default_lang();
-                    if ($default_lang != $lang) {
-                        $vars['lang']   = $lang;
-                    }
+        $is_language = false;
+        static $web_citysite_open = null;
+        null === $web_citysite_open && $web_citysite_open = config('city_switch_on');
+        if (!empty($web_citysite_open)) { // 多城市站点
+            if ('admin' == $module) {
+                if ((isset($vars['site']) && true === $vars['site'])) {
+                    $vars['site'] = '';
+                } else if (empty($vars['site'])) {
+                    $vars['site']   = get_home_site();
                 }
             } else {
-                if (!empty($vars['lang']) && $vars['lang'] == get_default_lang()) {
-                    unset($vars['lang']);
-                }
-            }
-        } else { // 单语言
-            if ('admin' == $module) { // 排除后台分组模块
-                if (empty($vars['lang'])) {
-                    $vars['lang']   = $main_lang;
+                if ((isset($vars['site']) && true === $vars['site']) || get_default_site() == get_home_site()/* || $request->subDomain() == get_home_site()*/) {
+                    $vars['site'] = '';
+                } else if (empty($vars['site'])) {
+                    $vars['site']   = get_home_site();
                 }
             }
         }
-        /*--end*/
+        else { // 多语言
+            $is_language = is_language();
+            if ($is_language) {
+                if (empty($vars['lang'])) {
+                    $lang = $request->param('lang/s', '');
+                    if ('admin' == $module) {
+                        $system_home_default_lang = config('ey_config.system_home_default_lang');
+                        if (!empty($lang) && $lang != $system_home_default_lang) {
+                            $vars['lang']   = $lang;
+                        }
+                    } else {
+                        $lang = get_current_lang();
+                        $default_lang = get_default_lang();
+                        if ($default_lang != $lang) {
+                            $vars['lang']   = $lang;
+                        }
+                    }
+                } else {
+                    if (!empty($vars['lang']) && $vars['lang'] == get_default_lang()) {
+                        unset($vars['lang']);
+                    }
+                }
+            } else { // 单语言
+                if ('admin' == $module) { // 排除后台分组模块
+                    if (empty($vars['lang'])) {
+                        $vars['lang']   = $main_lang;
+                    }
+                }
+            } 
+        }
 
         if (false === $domain && Route::rules('domain')) {
             $domain = true;
@@ -212,9 +237,14 @@ class Url
                 }
             }
             $url .= "?m={$m}&c={$c}&a={$a}";
-            /*URL全局参数（比如：可视化uiset、多模板v、多语言lang）*/
+            /*URL全局参数（比如：可视化uiset、多模板v、多语言lang、多城市site）*/
             $urlParam = $request->param();
             !empty($vars['lang']) && !empty($urlParam['lang']) && $urlParam['lang'] = $vars['lang'];
+            if (isset($vars['site']) && empty($vars['site'])) {
+                unset($urlParam['site']);
+            } else {
+                !empty($vars['site']) && !empty($urlParam['site']) && $urlParam['site'] = $vars['site'];
+            }
             foreach ($urlParam as $key => $val) {
                 if (in_array($key, Config::get('global.parse_url_param'))) {
                     $urlParam[$key] = trim($val, '/');
@@ -240,6 +270,9 @@ class Url
                 /*URL全局参数（单语言不携带lang参数）*/
                 if (!$is_language) {
                     unset($vars['lang']);
+                }
+                if (empty($web_citysite_open)) { // 不开启多城市
+                    unset($vars['site']);
                 }
             }
             /*--end*/

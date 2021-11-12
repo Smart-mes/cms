@@ -96,19 +96,25 @@
                             </td>
 
                             <td class="">
+                                <div class="w100 tc">
                                 {eq name="$vo.service_type" value="1"}￥{$vo.product_total_price}{/eq}
                                 {eq name="$vo.service_type" value="2"}￥{$vo.product_total_price}{/eq}
+                                </div>
                             </td>
 
                             <td class="">
+                                <div class="w100 tc">
                                 {eq name="$vo.service_type" value="1"}￥{$vo.refund_price}{/eq}
                                 {eq name="$vo.service_type" value="2"}￥{$vo.refund_price}{/eq}
+                                </div>
                             </td>
 
                             <td class="">
+                                <div class="w100 tc">
                                 {eq name="$vo.service_type" value="1"}<div class="w100 tc blue">换货</div>{/eq}
                                 {eq name="$vo.service_type" value="2"}<div class="w100 tc red">退货</div>{/eq}
                                 {eq name="$vo.service_type" value="3"}<div class="w100 tc">维修</div>{/eq}
+                                </div>
                             </td>
 
                             <td class=""> <div class="w100 tc"> {$ServiceStatus[$vo.status]|default=''} </div> </td>

@@ -1,6 +1,5 @@
 {include file="public/layout" /}
 <link rel="stylesheet" type="text/css" href="__PUBLIC__/plugins/webuploader/webuploader.css">
-<script type="text/javascript" src="__PUBLIC__/plugins/laydate/laydate.js"></script>
 
 {eq name="$editor.editor_select" value="1"}
     {load href="__PUBLIC__/plugins/Ueditor/ueditor.config.js" /}
@@ -133,6 +132,27 @@
                     <input type="text" value="{$field.jumplinks}" name="jumplinks" id="jumplinks" class="input-txt" placeholder="http://">
                     <span class="err"></span>
                     <p class="notic">请输入完整的URL网址（包含http或https），设置后访问该条信息将直接跳转到设置的网址</p>
+                </dd>
+            </dl>
+            <dl class="row {empty name="$global.web_citysite_open"} none {/empty} ">
+                <dt class="tit">
+                    <label for="title">所属区域</label>
+                </dt>
+                <dd class="opt"> 
+                    <select name="province_id" id="province_id" onchange="set_city_list(0);">
+                        <option value="0">全国</option>
+                        {volist name=':get_site_province_list()' id='vo'}
+                        <option value="{$vo.id}" {eq name="$field.province_id" value="$vo.id" } selected {/eq} >{$vo.name}</option>
+                        {/volist}
+                    </select>
+                    <select name="city_id" id="city_id" class="none ml5" onchange="set_area_list(0);">
+                        <option value="">--请选择--</option>
+                    </select>
+                    <select name="area_id" id="area_id" class="none ml5">
+                        <option value="">--请选择--</option>
+                    </select>
+                    <span class="err"></span>
+                    <p class="notic"></p>
                 </dd>
             </dl>
             <dl class="row">
@@ -438,6 +458,7 @@
             <div class="bot">
                 <input type="hidden" name="gourl" value="{$gourl|default=''}">
                 <input type="hidden" name="aid" value="{$field.aid|default='0'}">
+                <input type="hidden" id="editor_addonFieldExt" value="">
                 <a href="JavaScript:void(0);" onclick="check_submit();" class="ncap-btn-big ncap-btn-green" id="submitBtn">确认提交</a>
             </div>
         </div> 
@@ -1092,9 +1113,20 @@
 </script>
 
 <script type="text/javascript">
+    layui.use('laydate', function() {
+        var laydate = layui.laydate;
+
+        laydate.render({
+            elem: '#add_time'
+            ,type: 'datetime'
+        });
+    })
 
     $(function () {
-        $('#add_time').layDate();   
+        try {
+            set_city_list({$field.city_id|default=0});
+            set_area_list({$field.area_id|default=0});
+        }catch(e){}
      
         //选项卡切换列表
         $('.tab-base').find('.tab').click(function(){
@@ -1163,8 +1195,10 @@
             $('input[name=htmlfilename]').focus();
             return false;
         }
-
-        $('#post_form').submit();
+        setTimeout(function (){
+            editor_auto_210607();
+            $('#post_form').submit();
+        }, 1);
     }
 
     function img_call_back(fileurl_tmp)

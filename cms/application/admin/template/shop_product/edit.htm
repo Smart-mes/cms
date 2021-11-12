@@ -1,5 +1,4 @@
 {include file="public/layout" /}
-<script type="text/javascript" src="__PUBLIC__/plugins/laydate/laydate.js"></script>
 
 {eq name="$editor.editor_select" value="1"}
     {load href="__PUBLIC__/plugins/Ueditor/ueditor.config.js" /}
@@ -82,6 +81,27 @@
                         <p class="notic">请输入完整的URL网址（包含http或https），设置后访问该条信息将直接跳转到设置的网址</p>
                     </dd>
                 </dl>
+                <dl class="row {empty name="$global.web_citysite_open"} none {/empty} ">
+                    <dt class="tit">
+                        <label for="title">所属区域</label>
+                    </dt>
+                    <dd class="opt"> 
+                        <select name="province_id" id="province_id" onchange="set_city_list(0);">
+                            <option value="0">全国</option>
+                            {volist name=':get_site_province_list()' id='vo'}
+                            <option value="{$vo.id}" {eq name="$field.province_id" value="$vo.id" } selected {/eq} >{$vo.name}</option>
+                            {/volist}
+                        </select>
+                        <select name="city_id" id="city_id" class="none ml5" onchange="set_area_list(0);">
+                            <option value="">--请选择--</option>
+                        </select>
+                        <select name="area_id" id="area_id" class="none ml5">
+                            <option value="">--请选择--</option>
+                        </select>
+                        <span class="err"></span>
+                        <p class="notic"></p>
+                    </dd>
+                </dl>
                 <dl class="row">
                     <dt class="tit">
                       <label>缩略图</label>
@@ -120,9 +140,9 @@
                                 <tbody>
                                 <tr>
                                     <td>
-                                        <div class="sort-list">
+                                        <div class="sort-list-img">
                                             {volist name="proimg_list" id="vo" key="k"}
-                                            <div class="images_upload" style="display:inline-block;">
+                                            <div class="images_upload images_upload_html" style="display:inline-block;">
                                                 <div style="position: relative; height: 130px;">
                                                     <input type="hidden" name="proimg[]" value="{$vo['image_url']}">
                                                     <a href="{$vo['image_url']}" onclick="" class="upimg" target="_blank" title="拖动修改排序">
@@ -133,8 +153,7 @@
                                                 <textarea rows="5" cols="60" name="imgintro[]" style="height:28px; width: 136px;" placeholder="图片注释">{$vo.intro}</textarea>
                                             </div>
                                             {/volist}
-                                            <div class="images_upload">
-                                            </div>
+                                            <div class="images_upload"></div>
                                         </div>
                                         <a href="javascript:void(0);" onClick="GetUploadify(30,'','allimg','proimg_call_back');" class="img-upload mb15" title="点击上传">
                                             <div class="y-line"></div>
@@ -147,7 +166,7 @@
                         </div>
                         <!-- 上传图片显示的样板 start -->
                         <div class="images_upload_tpl none">
-                            <div class="images_upload">
+                            <div class="images_upload images_upload_html">
                                 <div style="position: relative; height: 130px;">
                                     <input type="hidden" name="proimg[]" value="" />
                                     <a href="javascript:void(0);" onClick="" class="upimg" title="拖动修改排序">
@@ -804,6 +823,7 @@
                                         <option value="{$vo.list_id}" {eq name="$vo.list_id" value="$field.attrlist_id"}selected{/eq}>{$vo.list_name}</option>
                                     {/volist}
                                 </select>
+                                <!-- &nbsp;<a href="JavaScript:void(0);" onclick="attrlistLayer(this)" style="font-size: 12px;padding-left: 10px;">[管理]</a> -->
                             </div>
                             <div id='AttrSelectName' style="margin: 1px;">{$canshu}</div>
                         </div>
@@ -816,7 +836,10 @@
                     function AttrListSelect(obj) {
                         var aid = '';
                         var list_id = $(obj).val();
-                        if (parseInt(list_id) < 1) return false;
+                        if (parseInt(list_id) < 1) {
+                            $("#AttrSelectName").empty();
+                            return false;
+                        }
                         $('#AttrSelectName').html('<div style="color: red;font-size: 12px;text-align: center;">加载中……</div>');
                         // 商品栏目切换时 ajax 调用  返回不同的属性输入框     
                         $.ajax({
@@ -827,6 +850,43 @@
                                 $("#AttrSelectName").empty().append(data);
                             }
                         });
+                    }
+
+                    function attrlistLayer(obj)
+                    {
+                        var url = "{:url('ShopProduct/attrlist_index', ['oldinlet'=>1])}";
+                        //iframe窗
+                        layer.open({
+                            type: 2,
+                            title: '商品参数管理',
+                            fixed: true, //不固定
+                            shadeClose: false,
+                            shade: 0.3,
+                            area: ['100%', '100%'],
+                            content: url,
+                            end: function(index){
+                                var list_id = $('#attrlist_id').val();
+                                $.ajax({
+                                    url:"{:url('Product/ajax_get_shop_attrlist')}",
+                                    type:'GET',
+                                    data:{list_id:list_id, _ajax:1},
+                                    success:function(res) {
+                                        var html = "<option value='0'>请选择参数</option>";
+                                        html += res;
+                                        $("#attrlist_id").empty().append(html);
+
+                                        // 删掉选中的参数之后，默认不选中，参数属性同时要清空掉
+                                        if ($('#attrlist_id').val() < 1) {
+                                            $("#AttrSelectName").empty();
+                                        }
+                                    },
+                                    error: function(e){
+                                        showErrorAlert(e.responseText);
+                                    }
+                                });
+                            }
+                        });
+                        layer.full(iframes);
                     }
                 </script>
             </div>
@@ -956,6 +1016,7 @@
                 <div class="bot">
                     <input type="hidden" name="gourl" value="{$gourl|default=''}">
                     <input type="hidden" name="aid" value="{$field.aid|default='0'}">
+                    <input type="hidden" id="editor_addonFieldExt" value="">
                     <a href="JavaScript:void(0);" onclick="check_submit();" class="ncap-btn-big ncap-btn-green" id="submitBtn">确认提交</a>
                 </div>
             </div> 
@@ -963,9 +1024,20 @@
     </div>
 </div>
 <script type="text/javascript">
+    layui.use('laydate', function() {
+        var laydate = layui.laydate;
+
+        laydate.render({
+            elem: '#add_time'
+            ,type: 'datetime'
+        });
+    })
 
     $(function () {
-        $('#add_time').layDate();   
+        try {
+            set_city_list({$field.city_id|default=0});
+            set_area_list({$field.area_id|default=0});
+        }catch(e){}
      
         //选项卡切换列表
         $('.tab-base').find('.tab').click(function(){
@@ -1069,8 +1141,10 @@
             $('input[name=htmlfilename]').focus();
             return false;
         }
-
-        $('#post_form').submit();
+        setTimeout(function (){
+            editor_auto_210607();
+            $('#post_form').submit();
+        }, 1);
     }
 
     function img_call_back(fileurl_tmp)
@@ -1083,16 +1157,18 @@
 
     // 上传产品相册回调函数
     function proimg_call_back(paths){
-        
         var  last_div = $(".images_upload_tpl").html();
-        // var  last_div = $(".images_upload:last").prop("outerHTML");  
         for (var i=0;i<paths.length ;i++ )
         {
-            $(".images_upload:eq(0)").before(last_div);  // 插入一个 新图片
-            $(".images_upload:eq(0)").find('a:eq(0)').attr('href',paths[i]).attr('onclick','').attr('target', "_blank");// 修改他的链接地址
-            $(".images_upload:eq(0)").find('img').attr('src',paths[i]);// 修改他的图片路径
-            $(".images_upload:eq(0)").find('a:eq(1)').attr('onclick',"ClearPicArr2(this,'"+paths[i]+"')").text('');
-            $(".images_upload:eq(0)").find('input').val(paths[i]); // 设置隐藏域 要提交的值
+            if ($(".sort-list-img .images_upload_html").length > 0) {
+                $(".sort-list-img .images_upload_html:last").after(last_div);  // 插入一个 新图片
+            } else {
+                $(".sort-list-img .images_upload:last").before(last_div);  // 插入一个 新图片
+            }
+            $(".sort-list-img .images_upload_html:last").find('a:eq(0)').attr('href',paths[i]).attr('onclick','').attr('target', "_blank");// 修改他的链接地址
+            $(".sort-list-img .images_upload_html:last").find('img').attr('src',paths[i]);// 修改他的图片路径
+            $(".sort-list-img .images_upload_html:last").find('a:eq(1)').attr('onclick',"ClearPicArr2(this,'"+paths[i]+"')").text('');
+            $(".sort-list-img .images_upload_html:last").find('input').val(paths[i]); // 设置隐藏域 要提交的值
         }            
     }
     
@@ -1156,7 +1232,7 @@
 
     /** 以下 图集相册的拖动排序相关 js*/
     
-    $( ".sort-list" ).sortable({
+    $( ".sort-list-img" ).sortable({
         start: function( event, ui) {
         
         }
@@ -1176,7 +1252,7 @@
         }
     });
     //因为他们要拖动，所以尽量设置他们的文字不能选择。 
-    $( ".sort-list" ).disableSelection();
+    $( ".sort-list-img" ).disableSelection();
 </script>
 
 {include file="public/footer" /}

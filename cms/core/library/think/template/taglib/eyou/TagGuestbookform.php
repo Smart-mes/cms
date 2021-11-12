@@ -44,7 +44,7 @@ class TagGuestbookform extends Base
         if (!empty($typeid)) {
             $typeid = model('LanguageAttr')->getBindValue($typeid, 'arctype');
             if (empty($typeid)) {
-                echo '标签guestbookform报错：找不到与第一套【'.$this->main_lang.'】语言关联绑定的属性 typeid 值 。';
+                echo '标签guestbookform报错：找不到与第一套【'.self::$main_lang.'】语言关联绑定的属性 typeid 值 。';
                 return false;
             }
         }
@@ -56,7 +56,7 @@ class TagGuestbookform extends Base
         $row = Db::name('guestbook_attribute')
             ->where([
                 'typeid'    => $typeid,
-                'lang'      => $this->home_lang,
+                'lang'      => self::$home_lang,
                 'is_del'    => 0,
             ])
             ->order('sort_order asc, attr_id asc')
@@ -67,7 +67,7 @@ class TagGuestbookform extends Base
             return false;
         } else {
             /*获取多语言关联绑定的值*/
-            $row = model('LanguageAttr')->getBindValue($row, 'guestbook_attribute', $this->main_lang); // 多语言
+            $row = model('LanguageAttr')->getBindValue($row, 'guestbook_attribute', self::$main_lang); // 多语言
             /*--end*/
 
             $newAttribute = array();
@@ -193,6 +193,7 @@ EOF;
             $token_id = md5('guestbookform_token_'.$typeid.md5(getTime().uniqid(mt_rand(), TRUE)));
             $funname = 'f'.md5("ey_guestbookform_token_{$typeid}");
             $submit = 'submit'.$token_id;
+            $home_lang = self::$home_lang;
             $tokenStr = <<<EOF
 <script type="text/javascript">
     function {$submit}(elements)
@@ -207,26 +208,19 @@ EOF;
 
     function ey_fleshVerify(id)
     {
-        var src = "{$this->root_dir}/index.php?m=api&c=Ajax&a=vertify&type=guestbook&lang={$this->home_lang}";
+        var src = "{$this->root_dir}/index.php?m=api&c=Ajax&a=vertify&type=guestbook&lang={$home_lang}";
         src += "&r="+ Math.floor(Math.random()*100);
         document.getElementById(id).src = src;
     }
 
     function {$funname}()
     {
-        //步骤一:创建异步对象
         var ajax = new XMLHttpRequest();
-        //步骤二:设置请求的url参数,参数一是请求的类型,参数二是请求的url,可以带参数,动态的传递参数starName到服务端
         ajax.open("post", "{$this->root_dir}/index.php?m=api&c=Ajax&a=get_token&name=__token__{$token_id}", true);
-        // 给头部添加ajax信息
         ajax.setRequestHeader("X-Requested-With","XMLHttpRequest");
-        // 如果需要像 HTML 表单那样 POST 数据，请使用 setRequestHeader() 来添加 HTTP 头。然后在 send() 方法中规定您希望发送的数据：
         ajax.setRequestHeader("Content-type","application/x-www-form-urlencoded");
-        //步骤三:发送请求+数据
         ajax.send('_ajax=1');
-        //步骤四:注册事件 onreadystatechange 状态改变就会调用
         ajax.onreadystatechange = function () {
-            //步骤五 如果能够进到这个判断 说明 数据 完美的回来了,并且请求的页面是存在的
             if (ajax.readyState==4 && ajax.status==200) {
                 document.getElementById("{$token_id}").value = ajax.responseText;
                 document.getElementById("gourl_{$token_id}").value = window.location.href;
@@ -316,14 +310,14 @@ EOF;
 </script>
 EOF;
             $seo_pseudo = tpCache('seo.seo_pseudo');
-            $gourl = $this->request->url(true);
+            $gourl = self::$request->url(true);
             if (2 == $seo_pseudo) {
-                $gourl = $this->request->domain().$this->root_dir;
+                $gourl = self::$request->domain().$this->root_dir;
             }
             $hidden = '<input type="hidden" name="gourl" id="gourl_'.$token_id.'" value="'.$gourl.'" /><input type="hidden" name="typeid" value="'.$typeid.'" /><input type="hidden" name="__token__'.$token_id.'" id="'.$token_id.'" value="" />'.$tokenStr;
             $newAttribute['hidden'] = $hidden;
 
-            $action = $this->root_dir."/index.php?m=home&c=Lists&a=gbook_submit&lang={$this->home_lang}";
+            $action = $this->root_dir."/index.php?m=home&c=Lists&a=gbook_submit&lang={$home_lang}";
             $newAttribute['action'] = $action;
             $newAttribute['formhidden'] = ' enctype="multipart/form-data" ';
             $newAttribute['submit'] = "return {$submit}(this);";
@@ -357,7 +351,7 @@ EOF;
     {
         header("Content-type: text/html; charset=utf-8");
         $attributeList = Db::name('GuestbookAttribute')->where("typeid = $typeid")
-            ->where('lang', $this->home_lang)
+            ->where('lang', self::$home_lang)
             ->order('sort_order asc')
             ->select();
         $form_arr = array();

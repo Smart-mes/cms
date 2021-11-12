@@ -26,10 +26,7 @@
         </li>
         {if condition="$php_servicemeal >= 2"}
         <li>
-            <a {if condition="'ShopComment' == $Think.const.CONTROLLER_NAME"}class="active"{/if} href='{:url("ShopComment/comment_index")}'>商品评价</a>
-        </li>
-        <li>
-            <a {if condition="(in_array($Think.const.CONTROLLER_NAME, ['Sharp','Coupon'])) OR ('Shop' == $Think.const.CONTROLLER_NAME and in_array($Think.const.ACTION_NAME, ['market_index']))"}class="active"{/if} href='{:url("Shop/market_index")}'>营销功能</a>
+            <a {if condition="(in_array($Think.const.CONTROLLER_NAME, ['Sharp','Coupon','ShopComment'])) OR ('Shop' == $Think.const.CONTROLLER_NAME and in_array($Think.const.ACTION_NAME, ['market_index']))"}class="active"{/if} href='{:url("Shop/market_index")}'>营销功能</a>
         </li>
         {/if}
     </ul>

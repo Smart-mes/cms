@@ -24,21 +24,11 @@ use think\Request;
 class Base
 {
     /**
-     * 主体语言（语言列表中最早一条）
-     */
-    public $main_lang = 'cn';
-
-    /**
-     * 前台当前语言
-     */
-    public $home_lang = 'cn';
-
-    /**
      * 子目录
      */
     public $root_dir = '';
 
-    public $request = null;
+    static $request = null;
 
     /**
      * 当前栏目ID
@@ -50,6 +40,42 @@ class Base
      */
     public $aid = 0;
 
+    /**
+     * 是否开启多语言
+     */
+    static $lang_switch_on = null;
+
+    /**
+     * 主体语言（语言列表中最早一条）
+     */
+    static $main_lang = null;
+
+    /**
+     * 前台当前语言
+     */
+    static $home_lang = null;
+
+    /**
+     * 是否开启多城市站点
+     */
+    static $city_switch_on = null;
+
+    /**
+     * 前台当前城市站点
+     */
+    static $home_site = '';
+
+    /**
+     * 当前城市站点ID
+     */
+    static $siteid = null;
+
+    /**
+     * 当前城市站点信息
+     */
+    static $site_info = null;
+
+
     //构造函数
     function __construct()
     {
@@ -60,26 +86,35 @@ class Base
     // 初始化
     protected function _initialize()
     {
-        /*多语言*/
-        $this->main_lang = get_main_lang();
-        $this->home_lang = get_home_lang();
-        /*--end*/
-        // 子目录安装路径
-        $this->root_dir = ROOT_DIR;
-            
-        if (null == $this->request) {
-            $this->request = Request::instance();
+        if (null == self::$request) {
+            self::$request = Request::instance();
         }
 
+        $this->root_dir = ROOT_DIR; // 子目录安装路径
+        /*多语言*/
+        if (null === self::$main_lang) {
+            self::$main_lang = get_main_lang();
+            self::$home_lang = get_home_lang();
+        }
+
+        /*多城市*/
+        self::$home_site = get_home_site();
+        null === self::$city_switch_on && self::$city_switch_on = config('city_switch_on');
+        if (!empty(self::$home_site) && null === self::$site_info) {
+            if (!empty(self::$city_switch_on)) {
+                self::$site_info = Db::name('citysite')->where('domain', self::$home_site)->cache(true, EYOUCMS_CACHE_TIME, 'citysite')->find();
+                if (!empty(self::$site_info)) {
+                    self::$siteid = self::$site_info['id'];
+                }
+            }
+        }
+        self::$siteid = intval(self::$siteid);
+
         $this->tid = input("param.tid/s", '');
-        /*tid为目录名称的情况下*/
-        $this->tid = getTrueTypeid($this->tid);
-        /*--end*/
+        $this->tid = getTrueTypeid($this->tid); // tid为目录名称的情况下
 
         $this->aid = input("param.aid/s", '');
-        /*在aid传值为自定义文件名的情况下*/
-        $this->aid = getTrueAid($this->aid);
-        /*--end*/
+        $this->aid = getTrueAid($this->aid); // 在aid传值为自定义文件名的情况下
     }
 
     //查询虎皮椒支付有没有配置相应的(微信or支付宝)支付

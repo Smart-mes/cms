@@ -40,34 +40,27 @@ class TagArticlepay extends Base
         }
         $artData = Db::name('archives')
             ->alias('a')
-            ->field('a.users_price,b.content')
+            ->field('a.restric_type, b.content')
             ->join('article_content b','a.aid = b.aid')
             ->where('a.aid',$aid)
             ->find();
         $result['displayId'] = ' id="article_display_'.$aid.'_1619061972" style="display:none;" ';
+        $result['vipDisplayId'] = ' id="article_vipDisplay_'.$aid.'_1619061972" style="display:none;" ';
 
-        $pay_data = Db::name('article_pay')->field('part_free,free_content')->where('aid',$aid)->find();
-
-        if (0<$artData['users_price'] && !empty($pay_data)){
-            $is_pay = Db::name('article_order')->where(['users_id'=>$this->users_id,'order_status'=>1,'product_id'=>$aid])->find();
-            if (empty($is_pay)){
-                if(0 == $pay_data['part_free']){
-                    $result['content'] = '';
-                }else if(in_array($pay_data['part_free'],[1,2])){
-                    $result['content'] = $pay_data['free_content'];
-                }
-            }else{
-                $result['displayId'] = ' id="article_display_'.$aid.'_1619061972" ';
-                if(0 == $pay_data['part_free']){
-                    $result['content'] = $artData['content'];
-                }else if(1 == $pay_data['part_free']){
-                    $result['content'] = $pay_data['free_content'].$artData['content'];
-                }else if(2 == $pay_data['part_free']){
-                    $result['content'] = $artData['content'];
-                }
-            }
-        }else{
+        if (empty($artData['restric_type'])) { // 不限免费
             $result['content'] = $artData['content'];
+        }
+        else { // 其他
+
+            /*预览内容*/
+            $free_content = '';
+            $pay_data = Db::name('article_pay')->field('part_free,free_content')->where('aid',$aid)->find();
+            if (!empty($pay_data['part_free'])) {
+                $free_content = !empty($pay_data['free_content']) ? $pay_data['free_content'] : '';
+            }
+            /*end*/
+            
+            $result['content'] = $free_content;
         }
 
         $result['content'] = htmlspecialchars_decode($result['content']);
@@ -81,17 +74,20 @@ class TagArticlepay extends Base
         }else{
             $result['onclick'] = ' href="javascript:void(0);" onclick="ArticleBuyNow('.$aid.');" ';//第二种弹框页支付
         }
+        $result['onBuyVipClick'] = ' href="javascript:void(0);" onclick="BuyVipClick();" ';
         $version = getCmsVersion();
         $get_content_url = "{$this->root_dir}/index.php?m=api&c=Ajax&a=ajax_get_content";
         $buy_url = url('user/Article/buy');
+        $buy_vip_url = url('user/Level/level_centre');
 
         $result['hidden'] = <<<EOF
 <script type="text/javascript">
     var buy_url_1618968479 = '{$buy_url}';
     var aid_1618968479 = {$aid};
     var root_dir_1618968479 = '{$this->root_dir}';
+    var buy_vip_url_1618968479 = '{$buy_vip_url}';
 </script>
-<script type="text/javascript" src="{$this->root_dir}/public/static/common/js/tag_articlepay.js?v={$version}"></script>
+<script type="text/javascript" src="{$this->root_dir}/public/static/common/js/tag_articlepay.js?t={$version}"></script>
 <script type="text/javascript">
     ey_ajax_get_content_1618968479({$aid},'{$get_content_url}');
 </script>

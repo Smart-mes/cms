@@ -32,6 +32,7 @@ class Buildhtml extends Base
         cache("channel_page_total_serialize", null);
         cache("channel_info_serialize", null);
         cache("has_children_Row_serialize", null);
+        cache("aid_arr_serialize", null);
         cache("article_info_serialize", null);
         cache("article_page_total_serialize", null);
         cache("article_tags_serialize", null);
@@ -46,12 +47,13 @@ class Buildhtml extends Base
     {
         $this->clearCache();
         $channelData  = $this->getChannelData(0);
-        $articleData  = $this->getArticleData(0, 0);
+        $aid_arr = getAllArchivesAid(0, $this->home_lang);
+        $articleData_pagetotal   = count($aid_arr);
         $msg          = $this->handleBuildIndex();
-        $allpagetotal = 1 + $channelData['pagetotal'] + $articleData['pagetotal'];
+        $allpagetotal = 1 + $channelData['pagetotal'] + $articleData_pagetotal;
 
         $this->success($msg, null, ["achievepage" => 1, "channelpagetotal" => $channelData['pagetotal']
-            , "articlepagetotal"                  => $articleData['pagetotal'], "allpagetotal" => $allpagetotal]);
+            , "articlepagetotal"                  => $articleData_pagetotal, "allpagetotal" => $allpagetotal]);
     }
 
     /*
@@ -68,9 +70,14 @@ class Buildhtml extends Base
      */
     private function handleBuildIndex()
     {
-        /*获取当前页面URL*/
-        $result['pageurl'] = $this->request->domain() . ROOT_DIR;
-        /*--end*/
+        $result['pageurl'] = $this->request->domain() . ROOT_DIR; // 获取当前页面URL
+        $result['pageurl_m'] = pc_to_mobile_url($result['pageurl']); // 获取当前页面对应的移动端URL
+        // 移动端域名
+        $result['mobile_domain'] = '';
+        if (!empty($this->eyou['global']['web_mobile_domain_open']) && !empty($this->eyou['global']['web_mobile_domain'])) {
+            $result['mobile_domain'] = $this->eyou['global']['web_mobile_domain'] . '.' . $this->request->rootDomain(); 
+        }
+
         $eyou       = array(
             'field' => $result,
         );
@@ -113,6 +120,7 @@ class Buildhtml extends Base
             preg_match_all($page, $content, $matchpage);
 
             $dir = trim($dir, '.');
+            $seo_html_listname = $this->eyou['global']['seo_html_listname'];
             foreach ($matchpage[0] as $key1 => $value1) {
                 if ($matchpage[5][$key1] == 1) {
                     if ($top == 1) {
@@ -123,7 +131,26 @@ class Buildhtml extends Base
                         $url = $dir . '/lists_' . $tid . '.html';
                     }
                 } else {
-                    $url = $dir . '/lists_' . $tid . '_' . $matchpage[5][$key1] . '.html';
+                    if ($seo_html_listname == 4) {
+                        if (!empty($result['rulelist'])) {
+                            if (!preg_match('/{page}/i', $result['rulelist'])) { // 没有分页变量的情况
+                                $rulelist_filename = '';
+                            } else {
+                                $rulelist = trim($result['rulelist'], '/');
+                                $rulelist_filename = preg_replace('/^((.*)\/)?([^\/]+)$/i', '${3}', $rulelist);
+                                $rulelist_filename = str_replace("{tid}", $tid, $rulelist_filename);
+                                $rulelist_filename = str_replace("{page}", $matchpage[5][$key1], $rulelist_filename);
+                            }
+                            $url = $dir;
+                            if (!empty($rulelist_filename)) {
+                                $url .= '/' . $rulelist_filename;
+                            }
+                        }else{
+                            $url = $dir . '/list_' . $tid . '_' . $matchpage[5][$key1] . '.html';
+                        }
+                    } else {
+                        $url = $dir . '/lists_' . $tid . '_' . $matchpage[5][$key1] . '.html';
+                    }
                 }
                 $url        = ROOT_DIR . '/' . trim($url, '/');
                 $value1_new = preg_replace('/href(\s*)=(\s*)[\'|\"]([^\'\"]*)[\'|\"]/i', '', $value1);
@@ -150,14 +177,108 @@ class Buildhtml extends Base
         $typeid      = input("param.id/d", 0); // 栏目ID
         $findex         = input("param.findex/d", 0);
         $achievepage = input("param.achieve/d", 0); // 已完成文档数
-        $this->clearCache();
-        $data = $this->handelBuildArticle($typeid, 0, $findex, $achievepage);
+        if (empty($findex) && empty($achievepage)){
+            $this->clearCache();
+        }
+        $data = $this->handelBuildArticleList($typeid, $findex, $achievepage,true,20);
 
         $this->success($data[0], null, $data[1]);
     }
+    /*
+     * 批量生成文档静态页面时候生成
+     ** $typeid      栏目id
+     * $aid         内容页id
+     * $findex         下一次执行栏目id
+     * $achievepage 已完成文档数
+     * $batch       是否分批次执行，true：分批，false：不分批
+     * limit        每次执行多少条数据
+     * type         执行类型，0：aid指定的文档页，1：上一篇，2：下一篇
+     */
+    private function handelBuildArticleList($typeid, $nextid = 0, $achievepage = 0, $batch = true, $limit = 20)
+    {
+        $msg                  = "";
+        $globalConfig         = $this->eyou['global'];
+        $result               = $this->getArticleAidData($typeid);
+        $aid_arr                 = $result['aid_arr'];
+        $allTags              = $result['allTags'];
+        $has_children_Row     = $result['has_children_Row'];
+//        $allAttrInfo          = $result['allAttrInfo'];
+        $data['allpagetotal'] = $pagetotal = $result['pagetotal'];
+        $data['achievepage']  = $achievepage;
+        $data['pagetotal']    = 0;
+        if ($batch && $pagetotal > $achievepage) {
+            while ($limit && isset($aid_arr[$nextid])) {
+                $archives = getAllArchives($this->home_lang, 0, $aid_arr[$nextid]);
+                $row = $archives['info'][0];
+                $arctypeRow = $archives['arctypeRow'];
+                $allAttrInfo = getAllAttrInfo([$aid_arr[$nextid]]);
+                $msg                 .= $msg_temp = $this->createArticle($row, $globalConfig, $arctypeRow, $allTags, $has_children_Row, $allAttrInfo);
+                $data['achievepage'] += 1;
+                $limit--;
+                $nextid++;
+            }
+            $data['findex'] = $nextid;
+        } else if (!$batch) {
+            foreach ($aid_arr as $key => $val) {
+                $archives = getAllArchives($this->home_lang, 0, $val);
+                $row = $archives['info'][0];
+                $arctypeRow = $archives['arctypeRow'];
+                $allAttrInfo = getAllAttrInfo([$val]);
+                $msg                 .= $msg_temp = $this->createArticle($row, $globalConfig, $arctypeRow, $allTags, $has_children_Row, $allAttrInfo);
+                $data['achievepage'] += 1;
+                $data['findex']         = $key;
+            }
+        }
+        if ($data['allpagetotal'] == $data['achievepage']) {  //生成完全部页面，删除缓存
+            cache("aid_arr_serialize", null);
+            cache("article_page_total_serialize", null);
+            cache("article_tags_serialize", null);
+            cache("article_attr_info_serialize", null);
+            cache("article_children_row_serialize", null);
+        }
+
+        return [$msg, $data];
+    }
+    /*
+     * 获取所有需要生成静态的文档页面aid集合及相关信息
+     * $typeid 栏目id，0：表示生成全部
+     */
+    private function getArticleAidData($typeid = 0){
+        $aid_arr_serialize = cache("aid_arr_serialize", "");
+        if (empty($aid_arr_serialize)){
+            $aid_arr = getAllArchivesAid($typeid, $this->home_lang);
+            $pagetotal   = count($aid_arr);
+            $allTags     = getAllTags();
+//            $allAttrInfo = getAllAttrInfo($aid_arr);
+            /*获取所有栏目是否有子栏目的数组*/
+            $has_children_Row = Db::name('Arctype')->field('parent_id, count(id) AS total')->where([
+                'current_channel'=>['neq', 51], // 过滤问答模型
+                'is_del'    => 0,
+            ])->group('parent_id')->getAllWithIndex('parent_id');
+            cache("aid_arr_serialize", serialize($aid_arr));
+            cache("article_page_total_serialize", $pagetotal);
+            cache("article_tags_serialize", serialize($allTags));
+//            cache("article_attr_info_serialize", serialize($allAttrInfo));
+            cache("article_children_row_serialize", serialize($has_children_Row));
+        }else{
+            $aid_arr             = unserialize($aid_arr_serialize);
+            $pagetotal        = cache("article_page_total_serialize", "");
+            $allTags          = unserialize(cache("article_tags_serialize", ""));
+//            $allAttrInfo      = unserialize(cache("article_attr_info_serialize", ""));
+            $has_children_Row = unserialize(cache("article_children_row_serialize", ""));
+        }
+
+        return [
+            'aid_arr' => $aid_arr,
+            'pagetotal' => $pagetotal,
+            'allTags' => $allTags,
+//            'allAttrInfo' => $allAttrInfo,
+            'has_children_Row' => $has_children_Row
+        ];
+    }
 
     /**
-     * 获取详情页数据
+     * 获取所有详情页数据
      * $typeid      栏目id
      * $aid     文章id
      * $type    类型，0：aid指定的内容，1：上一篇，2：下一篇
@@ -197,7 +318,7 @@ class Buildhtml extends Base
     }
 
     /**
-     * 处理生成内容页
+     * 更新文档内容时候生成处理生成内容页
      * $typeid      栏目id
      * $aid         内容页id
      * $findex         下一次执行栏目id
@@ -260,15 +381,11 @@ class Buildhtml extends Base
         $this->request->post(['aid' => $aid]);
         $this->request->post(['tid' => $result['typeid']]);
 
-        // tags标签
-        $result['tags'] = empty($allTags[$aid]) ? '' : implode(',', $allTags[$aid]);
-
         $arctypeInfo = $arctypeRow[$result['typeid']];
-        /*排除文档模型与栏目模型对不上的文档*/
-        if ($arctypeInfo['current_channel'] != $result['channel']) {
+        /*排除文档模型与栏目模型对不上的文档 \ 问答模型 \ 外部链接跳转*/
+        if (empty($result) || $arctypeInfo['current_channel'] != $result['channel'] || 51 == $result['channel']) {
             return false;
         }
-        if (51 == $result['channel']) return false; // 问答模型
         /*--end*/
         $arctypeInfo = model('Arctype')->parentAndTopInfo($result['typeid'], $arctypeInfo);
         /*自定义字段的数据格式处理*/
@@ -291,40 +408,71 @@ class Buildhtml extends Base
         $result = array_merge($arctypeInfo, $result);
 
         // 获取当前页面URL
-        $result['arcurl'] = $result['pageurl'] = '';
+        $result['arcurl'] = $result['pageurl'] = $result['pageurl_m'] = '';
         if ($result['is_jump'] != 1) {
             $result['arcurl'] = $result['pageurl'] = arcurl('home/View/index', $result, true, true);
+            $result['pageurl_m'] = pc_to_mobile_url($result['pageurl'], $result['typeid'], $result['aid']); // 获取当前页面对应的移动端URL
         }
         /*--end*/
+
+        // 移动端域名
+        $result['mobile_domain'] = '';
+        if (!empty($this->eyou['global']['web_mobile_domain_open']) && !empty($this->eyou['global']['web_mobile_domain'])) {
+            $result['mobile_domain'] = $this->eyou['global']['web_mobile_domain'] . '.' . $this->request->rootDomain(); 
+        }
         
         $result['seo_title']       = set_arcseotitle($result['title'], $result['seo_title'], $result['typename'], $result['typeid']);
-        $result['seo_description'] = @msubstr(checkStrHtml($result['seo_description']), 0, $arc_seo_description_length, false);
-        $result['tags'] = !empty($result['tags']['tag_arr']) ? $result['tags']['tag_arr'] : '';
+        $result['seo_description'] = checkStrHtml($result['seo_description']);
+        $result['tags'] = empty($allTags[$aid]) ? '' : implode(',', $allTags[$aid]);
         $result['litpic'] = handle_subdir_pic($result['litpic']); // 支持子目录
         $result = view_logic($aid, $result['channel'], $result, $allAttrInfo); // 模型对应逻辑
         $result = $this->fieldLogic->getChannelFieldList($result, $result['channel']); // 自定义字段的数据格式处理
 
+        if (!empty($result['users_id'])){
+            $users_where['a.users_id'] = $result['users_id'];
+        }elseif (!empty($result['admin_id'])){
+            $users_where['a.admin_id'] = $result['admin_id'];
+        }else {
+            $users_where['a.admin_id'] = ['>',0];
+        }
+        $users = Db::name('users')->alias('a')->field('a.username,a.nickname,a.head_pic,b.level_name,b.level_value')->where($users_where)->join('users_level b','a.level = b.level_id','left')->find();
+        if (!empty($users)) {
+            $users['head_pic']  = get_default_pic($users['head_pic']);
+            empty($users['nickname']) && $users['nickname'] = $users['username'];
+        }
+
         $eyou       = array(
             'type'  => $arctypeInfo,
             'field' => $result,
+            'users' => $users,
         );
         $this->eyou = array_merge($this->eyou, $eyou);
         $this->assign('eyou', $this->eyou);
 
-        /*模板文件*/
-        $tpl = !empty($result['tempview'])
-            ? str_replace('.' . $this->view_suffix, '', $result['tempview'])
-            : 'view_' . $result['nid'];
-        /*--end*/
+        // 模板文件
+        $tpl = '';
+        if (!empty($result['tempview']) && file_exists("./template/".TPL_THEME."pc/{$result['tempview']}")) {
+            $tpl = str_replace('.' . $this->view_suffix, '', $result['tempview']);
+        } else {
+            $tpl = 'view_' . $result['nid'];
+        }
 
-        $dir = $this->getArticleDir($result['dirpath']);
+        $dir = $this->getArticleDir($result);
         if (!empty($result['htmlfilename'])) {
             $aid = $result['htmlfilename'];
         }
-        $savepath = $dir . '/' . $aid . '.html';
+        if (4 == $this->eyou['global']['seo_html_pagename']) {
+            if (!empty($result['ruleview'])) {
+                $savepath = $dir;
+            }else{
+                $savepath = $dir . '/' . $aid . '.html';
+            }
+        } else {
+            $savepath = $dir . '/' . $aid . '.html';
+        }
 
         try {
-            $this->filePutContents('./' . $savepath, $tpl, 'pc', 0, '/', 0, 1, $result);
+            $this->filePutContents($savepath, $tpl, 'pc', 0, '/', 0, 1, $result);
         } catch (\Exception $e) {
             $msg .= '<span>' . $savepath . '生成失败！' . $e->getMessage() . '</span><br>';
         }
@@ -332,11 +480,13 @@ class Buildhtml extends Base
         return $msg;
     }
 
-    private function getArticleDir($dirpath)
+    private function getArticleDir($row = [])
     {
         $dir               = "";
         $seo_html_pagename = $this->eyou['global']['seo_html_pagename'];
         $seo_html_arcdir   = $this->eyou['global']['seo_html_arcdir'];
+        $dirpath = !empty($row['dirpath']) ? $row['dirpath'] : '';
+        $aid = !empty($row['htmlfilename']) ? $row['htmlfilename'] : $row['aid'];
         if ($seo_html_pagename == 1) {//存放顶级目录
             $dirpath_arr = explode('/', $dirpath);
             if (count($dirpath_arr) > 2) {
@@ -350,6 +500,27 @@ class Buildhtml extends Base
                 $dir = '.' . $seo_html_arcdir . '/' . end($dirpath_arr);
             } else {
                 $dir = '.' . $seo_html_arcdir . $dirpath;
+            }
+        } else if ($seo_html_pagename == 4) { //自定义存放目录
+            $dir = '.' . $seo_html_arcdir;
+            $diy_dirpath = !empty($row['diy_dirpath']) ? $row['diy_dirpath'] : '';
+            if (!empty($row['ruleview'])) {
+                $y = $m = $d = 1;
+                if (!empty($row['add_time'])) {
+                    $y = date('Y', $row['add_time']);
+                    $m = date('m', $row['add_time']);
+                    $d = date('d', $row['add_time']);
+                }
+                $ruleview = ltrim($row['ruleview'], '/');
+                $ruleview = str_ireplace("{aid}", $aid, $ruleview);
+                $ruleview = str_ireplace("{Y}", $y, $ruleview);
+                $ruleview = str_ireplace("{M}", $m, $ruleview);
+                $ruleview = str_ireplace("{D}", $d, $ruleview);
+                $ruleview = preg_replace('/{(栏目目录|typedir)}(\/?)/i', $diy_dirpath.'/', $ruleview);
+                $ruleview = '/'.ltrim($ruleview, '/');
+                $dir .= $ruleview;
+            }else{
+                $dir .= $diy_dirpath;
             }
         } else { //存放父级目录
             $dir = '.' . $seo_html_arcdir . $dirpath;
@@ -372,7 +543,9 @@ class Buildhtml extends Base
         $id          = input("param.id/d", 0); // 栏目ID
         $findex         = input("param.findex/d", 0);
         $achievepage = input("param.achieve/d", 0);
-        $this->clearCache();
+        if (empty($findex) && empty($achievepage)){
+            $this->clearCache();
+        }
         $data = $this->handleBuildChannel($id, $findex, $achievepage);
 
         $this->success($data[0], null, $data[1]);
@@ -477,7 +650,13 @@ class Buildhtml extends Base
         $this->eyou = array_merge($this->eyou, $eyou);
         $this->assign('eyou', $this->eyou);
 
-        $tpl = !empty($row['templist']) ? str_replace('.' . $this->view_suffix, '', $row['templist']) : 'lists_' . $row['nid'];
+        // 模板文件
+        $tpl = '';
+        if (!empty($row['templist']) && file_exists("./template/".TPL_THEME."pc/{$row['templist']}")) {
+            $tpl = str_replace('.' . $this->view_suffix, '', $row['templist']);
+        } else {
+            $tpl = 'lists_' . $row['nid'];
+        }
 
         if (in_array($row['current_channel'], [6, 8])) {   //留言模型或单页模型，不存在多页
             $this->request->get(['page' => '']);
@@ -485,8 +664,22 @@ class Buildhtml extends Base
             $dirpath_end = end($dirpath);
             if ($seo_html_listname == 1) {  //存放顶级目录
                 $savepath = '.' . $seo_html_arcdir . '/' . $dirpath[1] . "/lists_" . $eyou['field']['typeid'] . ".html";
-            } else if ($seo_html_listname == 3) { // //存放子级目录
+            } else if ($seo_html_listname == 3) { //存放子级目录
                 $savepath = '.' . $seo_html_arcdir . '/' . $dirpath_end . "/lists_" . $eyou['field']['typeid'] . ".html";
+            } else if ($seo_html_listname == 4) { //自定义存放目录
+                $savepath = '.' . $seo_html_arcdir;
+                $diy_dirpath = !empty($eyou['field']['diy_dirpath']) ? $eyou['field']['diy_dirpath'] : '';
+                if (!empty($eyou['field']['rulelist'])) {
+                    $rulelist = ltrim($eyou['field']['rulelist'], '/');
+                    $rulelist = str_replace("{tid}", $eyou['field']['typeid'], $rulelist);
+                    $rulelist = str_replace("{page}", '', $rulelist);
+                    $rulelist = preg_replace('/{(栏目目录|typedir)}(\/?)/i', $diy_dirpath.'/', $rulelist);
+                    $rulelist = '/'.ltrim($rulelist, '/');
+                    $rulelist = preg_replace('/([\/]+)/i', '/', $rulelist);
+                    $savepath .= $rulelist;
+                }else{
+                    $savepath .= $diy_dirpath . '/' . 'list_' . $eyou['field']['typeid'] . ".html";
+                }
             } else {
                 $savepath = '.' . $seo_html_arcdir . $eyou['field']['dirpath'] . '/' . 'lists_' . $eyou['field']['typeid'] . ".html";
             }
@@ -494,6 +687,10 @@ class Buildhtml extends Base
                 $this->filePutContents($savepath, $tpl, 'pc', 0, '/', 0, 1, $row);
                 if ($seo_html_listname == 3) {
                     @copy($savepath, '.' . $seo_html_arcdir . '/' . $dirpath_end . '/index.html');
+                    @unlink($savepath);
+                } else if ($seo_html_listname == 4) {
+                    $dst_savepath = preg_replace('/\/([^\/]+)$/i', '/index.html', $savepath);
+                    @copy($savepath, $dst_savepath);
                     @unlink($savepath);
                 } else if ($seo_html_listname == 2 || count($dirpath) < 3) {
                     @copy($savepath, '.' . $seo_html_arcdir . $eyou['field']['dirpath'] . '/index.html');
@@ -512,6 +709,10 @@ class Buildhtml extends Base
             $totalpage = $row['pagetotal'];
             for ($i = 1; $i <= $totalpage; $i++) {
                 $msg .= $this->createMultipageChannel($i, $tid, $row, $has_children_Row, $seo_html_listname, $seo_html_arcdir, $tpl);
+                $lastPage = cache('eyou-TagList-lastPage');
+                if (!empty($lastPage)) {
+                    $totalpage = $lastPage;
+                }
             }
         }
 
@@ -539,19 +740,40 @@ class Buildhtml extends Base
         } else if ($seo_html_listname == 3) { //存放子级目录
             $dir      = '.' . $seo_html_arcdir . '/' . $dirpath_end;
             $savepath = '.' . $seo_html_arcdir . '/' . $dirpath_end . "/lists_" . $eyou['field']['typeid'];
+        } else if ($seo_html_listname == 4) { //自定义存放目录
+            $dir      =  $savepath = '.' . $seo_html_arcdir;
+            $diy_dirpath = !empty($eyou['field']['diy_dirpath']) ? $eyou['field']['diy_dirpath'] : '';
+            if (!empty($eyou['field']['rulelist'])) {
+                $rulelist = ltrim($eyou['field']['rulelist'], '/');
+                $rulelist = str_replace("{tid}", $eyou['field']['typeid'], $rulelist);
+                $rulelist = str_replace("{page}", $i, $rulelist);
+                $rulelist = preg_replace('/{(栏目目录|typedir)}(\/?)/i', $diy_dirpath.'/', $rulelist);
+                $rulelist = '/'.ltrim($rulelist, '/');
+                $dir .= preg_replace('/\/([\/]*)([^\/]*)$/i', '', $rulelist);
+                $savepath .= $rulelist;
+            }else{
+                $dir .= $diy_dirpath;
+                $savepath .= $diy_dirpath . '/' . 'list_' . $eyou['field']['typeid'];
+            }
         } else {
             $dir      = '.' . $seo_html_arcdir . $eyou['field']['dirpath'];
             $savepath = '.' . $seo_html_arcdir . $eyou['field']['dirpath'] . '/' . 'lists_' . $eyou['field']['typeid'];
         }
-        if ($i > 1) {
-            $savepath .= '_' . $i . '.html';;
-        } else {
-            $savepath .= '.html';
+
+        if ($seo_html_listname != 4 || empty($eyou['field']['rulelist'])) {
+            if ($i > 1) {
+                $savepath .= '_' . $i . '.html';
+            } else {
+                $savepath .= '.html';
+            }
         }
+
         $top = 1;
         if ($i > 1 && $seo_html_listname == 1 && count($dirpath) > 2) {
             $top = 2;
         } else if ($i > 1 && $seo_html_listname == 3) {
+            $top = 1;
+        } else if ($i > 1 && $seo_html_listname == 4) {
             $top = 1;
         }
         try {
@@ -559,6 +781,16 @@ class Buildhtml extends Base
             if ($i == 1 && $seo_html_listname == 3) {
                 @copy($savepath, '.' . $seo_html_arcdir . '/' . $dirpath_end . '/index.html');
                 @unlink($savepath);
+            } else if ($seo_html_listname == 4) {
+                if ($i == 1) {
+                    $dst_savepath = preg_replace('/\/([^\/]+)$/i', '/index.html', $savepath);
+                    @copy($savepath, $dst_savepath);
+                    @unlink($savepath);
+                } else if ($i > 1) {
+                    if (!empty($eyou['field']['rulelist']) && !preg_match('/{page}/i', $eyou['field']['rulelist'])) { // 没有分页变量的情况
+                        @unlink($savepath);
+                    }
+                }
             } else if ($i == 1 && ($seo_html_listname == 2 || count($dirpath) < 3)) {
                 @copy($savepath, '.' . $seo_html_arcdir . $eyou['field']['dirpath'] . '/index.html');
                 @unlink($savepath);
@@ -597,12 +829,13 @@ class Buildhtml extends Base
         /*end*/
 
         $seo_pseudo = $this->eyou['global']['seo_pseudo'];
+        $seo_html_pagename = $this->eyou['global']['seo_html_pagename'];
         $this->clearCache();
         if ($seo_pseudo != 2) {
             $this->error("当前非静态模式，不做静态处理");
         }
         if (!empty($del_ids)) {    //删除文章页面
-            $info = Db::name('archives')->field('a.*,b.dirpath')
+            $info = Db::name('archives')->field('b.dirpath,b.diy_dirpath,b.rulelist,b.ruleview,a.*')
                 ->alias('a')
                 ->join('__ARCTYPE__ b', 'a.typeid = b.id', 'LEFT')
                 ->where([
@@ -610,13 +843,24 @@ class Buildhtml extends Base
                     'a.lang' => $lang,
                 ])
                 ->select();
+
             foreach ($info as $key => $row) {
-                $dir      = $this->getArticleDir($row['dirpath']);
                 $filename = $row['aid'];
-                $path     = $dir . "/" . $filename . ".html";
-                if (file_exists($path)) {
-                    @unlink($path);
+                if (!empty($row['htmlfilename'])) {
+                    $filename = $row['htmlfilename'];
                 }
+                $dir      = $this->getArticleDir($row);
+                if (4 == $seo_html_pagename) {
+                    if (!empty($row['ruleview'])) {
+                        $path = $dir;
+                    }else{
+                        $path     = $dir . "/" . $filename . ".html";
+                    }
+                } else {
+                    $path     = $dir . "/" . $filename . ".html";
+                }
+
+                if (file_exists($path)) @unlink($path);
             }
         } else if (!empty($aid) && !empty($typeid)) {   //变更文档信息，更新文档页及相关的栏目页
             if ('view' == $type) {
@@ -670,7 +914,9 @@ class Buildhtml extends Base
 
                         $result['templist'] = !empty($arctype_info['templist']) ? $arctype_info['templist'] : 'lists_' . $arctype_info['nid'];
                         $result['dirpath']  = $arctype_info['dirpath'];
+                        $result['diy_dirpath']  = $arctype_info['diy_dirpath'];
                         $result['typeid']   = $arctype_info['typeid'];
+                        $result['rulelist']  = $arctype_info['rulelist'];
                     }
                     break;
                 }
@@ -698,9 +944,13 @@ class Buildhtml extends Base
         }
         $result['seo_title'] = set_typeseotitle($result['typename'], $result['seo_title_tmp']);
 
-        /*获取当前页面URL*/
-        $result['pageurl'] = $result['typeurl'];
-        /*--end*/
+        $result['pageurl'] = $result['typeurl']; // 获取当前页面URL
+        $result['pageurl_m'] = pc_to_mobile_url($result['pageurl'], $result['typeid']); // 获取当前页面对应的移动端URL
+        // 移动端域名
+        $result['mobile_domain'] = '';
+        if (!empty($this->eyou['global']['web_mobile_domain_open']) && !empty($this->eyou['global']['web_mobile_domain'])) {
+            $result['mobile_domain'] = $this->eyou['global']['web_mobile_domain'] . '.' . $this->request->rootDomain(); 
+        }
 
         /*给没有type前缀的字段新增一个带前缀的字段，并赋予相同的值*/
         foreach ($result as $key => $val) {
@@ -720,22 +970,30 @@ class Buildhtml extends Base
      */
     private function pc_to_mobile_js($html = '', $result = [])
     {
+        static $other_pcwapjs = null;
+        null === $other_pcwapjs && $other_pcwapjs = tpCache('other.other_pcwapjs');
+        if (!empty($other_pcwapjs)) {
+            return $html;
+        }
+
         if (file_exists('./template/'.TPL_THEME.'mobile')) { // 分离式模板
 
             /*是否开启手机站域名，并且配置*/
             if (!empty($this->eyou['global']['web_mobile_domain_open']) && !empty($this->eyou['global']['web_mobile_domain'])) {
                 $domain = $this->eyou['global']['web_mobile_domain'] . '.' . $this->request->rootDomain();
+            } else {
+                $domain = true;
             }
             /*end*/
 
             $aid = input('param.aid/d');
             $tid = input('param.tid/d');
             if (!empty($aid)) { // 内容页
-                $url = url('home/View/index', ['aid' => $aid], true, true, 1, 1, 0);
+                $url = url('home/View/index', ['aid' => $aid], true, $domain, 1, 1, 0);
             } else if (!empty($tid)) { // 列表页
-                $url = url('home/Lists/index', ['tid' => $tid], true, true, 1, 1, 0);
+                $url = url('home/Lists/index', ['tid' => $tid], true, $domain, 1, 1, 0);
             } else { // 首页
-                $url = $this->request->domain() . ROOT_DIR . '/index.php';
+                $url = $this->request->scheme().'://'. $this->request->host(true) . ROOT_DIR . '/index.php';
             }
 
             $jsStr = <<<EOF
@@ -770,7 +1028,7 @@ EOF;
      * @param $dir
      * @return bool
      */
-    public function deldir($dir)
+    private function deldir($dir)
     {
         //先删除目录下的文件：
         $fileArr = glob($dir.'/*.html');

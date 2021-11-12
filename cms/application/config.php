@@ -30,6 +30,24 @@ if (file_exists($langnum_file)) {
     }
 }
 
+// 不支持http请求的api，就通过文件改为https
+$service_ey = 'aHR0cDovL3NlcnZpY2UuZXlvdWNtcy5jb20=';
+$service_ey_token = '0763150235251e259b1a47f2838ecc26';
+if (file_exists("./data/conf/https_service.txt")) {
+    $service_ey = 'aHR0cHM6Ly9zZXJ2aWNlLmV5b3VjbXMuY29t';
+    $service_ey_token = '010fbcb69eb7f820b7297b4dc706e302';
+}
+
+// 多城市开启\禁用
+$city_switch_on = false;
+// $citysite_file = DATA_PATH.'conf'.DS.'citysite.txt';
+// if (false === $lang_switch_on && file_exists($citysite_file)) {
+//     $citysite_value = file_get_contents($citysite_file);
+//     if (0 < intval($citysite_value)) {
+//         $city_switch_on = true;
+//     }
+// }
+
 // session会话设置
 $session_conf = [
     'id'             => '',
@@ -54,7 +72,10 @@ if (file_exists($session_file)) {
     if (!empty($session_conf_tmp)) {
         $session_conf_tmp = json_decode($session_conf_tmp, true);
         if (!empty($session_conf_tmp) && is_array($session_conf_tmp)) {
+            isset($session_conf_tmp['expire']) && $session_conf_tmp['expire'] = intval($session_conf_tmp['expire']);
             $session_conf = array_merge($session_conf, $session_conf_tmp);
+        } else {
+            $session_conf = array_merge($session_conf, ['expire'=>7200]);
         }
     }
 }
@@ -104,6 +125,8 @@ return array(
     'controller_suffix'      => false,
     // 是否https链接
     'is_https'               => false,
+    // 是否开启多城市
+    'city_switch_on'         => $city_switch_on,
 
     // +----------------------------------------------------------------------
     // | 模块设置
@@ -308,8 +331,8 @@ return array(
     'AUTH_CODE' => "!*&^eyoucms<>|?", //安装完毕之后不要改变，否则所有密码都会出错
     
     // 核心字符串
-    'service_ey' => "aHR0cDovL3NlcnZpY2UuZXlvdWNtcy5jb20=",
-    'service_ey_token' => "0763150235251e259b1a47f2838ecc26",
+    'service_ey' => $service_ey,
+    'service_ey_token' => $service_ey_token,
     
     // +----------------------------------------------------------------------
     // | 验证码
@@ -367,19 +390,19 @@ return array(
     // +----------------------------------------------------------------------
     'http_exception_template' => array(
         // 还可以定义其它的HTTP status
-        400 => ROOT_PATH.'public/static/errpage/400.html',
+        400 => ROOT_PATH.'public/errpage/400.html',
         // 还可以定义其它的HTTP status
-        401 => ROOT_PATH.'public/static/errpage/401.html',
+        401 => ROOT_PATH.'public/errpage/401.html',
         // 还可以定义其它的HTTP
-        403 => ROOT_PATH.'public/static/errpage/403.html',
+        403 => ROOT_PATH.'public/errpage/403.html',
         // 还可以定义其它的HTTP
-        404 => ROOT_PATH.'public/static/errpage/404.html',
+        404 => ROOT_PATH.'public/errpage/404.html',
         // 还可以定义其它的HTTP
-        405 => ROOT_PATH.'public/static/errpage/405.html',
+        405 => ROOT_PATH.'public/errpage/405.html',
         // 还可以定义其它的HTTP
-        500 => ROOT_PATH.'public/static/errpage/500.html',
+        500 => ROOT_PATH.'public/errpage/500.html',
         // 还可以定义其它的HTTP status
-        503 => ROOT_PATH.'public/static/errpage/503.html',
+        503 => ROOT_PATH.'public/errpage/503.html',
     ),
 
     /**假设这个访问地址是 www.xxxxx.dev/home/goods/goodsInfo/id/1.html 

@@ -73,10 +73,9 @@ class ShopLogic extends Model
     {
         error_reporting(0);//关闭所有错误报告
         $web_users_tpl_theme = tpCache('web.web_users_tpl_theme');
-        if (empty($web_users_tpl_theme)) {
-            $web_users_tpl_theme = 'users'; 
-        }
-        if ('v1.0.1' > $this->version && !file_exists($this->planPath_pc.$web_users_tpl_theme.'/shop_centre.htm')) {
+        empty($web_users_tpl_theme) && $web_users_tpl_theme = 'users';
+        $shop_tpl_list = glob("./{$this->planPath_pc}{$web_users_tpl_theme}/shop_*");
+        if (empty($shop_tpl_list)) {
             return $this->OneKeyUpgrade();
         } else {
             return true;

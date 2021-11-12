@@ -257,20 +257,11 @@ class Archives extends Base
                     ->getAllWithIndex('id');
                 $assign_data['channelRow'] = $channelRow;
 
-                $aids_channel2 = []; // 产品模型的文档ID
                 foreach ($list as $key => $val) {
-                    if (2 == $val['channel']) array_push($aids_channel2, $val['aid']);
                     $row[$val['aid']]['arcurl'] = get_arcurl($row[$val['aid']]);
                     $row[$val['aid']]['litpic'] = handle_subdir_pic($row[$val['aid']]['litpic']); // 支持子目录
                     $list[$key] = $row[$val['aid']];
                 }
-
-                // 产品参数
-                $product_attr_row = [];
-                if (!empty($aids_channel2)) {
-                    $product_attr_row = Db::name('product_attr')->field('count(product_attr_id) as num, aid')->where(['aid'=>['IN', $aids_channel2]])->group('aid')->getAllWithIndex('aid');
-                }
-                $assign_data['product_attr_row'] = $product_attr_row;
             }
         }
 
@@ -348,11 +339,11 @@ class Archives extends Base
             } else {
                 $ctl_name = $row['ctl_name'];
             }
-            $gourl = url('Archives/index_archives', array('typeid'=>$typeid));
+            $gourl = url('Archives/index_archives', array('typeid'=>$typeid), true, true);
             $data['gourl'] = $gourl;
-            $jumpUrl = url("{$ctl_name}/add", $data);
+            $jumpUrl = url("{$ctl_name}/add", $data, true, true);
         } else {
-            $jumpUrl = url("Archives/release");
+            $jumpUrl = url("Archives/release", [], true, true);
         }
         $this->redirect($jumpUrl);
     }
@@ -387,7 +378,7 @@ class Archives extends Base
         }
         $arcurl = input('param.arcurl/s');
         $data['arcurl'] = $arcurl;
-        $jumpUrl = url("{$ctl_name}/edit", $data);
+        $jumpUrl = url("{$ctl_name}/edit", $data, true, true);
         $this->redirect($jumpUrl);
     }
 
@@ -421,7 +412,7 @@ class Archives extends Base
                 if ($r !== false) {
                     adminLog('审核文档-id：'.implode(',', $aids));
                     /*清空sql_cache_table数据缓存表 并 添加查询执行语句到mysql缓存表*/
-                    Db::name('sql_cache_table')->query('TRUNCATE TABLE '.config('database.prefix').'sql_cache_table');
+                    Db::name('sql_cache_table')->execute('TRUNCATE TABLE '.config('database.prefix').'sql_cache_table');
                     model('SqlCacheTable')->InsertSqlCacheTable(true);
                     /* END */
                     $this->success('操作成功！');
@@ -449,7 +440,7 @@ class Archives extends Base
                 if ($r !== false) {
                     adminLog('取消审核-id：'.implode(',', $aids));
                     /*清空sql_cache_table数据缓存表 并 添加查询执行语句到mysql缓存表*/
-                    Db::name('sql_cache_table')->query('TRUNCATE TABLE '.config('database.prefix').'sql_cache_table');
+                    Db::name('sql_cache_table')->execute('TRUNCATE TABLE '.config('database.prefix').'sql_cache_table');
                     model('SqlCacheTable')->InsertSqlCacheTable(true);
                     /* END */
                     $this->success('操作成功！');
@@ -495,9 +486,14 @@ class Archives extends Base
                 ])->update($update_data);
             if($r){
                 /*清空sql_cache_table数据缓存表 并 添加查询执行语句到mysql缓存表*/
-                Db::name('sql_cache_table')->query('TRUNCATE TABLE '.config('database.prefix').'sql_cache_table');
+                Db::name('sql_cache_table')->execute('TRUNCATE TABLE '.config('database.prefix').'sql_cache_table');
                 model('SqlCacheTable')->InsertSqlCacheTable(true);
                 /* END */
+                // 移动tag标签
+                Db::name('taglist')->where(['aid'=>['IN', $aids]])->update([
+                    'typeid'    => $typeid,
+                    'update_time'   => getTime(),
+                ]);
                 adminLog('移动文档-id：'.$aids);
                 $this->success('操作成功');
             }else{
@@ -771,6 +767,29 @@ class Archives extends Base
     }
 
     /**
+     *  自动远程图片本地化/自动清除非站内链接
+     *
+     * @access    public
+     * @return    string
+     */
+    public function ajax_auto_editor()
+    {
+        if (IS_AJAX_POST) {
+            $body = input('post.body/s', '', null);
+            $local = input('post.local/d', '', 0);
+            $link = input('post.link/d', '', 0);
+            if (1 == $local){
+                $body = remote_to_local($body);
+            }
+            if (1 == $link){
+                $body = replace_links($body);
+            }
+            $this->success('操作成功！', null, ['body'=>$body]);
+        }
+        $this->error('操作失败！');
+    }
+
+    /**
      * 自定义字段
      */
     public function ajax_get_addonextitem()
@@ -794,12 +813,32 @@ class Archives extends Base
                 $channelfieldBindRow = Db::name('channelfield_bind')->where([
                         'typeid'    => ['IN', [0, $typeid]],
                     ])->column('field_id');
+                $first_html = '';
                 foreach ($addonFieldExtList as $key => $val) {
                     if (in_array($val['id'], $field_id_row) && !in_array($val['id'], $channelfieldBindRow)) {
                         unset($addonFieldExtList[$key]);
                         continue;
                     }
                     if ($val['dtype'] == 'htmltext') {
+                        if (empty($first_html)){
+                            $editor = tpSetting('editor');
+                            $addonFieldExtList[$key]['editor'] = $editor;
+                            $addonFieldExtList[$key]['first'] = 1;
+                            $first_html = 1;
+                        }
+                        array_push($htmltextField, $val['name']);
+                    }
+                }
+            } else {
+                $first_html = '';
+                foreach ($addonFieldExtList as $key => $val) {
+                    if ($val['dtype'] == 'htmltext') {
+                        if (empty($first_html)){
+                            $editor = tpSetting('editor');
+                            $addonFieldExtList[$key]['editor'] = $editor;
+                            $addonFieldExtList[$key]['first'] = 1;
+                            $first_html = 1;
+                        }
                         array_push($htmltextField, $val['name']);
                     }
                 }
@@ -1033,16 +1072,26 @@ EOF;
             // 数据查询，搜索出主键ID的值
             $limit = $count > config('paginate.list_rows') ? $Page->firstRow.','.$Page->listRows : $count;
             $list = Db::name('archives')
-                ->field("a.aid,a.channel")
+                ->field("a.aid,a.channel,a.admin_id,a.users_id")
                 ->alias('a')
                 ->where($condition)
                 ->order($orderby)
                 ->limit($limit)
                 ->getAllWithIndex('aid');
 
+            $aids = [];
+            $admin_ids = [];
+            $users_ids = [];
+            $channelIds = [];
             // 在数据量大的情况下，经过优化的搜索逻辑，先搜索出主键ID，再通过ID将其他信息补充完整；
             if ($list) {
-                $aids = array_keys($list);
+                foreach ($list as $key => $val) {
+                    array_push($aids, $val['aid']);
+                    !empty($val['admin_id']) && array_push($admin_ids, $val['admin_id']);
+                    !empty($val['users_id']) && array_push($users_ids, $val['users_id']);
+                    array_push($channelIds, $val['channel']);
+                }
+
                 $fields = "b.*, a.*, a.aid as aid";
                 $row = Db::name('archives')
                     ->field($fields)
@@ -1052,26 +1101,24 @@ EOF;
                     ->getAllWithIndex('aid');
 
                 // 获取当页文档的所有模型
-                $channelIds = get_arr_column($list, 'channel');
                 $assign_data['channelRow'] = Db::name('channeltype')->field('id, ctl_name, ifsystem')
                     ->where('id', 'IN', $channelIds)
                     ->getAllWithIndex('id');
 
-                // 产品模型的文档ID
-                $aids_channel2 = [];
+                $userlist = Db::name('users')->field('users_id,username,nickname')->where('users_id', 'in', $users_ids)->getAllWithIndex('users_id');
+                $adminlist = Db::name('admin')->field('admin_id,user_name,pen_name')->where('admin_id', 'in', $admin_ids)->getAllWithIndex('admin_id');
                 foreach ($list as $key => $val) {
-                    if (2 == $val['channel']) array_push($aids_channel2, $val['aid']);
                     $row[$val['aid']]['arcurl'] = get_arcurl($row[$val['aid']]);
                     $row[$val['aid']]['litpic'] = handle_subdir_pic($row[$val['aid']]['litpic']);
+                    if (!empty($userlist[$val['users_id']])) {
+                        $row[$val['aid']]['username'] = !empty($userlist[$val['users_id']]['nickname']) ? $userlist[$val['users_id']]['nickname'] : $userlist[$val['users_id']]['username'];
+                    } else if (!empty($adminlist[$val['admin_id']])) {
+                        $row[$val['aid']]['username'] = !empty($adminlist[$val['admin_id']]['pen_name']) ? $adminlist[$val['admin_id']]['pen_name'] : $adminlist[$val['admin_id']]['user_name'];
+                    } else {
+                        $row[$val['aid']]['username'] = '匿名';
+                    }
                     $list[$key] = $row[$val['aid']];
                 }
-
-                // 产品参数
-                $product_attr_row = [];
-                if (!empty($aids_channel2)) {
-                    $product_attr_row = Db::name('product_attr')->field('count(product_attr_id) as num, aid')->where(['aid'=>['IN', $aids_channel2]])->group('aid')->getAllWithIndex('aid');
-                }
-                $assign_data['product_attr_row'] = $product_attr_row;
             }
         }
 
@@ -1106,6 +1153,27 @@ EOF;
             $this->error("<font color='black'>系统已存在标题为'<font color='red'>".$title."'</font>的文档! </font><a href='javascript:void(0);' onclick='layer.closeAll();'>[<font color='red'>关闭</font>]</a>");
         }
         $this->success("没有重复!");
+
+    }
+
+    //ajax改变富文本编辑器远程图片本地化/清除非本站链接
+    public function ajax_editor_set()
+    {
+        if (IS_AJAX){
+            $post = input('post.');
+            if (0 == $post['value']){
+                $post['value'] = 1;
+            }elseif (1 == $post['value']){
+                $post['value'] = 0;
+            }
+            $editor_arr[$post['name']] = $post['value'];
+            $res = tpSetting('editor', $editor_arr);
+            if (!empty($res)){
+                $this->success("保存成功!");
+            }else{
+                $this->error('保存失败!');
+            }
+        }
 
     }
 }

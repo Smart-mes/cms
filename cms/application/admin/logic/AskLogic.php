@@ -46,7 +46,7 @@ class AskLogic extends Model
             $web_basehost = tpCache('web.web_basehost');
         }
         $web_basehost = preg_replace('/^(([^\:]+):)?(\/\/)?([^\/\:]*)(.*)$/i', '${4}', $web_basehost);
-        $this->upgrade_url = $this->service_url . '&domain='.$web_basehost.'&type=theme_ask&ip='.serverIP();
+        $this->upgrade_url = $this->service_url . '&domain='.$web_basehost.'&type=theme_ask&cms_version='.getVersion().'&ip='.serverIP();
         $this->planPath_pc = 'template/'.TPL_THEME.'pc/';
         $this->planPath_m = 'template/'.TPL_THEME.'mobile/';
     }

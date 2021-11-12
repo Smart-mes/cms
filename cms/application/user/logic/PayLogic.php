@@ -241,6 +241,7 @@ class PayLogic extends Model
     // 参数2为充值记录表数据集
     // 参数3为订单实际付款金额
     private function MoneyUnifiedProcessing($param, $MoneyData, $PayMoney){
+        $referurl = input('param.referurl/s', null, 'urldecode,base64_decode');
         // 支付宝付款成功后，订单并未修改状态时，修改订单状态并返回
         if ($MoneyData['status'] == 1) {
             // 当前时间
@@ -294,7 +295,7 @@ class PayLogic extends Model
                         $msg = [
                             'code' => 1,
                             'msg'  => '支付完成',
-                            'url'  => url('user/Level/level_centre'),
+                            'url'  => !empty($referurl) ? $referurl : url('user/Level/level_centre'),
                         ];
                         return $msg;
                     }
@@ -319,7 +320,7 @@ class PayLogic extends Model
             $msg = [
                 'code' => 1,
                 'msg'  => '支付完成',
-                'url'  => url('user/Level/level_centre'),
+                'url'  => !empty($referurl) ? $referurl : url('user/Level/level_centre'),
             ];
             return $msg;
         }
@@ -370,7 +371,7 @@ class PayLogic extends Model
         $sign = '';
         foreach ($param as $key => $value)
         {
-            if ($key != 'sign' && $key != 'sign_type' && $key != 'transaction_type' && $key != 'is_notify' && $key != 'm' && $key != 'c' && $key != 'a')
+            if (!in_array($key, ['sign','sign_type','transaction_type','is_notify','m','c','a','referurl']))
             {
                 $sign .= "$key=$value&";
             }
@@ -405,6 +406,9 @@ class PayLogic extends Model
         unset($data['a']);
         unset($data['transaction_type']);
         unset($data['is_notify']);
+        if (isset($data['referurl'])) {
+            unset($data['referurl']);
+        }
 
         // 获取返回值
         $return = $alipaySevice->check($data);

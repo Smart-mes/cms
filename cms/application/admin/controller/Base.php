@@ -39,6 +39,7 @@ class Base extends Controller {
         $this->editor = tpSetting('editor');
         if (empty($this->editor['editor_select'])) $this->editor['editor_select'] = 1;
         $this->assign('editor', $this->editor);
+
     }
     
     /*

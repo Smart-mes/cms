@@ -949,6 +949,7 @@ class Arctype extends Model
         $bool = false;
         if (!empty($data)) {
             $admin_lang = get_admin_lang();
+            $old_current_channel = Db::name('arctype')->where(['id'=>$data['id'],'lang'=>$admin_lang])->value('current_channel');
             $bool = Db::name('arctype')->where([
                     'id'    => $data['id'],
                     'lang'  => $admin_lang,
@@ -990,10 +991,12 @@ class Arctype extends Model
                         ];
                         !empty($minuendGrade) && $update_data['grade'] = Db::raw('grade+'.$minuendGrade);
 
-                        /*父级模板继承*/
+                        /*父级模板、命名规则继承*/
                         if (!empty($data['inherit_status'])) {
                             $update_data['templist'] = $data['templist'];
                             $update_data['tempview'] = $data['tempview'];
+                            $update_data['rulelist'] = $data['rulelist'];
+                            $update_data['ruleview'] = $data['ruleview'];
                         }
                         /*end*/
 
@@ -1062,6 +1065,7 @@ class Arctype extends Model
                     ])->column('attr_value');
                 Db::name('arctype')->where([
                         'id'    => ['IN', $attr_values],
+                        'current_channel' => $old_current_channel,
                     ])->update([
                         'current_channel'   => $data['current_channel'],
                         'update_time'   => getTime(),

@@ -4,7 +4,13 @@
 <div id="append_parent"></div>
 <div id="ajaxwaitid"></div>
 {include file="shop/left" /}
-<div class="page" style="min-width:auto;margin-left:98px;">
+<div class="page {empty name='$web_shopcomment_switch'}on-off_show{/empty}" style="min-width:auto;margin-left:98px;">
+    <!--遮罩给上面的class + on-off_show-->
+    <div class="on-off_shade" >
+        <div class="on-off_shadeCon">
+            <span>目前还没有开启评价模块功能，<a href="javascript:void(0);" data-url="{:url('ShopComment/ajax_open_close')}" data-value="{$web_shopcomment_switch}" onclick="ajax_open_close(this);">我要开启</a></span>
+        </div>
+    </div>
     <div class="flexigrid">
         <div class="mDiv">
             <div class="ftitle"> <h3>评价列表</h3> <h5>(共{$pager->totalRows}条数据)</h5> </div>
@@ -14,7 +20,9 @@
                     <div class="sDiv2">
                         <input type="text" size="50" name="order_code" value="{$Request.param.order_code}" class="qsbox" style="width: 200px;" placeholder="搜索订单号..."> <input type="submit" class="btn" value="搜索"> <i class="fa fa-search"></i>
                     </div>
-
+                    {notempty name='$web_shopcomment_switch'}
+                    &nbsp;<a href="javascript:void(0);" data-url="{:url('ShopComment/ajax_open_close')}" data-value="{$web_shopcomment_switch}" onclick="ajax_open_close(this);">关闭评价</a>
+                    {/notempty}
                 </div>
             </form>
         </div>
@@ -175,6 +183,25 @@
             location.href = location.href;
         });
     });
+
+    function ajax_open_close(obj, inc_type, name,value){
+        $.ajax({
+            type : 'post',
+            url : $(obj).attr('data-url'),
+            data : {value:$(obj).attr('data-value'), _ajax:1},
+            dataType : 'json',
+            success : function(res){
+                if(res.code == 1){
+                    window.location.reload();
+                }else{
+                    showErrorMsg(res.msg);
+                }
+            },
+            error: function(e){
+                showErrorAlert(e.responseText);
+            }
+        })
+    }
 </script>
 
 {include file="public/footer" /}

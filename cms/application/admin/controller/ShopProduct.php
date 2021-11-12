@@ -31,7 +31,11 @@ class ShopProduct extends Base
     public function _initialize()
     {
         parent::_initialize();
-        $this->language_access(); // 多语言功能操作权限
+
+        if (!preg_match('/^attrlist_/i', ACTION_NAME) && !preg_match('/^attribute_/i', ACTION_NAME)) {
+            $this->language_access(); // 多语言功能操作权限
+        }
+        
         $channeltype_list  = config('global.channeltype_list');
         $this->channeltype = $channeltype_list[$this->nid];
         empty($this->channeltype) && $this->channeltype = 2;
@@ -311,7 +315,7 @@ class ShopProduct extends Base
 
             //做自动通过审核判断
             if ($admin_info['role_id'] > 0 && $auth_role_info['check_oneself'] < 1) {
-                unset($post['arcrank']);
+                $post['arcrank'] = -1;
             }
 
             // --存储数据
@@ -423,8 +427,9 @@ class ShopProduct extends Base
 
         /*商品参数列表*/
         $where                   = [
+            'lang'  => $this->admin_lang,
+            'status' => 1,
             'is_del' => 0,
-            'status' => 1
         ];
         $assign_data['AttrList'] = $this->shop_product_attrlist_db->where($where)->order('sort_order asc, list_id asc')->select();
         /*END*/
@@ -678,9 +683,9 @@ class ShopProduct extends Base
         }
 
         // SEO描述
-        if (!empty($info['seo_description'])) {
-            $info['seo_description'] = @msubstr(checkStrHtml($info['seo_description']), 0, config('global.arc_seo_description_length'), false);
-        }
+        // if (!empty($info['seo_description'])) {
+        //     $info['seo_description'] = @msubstr(checkStrHtml($info['seo_description']), 0, config('global.arc_seo_description_length'), false);
+        // }
 
         $assign_data['field'] = $info;
 
@@ -762,8 +767,9 @@ class ShopProduct extends Base
 
         /*商品参数列表*/
         $where                   = [
+            'lang'  => $this->admin_lang,
+            'status' => 1,
             'is_del' => 0,
-            'status' => 1
         ];
         $assign_data['AttrList'] = $this->shop_product_attrlist_db->where($where)->order('sort_order asc, list_id asc')->select();
         /*END*/
@@ -1046,9 +1052,11 @@ class ShopProduct extends Base
     public function attrlist_index()
     {
         // 查询条件
-        $Where['is_del'] = 0;
+        $Where = [];
         $keywords        = input('keywords/s');
         if (!empty($keywords)) $Where['list_name'] = ['LIKE', "%{$keywords}%"];
+        $Where['lang'] = $this->admin_lang;
+        $Where['is_del'] = 0;
 
         // 分页
         $count   = $this->shop_product_attrlist_db->where($Where)->count('list_id');
@@ -1064,6 +1072,11 @@ class ShopProduct extends Base
             ->limit($pageObj->firstRow . ',' . $pageObj->listRows)
             ->select();
         $this->assign('list', $list);
+
+        // 内容管理的产品发布/编辑里入口进来
+        $oldinlet = input('param.oldinlet/d');
+        $this->assign('oldinlet', $oldinlet);
+
         return $this->fetch();
     }
 
@@ -1127,6 +1140,7 @@ class ShopProduct extends Base
                 'list_name'   => $post['list_name'],
                 'desc'        => trim($post['desc']),
                 'sort_order'  => 100,
+                'lang'        => $this->admin_lang,
                 'add_time'    => getTime(),
                 'update_time' => getTime(),
             ];
@@ -1154,14 +1168,15 @@ class ShopProduct extends Base
                             'attr_values'     => !empty($post['attr_values'][$k]) ? trim($post['attr_values'][$k]) : '',
                             'sort_order'      => isset($post['attr_sort_order'][$k]) ? intval($post['attr_sort_order'][$k]) : 100,
                             'status'          => 1,
+                            'lang'            => $this->admin_lang,
                             'add_time'        => getTime(),
                             'update_time'     => getTime(),
                         );
                     }
 
                     if (!empty($saveAttrData)) {
-                        $RId = Db::name('shop_product_attribute')->insertAll($saveAttrData);
-                        if ($RId !== false) {
+                        $rdata = model('ShopProductAttribute')->saveAll($saveAttrData);
+                        if ($rdata !== false) {
                             // 参数值合计增加
                             Db::name('shop_product_attrlist')->where('list_id', $ReturnId)->setInc('attr_count', count($post['attr_name']));
                         }
@@ -1303,6 +1318,7 @@ class ShopProduct extends Base
                 }
             }
         }
+        $condition['a.lang'] = $this->admin_lang;
         $condition['a.is_del'] = 0;
 
         // 分页
@@ -1352,6 +1368,7 @@ class ShopProduct extends Base
                 'attr_values'     => isset($post_data['attr_values']) ? $post_data['attr_values'] : '',
                 'sort_order'      => $post_data['sort_order'],
                 'status'          => 1,
+                'lang'            => $this->admin_lang,
                 'add_time'        => getTime(),
                 'update_time'     => getTime(),
             );
@@ -1397,7 +1414,7 @@ class ShopProduct extends Base
                 'update_time'     => getTime(),
             );
 
-            $ReturnId = Db::name('shop_product_attribute')->where('attr_id', $post_data['attr_id'])->update($SaveData);
+            $ReturnId = Db::name('shop_product_attribute')->where(['attr_id'=>$post_data['attr_id'], 'lang'=>$this->admin_lang])->update($SaveData);
             if ($ReturnId) {
                 adminLog('编辑商品参数：' . $SaveData['attr_name']);
                 $this->success('操作成功');
@@ -1406,7 +1423,8 @@ class ShopProduct extends Base
             }
         }
 
-        $info = Db::name('shop_product_attribute')->where('attr_id', input('id/d'))->find();
+        $id = input('param.id/d');
+        $info = Db::name('shop_product_attribute')->where(['attr_id'=>$id, 'lang'=>$this->admin_lang])->find();
         if (empty($info)) $this->error('数据不存在，请联系管理员！');
         $this->assign('field', $info);
 
@@ -1423,7 +1441,7 @@ class ShopProduct extends Base
         $id_arr = input('del_id/a');
         $id_arr = eyIntval($id_arr);
         if (!empty($id_arr)) {
-            $r = Db::name('shop_product_attribute')->where(['attr_id' => ['IN', $id_arr]])->delete();
+            $r = Db::name('shop_product_attribute')->where(['attr_id' => ['IN', $id_arr], 'lang'=>$this->admin_lang])->delete();
             if ($r) {
                 $IDCount = count($id_arr);
                 Db::name('shop_product_attrlist')->where('list_id', input('list_id/d'))->setDec('attr_count', $IDCount);

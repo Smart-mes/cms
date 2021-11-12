@@ -84,6 +84,11 @@ class Pay extends Base
             ->order('a.moneyid desc')
             ->limit($Page->firstRow.','.$Page->listRows)
             ->select();
+        foreach ($list as $key => $val) {
+            $val['money'] = floatval($val['money']);
+            $val['users_money'] = floatval($val['users_money']);
+            $list[$key] = $val;
+        }
         $show = $Page->show();// 分页显示输出
         $this->assign('page',$show);// 赋值分页输出
         $this->assign('list',$list);// 赋值数据集
@@ -109,6 +114,13 @@ class Pay extends Base
             'field' => $result,
         );
         $this->assign('eyou', $eyou);
+
+        /*第三套模板，将充值功能加入明细页面*/
+        $money = input('param.money/f');
+        $this->assign('money', $money);
+        $unified_number = input('param.unified_number/s');
+        $this->assign('unified_number', $unified_number);
+        /*end*/
 
         return $this->fetch('users/pay_consumer_details');
     }
@@ -293,7 +305,23 @@ class Pay extends Base
                         // $url = urldecode(url('user/Pay/pay_recharge_detail', ['querystr'=>$querystr,'hash'=>$hash]));
                         
                         $payment_type = input('post.payment_type/s');
-                        if (getUsersTplVersion() == 'v2' && !empty($payment_type)) { // 第二版会员中心
+                        if ($this->usersTplVersion == 'v2' && !empty($payment_type)) { // 第二版会员中心
+                            $payment_type_arr = explode('_', $payment_type);
+                            $pay_mark = !empty($payment_type_arr[1]) ? $payment_type_arr[1] : '';
+                            $payApiRow = Db::name('pay_api_config')->where(['pay_mark'=>$pay_mark,'lang'=>$this->home_lang])->find();
+                            if (empty($payApiRow)) {
+                                $this->error('请选择正确的支付方式！');
+                            }
+                            $data = [
+                                'pay_id'            => $payApiRow['pay_id'],
+                                'pay_mark'          => $pay_mark,
+                                'unified_id'        => $moneyid,
+                                'unified_number'    => $order_number,
+                                'transaction_type'  => 1,
+                            ];
+                            $this->success('正在支付中', url('user/Pay/pay_consumer_details'), $data);
+                        }
+                        else if ($this->usersTplVersion == 'v3' && !empty($payment_type)) { // 第三版会员中心
                             $payment_type_arr = explode('_', $payment_type);
                             $pay_mark = !empty($payment_type_arr[1]) ? $payment_type_arr[1] : '';
                             $payApiRow = Db::name('pay_api_config')->where(['pay_mark'=>$pay_mark,'lang'=>$this->home_lang])->find();
@@ -411,7 +439,7 @@ class Pay extends Base
                     // 组装数据返回
                     $data['transaction_type'] = 8; // 交易类型，8为购买视频
                     $data['unified_id']       = $data['order_id'];
-                    $data['unified_amount']   = $data['order_amount'];
+                    $data['unified_amount']   = floatval($data['order_amount']);
                     $data['unified_number']   = $data['order_code'];
                     $data['cause']            = '购买视频';
                     $data['pay_balance_open'] = $pay_balance_open;
@@ -433,7 +461,7 @@ class Pay extends Base
                     // 组装数据返回
                     $data['transaction_type'] = 9; // 交易类型，9为购买文章
                     $data['unified_id']       = $data['order_id'];
-                    $data['unified_amount']   = $data['order_amount'];
+                    $data['unified_amount']   = floatval($data['order_amount']);
                     $data['unified_number']   = $data['order_code'];
                     $data['cause']            = $data['product_name'];
                     $data['pay_balance_open'] = $pay_balance_open;
@@ -462,10 +490,41 @@ class Pay extends Base
                     // 组装数据返回
                     $data['transaction_type'] = 2; // 交易类型，2为购买
                     $data['unified_id']       = $data['order_id'];
-                    $data['unified_amount']   = $data['order_amount'];
+                    $data['unified_amount']   = floatval($data['order_amount']);
                     $data['unified_number']   = $data['order_code'];
                     $data['cause']            = '购买商品';
                     $data['pay_balance_open'] = $pay_balance_open;
+                    $data['province'] = get_province_name($data['province']);
+                    $data['city']     = get_city_name($data['city']);
+                    $data['district'] = get_area_name($data['district']);
+                    $data['addressInfo'] = $data['province'].' '.$data['city'].' '.$data['district'].' '.$data['address'];
+                    $data['paymentExpire'] = $data['add_time'] + config('global.get_shop_order_validity') - getTime();
+
+                    // 规格处理
+                    $order_details = Db::name('shop_order_details')->where('order_id',$data['order_id'])->order('details_id asc')->select();
+                    foreach ($order_details as $key => $val) {
+                        $product_spec = unserialize($val['data']);
+                        if (!empty($product_spec['spec_value_id'])) {
+                            $spec_value_id = explode('_', $product_spec['spec_value_id']);
+                            if (!empty($spec_value_id)) {
+                                $product_spec_list = [];
+                                $SpecWhere = [
+                                    'aid'           => $val['product_id'],
+                                    'spec_value_id' => ['IN',$spec_value_id]
+                                ];
+                                $ProductSpecData = Db::name("product_spec_data")->where($SpecWhere)->field('spec_name, spec_value')->select();
+                                foreach ($ProductSpecData as $spec_value) {
+                                    $product_spec_list[] = [
+                                        'name' => $spec_value['spec_name'],
+                                        'value' => $spec_value['spec_value'],
+                                    ];
+                                }
+                                $order_details[$key]['product_spec_list'] = $product_spec_list;
+                            }
+                        }
+                    }
+                    $data['order_details'] = $order_details;
+
                     $this->assign('data', $data);
 
                 }
@@ -686,7 +745,8 @@ class Pay extends Base
     }
 
     // 微信支付，获取订单信息并调用微信接口，生成二维码用于扫码支付
-    public function pay_wechat_png(){
+    public function pay_wechat_png()
+    {
         $users_id = session('users_id');
         if (!empty($users_id)) {
             $unified_number   = input('param.unified_number/s');
@@ -725,7 +785,8 @@ class Pay extends Base
     }
 
     // ajax异步查询订单状态，轮询方式（微信）
-    public function pay_deal_with(){
+    public function pay_deal_with()
+    {
         if (IS_AJAX_POST) {
             $unified_number   = input('post.unified_number/s');
             $transaction_type = input('post.transaction_type/d');
@@ -893,7 +954,8 @@ class Pay extends Base
     }
 
     // 微信支付成功后跳转到此页面
-    public function pay_success(){
+    public function pay_success()
+    {
         $transaction_type = input('param.transaction_type/d');
         if (1 == $transaction_type) {
             $url = urldecode(url('user/Pay/pay_consumer_details'));
@@ -905,16 +967,19 @@ class Pay extends Base
     }
 
     // 新版支付宝支付
-    public function newAlipayPayUrl(){
+    public function newAlipayPayUrl()
+    {
         $data['unified_number']   = input('param.unified_number/s');
         $data['unified_amount']   = input('param.unified_amount/f');
         $data['transaction_type'] = input('param.transaction_type/d');
         // 调用新版支付宝支付方法
-        model('PayApi')->getNewAliPayPayUrl($data);
+        $Result = model('PayApi')->getNewAliPayPayUrl($data);
+        if (!empty($Result)) $this->error($Result);
     }
 
     // 支付宝回调接口，处理订单数据
-    public function alipay_return(){
+    public function alipay_return()
+    {
         // 跳转处理回调信息
         $pay_logic = new PayLogic();
         $result    = $pay_logic->alipay_return();
@@ -1302,7 +1367,8 @@ class Pay extends Base
         }
     }
 
-    public function get_openid() {
+    public function get_openid()
+    {
         // 小程序配置
         $MiniproValue = Db::name('weapp_minipro0002')->where('type', 'minipro')->getField('value');
         if (empty($MiniproValue)) return false;
@@ -1326,7 +1392,8 @@ class Pay extends Base
         echo json_encode($res);
     }
 
-    public function ajax_applets_pay() {
+    public function ajax_applets_pay()
+    {
         // 小程序配置
         $MiniproValue = Db::name('weapp_minipro0002')->where('type', 'minipro')->getField('value');
         if (empty($MiniproValue)) return false;

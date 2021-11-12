@@ -51,7 +51,7 @@
                                 <div  class="tc">库存</div>
                             </th>
                             <th align="left" abbr="" axis="col3" class="w80">
-                                <div  class="tc">售价</div>
+                                <div class="tc sort_style"><a href="{:getArchivesSortUrl('users_price')}">售价&nbsp;<i {eq name='$Request.param.orderby' value='users_price'}{eq name='$Request.param.orderway' value='asc'}class="asc"{else /}class="desc"{/eq}{/eq}></i></a></div>
                             </th>
                             <th align="left" abbr="" axis="col3" class="w80">
                                 <div  class="tc">浏览量</div>
@@ -69,7 +69,7 @@
                                 <div class="tc">操作</div>
                             </th>
                             <th abbr="article_time" axis="col6" class="w60">
-                                <div class="tc">排序</div>
+                                <div class="tc sort_style"><a href="{:getArchivesSortUrl('sort_order')}">排序&nbsp;<i {eq name='$Request.param.orderby' value='sort_order'}{eq name='$Request.param.orderway' value='asc'}class="asc"{else /}class="desc"{/eq}{/eq}></i></a></div>
                             </th>
                         </tr>
                     </thead>
@@ -186,7 +186,7 @@
             </span>
             <div class="nav-dropup">
                 <button class="layui-btn layui-btn-primary dropdown-bt">批量操作<i class="layui-icon layui-icon-up"></i></button>
-                <div class="dropdown-menus" style="display:none; {if condition='0 < $pager->totalRows && ($pager->totalRows < 2 || $pager->listRows < 2)'}top:30px;bottom:unset;border-bottom:1px solid rgba(0,0,0,.15);border-top:none;{/if}">
+                <div class="dropdown-menus" style="display:none; {if condition='0 < $pager->totalRows && ($pager->totalRows < 2 || $pager->listRows < 2)'}top:28px;bottom:unset;border-bottom:1px solid rgba(0,0,0,.15);border-top:none;min-height: 250px;{/if}">
                     {eq name="'Archives@batch_attr'|is_check_access" value="1"}
                     <a href="javascript:void(0);" onclick="batch_attr(this, 'ids', '批量新增属性');" data-url="{:url('Archives/batch_attr', ['opt'=>'add'])}">新增属性</a>
                     <a href="javascript:void(0);" onclick="batch_attr(this, 'ids', '批量删除属性');" data-url="{:url('Archives/batch_attr', ['opt'=>'del'])}">删除属性</a>

@@ -38,14 +38,14 @@ class TagAd extends Base
         /*多语言*/
         $aid = model('LanguageAttr')->getBindValue($aid, 'ad');
         if (empty($aid)) {
-            echo '标签ad报错：找不到与第一套【'.$this->main_lang.'】语言关联绑定的属性 aid 值。';
+            echo '标签ad报错：找不到与第一套【'.self::$main_lang.'】语言关联绑定的属性 aid 值。';
             return false;
         }
         /*--end*/
 
         $result = M("ad")->where([
                 'id'    => $aid,
-                'lang'  => $this->home_lang,
+                'lang'  => self::$home_lang,
             ])
             ->cache(true,EYOUCMS_CACHE_TIME,"ad")
             ->find();

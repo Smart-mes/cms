@@ -47,7 +47,7 @@ class ShopOrderService extends Model
 
         // 订单号查询
         $order_code = $param['order_code'];
-        if (!empty($order_code)) $Where['a.order_code'] = array('LIKE', "%{$order_code}%");
+        if (!empty($order_code)) $Where['a.order_code|a.refund_code'] = array('LIKE', "%{$order_code}%");
         
         $count   = $this->shop_order_service_db->alias('a')->where($Where)->count('service_id');
         $pageObj = new Page($count, config('paginate.list_rows'));
@@ -127,6 +127,8 @@ class ShopOrderService extends Model
         $Service['upload_img'] = explode(',', $Service['upload_img']);
         $Service['product_img'] = handle_subdir_pic(get_default_pic($Service['product_img']));
         $Service['product_spec'] = str_replace("&lt;br/&gt;", " || ", $Service['product_spec']);
+        $Service['product_spec'] = trim($Service['product_spec']);
+        $Service['product_spec'] = rtrim($Service['product_spec'], '||');
         $Service['TypeName'] = Config::get('global.order_service_type')[$Service['service_type']];
         $Service['users_delivery'] = !empty($Service['users_delivery']) ? unserialize($Service['users_delivery']) : '';
         $Service['admin_delivery'] = !empty($Service['admin_delivery']) ? unserialize($Service['admin_delivery']) : '';

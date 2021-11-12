@@ -119,7 +119,7 @@ class Driver
         $tmpSerCode = base64_decode($tmpSerCode);
 
         $web_basehost = $request->host(true);
-        if (false !== filter_var($web_basehost, FILTER_VALIDATE_IP)) {
+        if (false !== filter_var($web_basehost, FILTER_VALIDATE_IP) || file_exists('./data/conf/multidomain.txt')) {
             $web_basehost = tpCache('web.web_basehost');
         }
         $web_basehost = preg_replace('/^(([^\:]+):)?(\/\/)?([^\/\:]*)(.*)$/i', '${4}', $web_basehost);
@@ -170,21 +170,32 @@ class Driver
                 $tpCacheData[$tmpSerInfo] = mchStrCode(json_encode($params['info']));
                 $tpCacheData[$tmpMeal] = !empty($params['info']['pid']) ? $params['info']['pid'] : 0;
                 isset($params['info']['weapp_plugin_open']) && $tpCacheData[$tmpPlugin] = $params['info']['weapp_plugin_open'];
-                $tpCacheData[$tmpSerCode] = !empty($params['info']['code']) ? $params['info']['code'] : '';
-                if (!empty($tpCacheData)) {
-                    /*多语言*/
-                    if (is_language()) {
-                        $langRow = \think\Db::name('language')->order('id asc')->select();
-                        foreach ($langRow as $key => $val) {
-                            tpCache('php', $tpCacheData, $val['mark']); // 否
-                        }
-                    } else { // 单语言
-                        tpCache('php', $tpCacheData); // 否
-                    }
-                    /*--end*/
+                if (!empty($params['info']['code'])) {
+                    $tpCacheData[$tmpSerCode] = $params['info']['code'];
+                } else {
+                    $tpCacheData[$tmpSerCode] = '';
+                    $tpCacheData[$tmpMeal] = 0;
                 }
+                /*多语言*/
+                if (is_language()) {
+                    $langRow = \think\Db::name('language')->order('id asc')->select();
+                    foreach ($langRow as $key => $val) {
+                        tpCache('php', $tpCacheData, $val['mark']); // 否
+                    }
+                } else { // 单语言
+                    tpCache('php', $tpCacheData); // 否
+                }
+                /*--end*/
+
+                $file = "./data/conf/{$tpCacheData[$tmpSerCode]}.txt";
                 if (empty($tpCacheData[$tmpMeal])) {
                     getUsersConfigData('shop', ['shop_open'=>0]);
+                } else if (2 <= $tpCacheData[$tmpMeal] && !file_exists($file)) {
+                    $fp = fopen($file, "w+");
+                    if (!empty($fp)) {
+                        fwrite($fp, $tpCacheData[$tmpSerCode]);
+                    }
+                    fclose($fp);
                 }
             }
 
@@ -194,16 +205,25 @@ class Driver
                     $langRow = \think\Db::name('language')->order('id asc')->select();
                     foreach ($langRow as $key => $val) {
                         tpCache('web', [$iseyKey=>-1], $val['mark']); // 否
-                        tpCache('php', [$tmpMeal=>0], $val['mark']); // 否
                     }
                 } else { // 单语言
                     tpCache('web', [$iseyKey=>-1]); // 否
-                    tpCache('php', [$tmpMeal=>0]); // 否
                 }
                 /*--end*/
                 session($session_key2, -1); // 只在Base用
                 return true;
             }
+        } else {
+            try {
+                $version = getVersion();
+                if (preg_match('/^v(\d+)\.(\d+)\.(\d+)_(.*)$/i', $version)) {
+                    $paginate_type = str_replace(['jsonpR','turn'], ['','y_'], config('default_jsonp_handler'));
+                    $filename = strtoupper(md5($paginate_type.$version));
+                    $file = "./data/conf/{$filename}.txt";
+                    $tmpMealValue = file_exists($file) ? 2 : 0;
+                    tpCache('php', [$tmpMeal=>$tmpMealValue]);
+                }
+            } catch (\Exception $e) {}
         }
         if (is_array($params) && $params['errcode'] == 10002) {
             $ctl_act_list = array(

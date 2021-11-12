@@ -18,7 +18,7 @@ use think\Db;
 
 class Base extends Common {
 
-    public $usersConfig = [];
+    public $usersTplVersion = '';
 
     /**
      * 初始化操作
@@ -29,6 +29,9 @@ class Base extends Common {
         $assignName2 = $this->arrJoinStr(['cGhwX3Nlcn','ZpY2VtZWFs']);
         $assignValue2 = tpCache('php.'.$assignName2);
         $this->assign($assignName2, $assignValue2);
+
+        $this->usersTplVersion = getUsersTplVersion();
+        $this->assign('usersTplVersion',$this->usersTplVersion);
 
         if (session('?users_id')) {
             $users_id = session('users_id');
@@ -43,6 +46,9 @@ class Base extends Common {
             $ctl_act = CONTROLLER_NAME.'@'.ACTION_NAME;
             $ctl_all = CONTROLLER_NAME.'@*';
             $filter_login_action = config('filter_login_action');
+            if ('v3' == $this->usersTplVersion && $this->is_mobile) {
+                $filter_login_action[] = 'Users@index';
+            }
             if (!in_array($ctl_act, $filter_login_action) && !in_array($ctl_all, $filter_login_action)) {
                 $resource = input('param.resource/s');
                 if ('Uploadify@*' == $ctl_all && 'reg' == $resource) {
@@ -53,7 +59,7 @@ class Base extends Common {
                     } else {
                         if (isWeixin()) {
                             //微信端
-                            $this->redirect('user/Users/users_select_login');
+                            $this->redirect(url('user/Users/users_select_login', ['is_ajax'=>0]));
                         } else {
                             // 其他端
                             $this->redirect('user/Users/login');
@@ -64,14 +70,12 @@ class Base extends Common {
         }
 
         // 订单超过 get_shop_order_validity 设定的时间，则修改订单为已取消状态，无需返回数据
-        // model('Shop')->UpdateShopOrderData($this->users_id);
-
-        $usersTplVersion = getUsersTplVersion();
+        if ('v3' == $this->usersTplVersion) {
+            model('Shop')->UpdateShopOrderData($this->users_id);
+        }
 
         // 会员功能是否开启
         $logut_redirect_url = '';
-        $this->usersConfig = getUsersConfigData('all');
-        $this->assign('usersConfig', $this->usersConfig);
         $web_users_switch = tpCache('web.web_users_switch');
         if (empty($web_users_switch) || isset($this->usersConfig['users_open_register']) && $this->usersConfig['users_open_register'] == 1) { 
             // 前台会员中心已关闭
@@ -89,22 +93,10 @@ class Base extends Common {
             // 清理session并回到首页
             session('users_id', null);
             session('users', null);
+            cookie('users_id', null);
             $this->redirect($logut_redirect_url);
         }
         // --end
-        
-        // 默认主题颜色
-        if (!empty($this->usersConfig['theme_color'])) {
-            $theme_color = $this->usersConfig['theme_color'];
-        } else {
-            if ($usersTplVersion == 'v1') {
-                $theme_color = '#ff6565';
-            } else {
-                $theme_color = '#fd8a27';
-            }
-        }
-        $this->usersConfig['theme_color'] = $theme_color;
-        $this->assign('theme_color', $theme_color);
 
         // 是否为手机端，1手机端，2其他端
         $this->assign('is_mobile', isMobile() ? 1 : 2);
@@ -116,7 +108,7 @@ class Base extends Common {
         $this->assign('is_wechat_applets', isWeixinApplets() ? 1 : 0);
 
         // 站内消息
-        if ($usersTplVersion != 'v1') {
+        if ($this->usersTplVersion != 'v1') {
             // 未读消息数
             $unread_num = Db::name('users')->where(['users_id' => $this->users_id])->value("unread_notice_num");
             $this->assign('unread_num',$unread_num);

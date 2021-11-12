@@ -328,8 +328,8 @@ class UsersRelease extends Base
                 $filename .= '_m';
             }
             $web_users_tpl_theme = 'users';
-            if (getUsersTplVersion() != 'v1') {
-                $web_users_tpl_theme .= '_'.getUsersTplVersion();
+            if ($this->usersTplVersion != 'v1') {
+                $web_users_tpl_theme .= '_'.$this->usersTplVersion;
             }
             $html = $this->fetch("./public/static/template/{$web_users_tpl_theme}/{$filename}.htm");
         } else {
@@ -371,13 +371,14 @@ class UsersRelease extends Base
 
             $servername_arr = unserialize(tpCache('download.download_select_servername'));
             $data['download']['default_servername'] = $servername_arr?$servername_arr[0]:'立即下载';
+            $weapp = Db::name('weapp')->where('code','in',['Qiniuyun','AliyunOss','Cos'])->where('status',1)->getAllWithIndex('code');
             $config = Db::name('channeltype')->where('nid','download')->value('data');
             $config = json_decode($config,true);
-            if ('1' == $config['qiniuyun_open']) {
+            if ('1' == $config['qiniuyun_open'] && !empty($weapp['Qiniuyun'])) {
                 $upload_flag = 'qny';
-            } else if ('1' == $config['oss_open']) {
+            } else if ('1' == $config['oss_open'] && !empty($weapp['AliyunOss'])) {
                 $upload_flag = 'oss';
-            } else if ('1' == $config['cos_open']) {
+            } else if ('1' == $config['cos_open'] && !empty($weapp['Cos'])) {
                 $upload_flag = 'cos';
             }else{
                 $upload_flag = 'local';

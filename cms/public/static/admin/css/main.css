@@ -694,6 +694,7 @@ i.fa-external-link { color: #999 !important; font-size: 9px !important; margin-l
     height: 10px;
     background: url(../images/sort.png);
     margin-left: 5px;
+    background-position: 0 -20px;
 }
 .sort_style i.desc {
     background-position: 0 0;
@@ -2414,6 +2415,12 @@ div.bot2 {
     box-sizing: border-box;
     -webkit-box-sizing: border-box;
 }
+.on-off_panel .on-off_list .marketing-nav li{
+    width: 20%;
+}
+.on-off_panel .on-off_list ul.marketing-nav > li:nth-child(6n) {
+  padding-right:15px;
+}
 .on-off_panel .on-off_list li a{
     display: flex;
     align-items: center;
@@ -2436,6 +2443,7 @@ div.bot2 {
     text-overflow: ellipsis;
     white-space: nowrap;
     font-size: 16px;
+    line-height: 1.5;
 }
 .on-off_panel .on-off_list li a img{ width:60px;}
 .on-off_panel .on-off_list li a:hover {
@@ -2444,6 +2452,30 @@ div.bot2 {
 .on-off_panel .on-off_list ul > li:nth-child(6n) {
   padding-right: 0px;
 }
+.on-off_panel .on-off_list li .icon{
+    width: 56px;
+    height: 56px;
+    line-height: 56px;
+    display: inline-block;
+    text-align: center;
+    background-color: #eee;
+    border-radius: 50px;
+}
+.on-off_panel .on-off_list li .icon i{
+    font-size: 30px !important;
+    margin-right: 0 !important;
+    color: #fff;
+}
+.on-off_panel .on-off_list li span>p{
+    font-size: 12px;
+    color: #999;
+    display: inline;
+}
+.on-off_panel .on-off_list li span>h2{
+     font-size: 16px;
+      display: inline;
+}
+
 .on-off_panel .son-tit{
     display: block;
     line-height: 36px;
@@ -2734,4 +2766,32 @@ div.bot2 {
 .select-show-box .mobile{
     background-color: #4caf50;
     border-color:#4caf50;
+}
+
+/*更多功能-导航遮罩*/
+.page.on-off_show{
+    position: relative;
+    
+}
+.page.on-off_show .on-off_shade {
+    display: flex !important;
+}
+.page .on-off_shade {
+    position: absolute;
+    height: 100%;
+    width: 100%;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.6);
+    z-index: 999;
+    top: 0;
+    display: none;
+}
+.page.on-off_show .on-off_shadeCon {
+    box-shadow: 0 4px 12px 0 rgba(0, 0, 0, 0.15);
+    background-color: #FFFFFF;
+    display: inline-block;
+    height: auto;
+    text-align: center;
+    padding: 16px;
 }

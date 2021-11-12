@@ -180,7 +180,7 @@ class FieldLogic extends Model
             {
                 $dfvalue = '';
             }
-            $maxlen = 200;
+            $maxlen = 251;
             $fields[0] = " `$fieldname` varchar($maxlen) NOT NULL DEFAULT '$dfvalue' COMMENT '$fieldtitle';";
             $fields[1] = "varchar($maxlen)";
             $fields[2] = $maxlen;

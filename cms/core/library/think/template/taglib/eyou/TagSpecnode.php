@@ -51,7 +51,7 @@ class TagSpecnode extends Base
         }
         $map['status'] = 1;
         $map['is_del'] = 0;
-        $map['lang'] = $this->home_lang;
+        $map['lang'] = self::$home_lang;
         $specialNodeInfo = Db::name('special_node')->where($map)->order('node_id asc')->find();
         if (empty($specialNodeInfo)) {
             return false;
@@ -135,7 +135,7 @@ class TagSpecnode extends Base
         $condition['a.arcrank'] = ['gt', -1];
         $condition['a.status'] = 1;
         $condition['a.is_del'] = 0;
-        $condition['a.lang'] = $this->home_lang;
+        $condition['a.lang'] = self::$home_lang;
 
         $allow_release_channel = config('global.allow_release_channel');
         $index = array_search(7, $allow_release_channel); // 过滤专题模型

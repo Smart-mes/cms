@@ -72,6 +72,33 @@ return array (
     'primary' => false,
     'autoinc' => false,
   ),
+  'diy_dirpath' => 
+  array (
+    'name' => 'diy_dirpath',
+    'type' => 'varchar(200)',
+    'notnull' => false,
+    'default' => '',
+    'primary' => false,
+    'autoinc' => false,
+  ),
+  'rulelist' => 
+  array (
+    'name' => 'rulelist',
+    'type' => 'varchar(200)',
+    'notnull' => false,
+    'default' => '',
+    'primary' => false,
+    'autoinc' => false,
+  ),
+  'ruleview' => 
+  array (
+    'name' => 'ruleview',
+    'type' => 'varchar(200)',
+    'notnull' => false,
+    'default' => '',
+    'primary' => false,
+    'autoinc' => false,
+  ),
   'englist_name' => 
   array (
     'name' => 'englist_name',

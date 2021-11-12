@@ -758,12 +758,9 @@ function GetUploadify(num,elementid,path,callback,url)
     }
     if (num > 0) {
 
+        if (!url) url = GetUploadify_url;
+
         var is_water = 1;
-
-        if (!url) {
-            url = GetUploadify_url;
-        }
-
         if ('water' == url) {
             is_water = 0;
             url = GetUploadify_url;
@@ -1199,6 +1196,23 @@ function push_zzbaidu(url, type)
     });
 }
 
+// 百度小程序 API 提交 (自动推送)
+function push_bdminipro(aid, type)
+{
+    $.ajax({
+        url:__root_dir__+"/index.php?m=api&c=Ajax&a=push_bdminipro&lang="+__lang__,
+        type:'POST',
+        dataType:'json',
+        data:{"aid":aid,"type":type,"_ajax":1},
+        success:function(res){
+            console.log(res.msg);
+        },
+        error: function(e){
+            console.log(e);
+        }
+    });
+}
+
 // 更新sitemap.xml地图
 function update_sitemap(controller, action)
 {
@@ -1228,7 +1242,7 @@ function click_to_eyou_1575506523(url,title,width,height) {
         shadeClose: false,
         shade: 0.3,
         maxmin: false, //开启最大化最小化按钮
-        area: ['80%', '80%'],
+        area: [width, height],
         content: url
     });
 }
@@ -1542,4 +1556,100 @@ function set_author()
             layer.close(index);
         }
     );
+}
+
+function editor_auto_210607() {
+    var editor_remote_img_local = 0;
+    var editor_img_clear_link = 0;
+    if ($('#editor_remote_img_local').attr('checked')) {
+        editor_remote_img_local = 1;
+    }
+    if ($('#editor_img_clear_link').attr('checked')) {
+        editor_img_clear_link = 1;
+    }
+    if (1 == editor_remote_img_local || 1 == editor_img_clear_link) {
+        var editor_addonFieldExt = $('#editor_addonFieldExt').val();
+        if (editor_addonFieldExt) {
+            var arr = editor_addonFieldExt.split(',');
+            $.each(arr, function (index, value) {
+                eval('ajax_auto_editor_addonFieldExt_'+value+'('+editor_remote_img_local+','+editor_img_clear_link+');');
+            });
+        }
+    }
+}
+
+//城市分站 - 自动获取二级城市列表
+function set_city_list(cityid, siteid) {
+    var pid =  $("#province_id").val();
+    $.ajax({
+        url: eyou_basefile + "?m=admin&c=Citysite&a=ajax_get_region&_ajax=1",
+        type: 'POST',
+        dataType: 'JSON',
+        async: false,
+        data: {pid:pid,level:2,siteid:siteid},
+        success: function(res){
+            if (res.code === 1){
+                if (1 == res.data.isempty) {
+                    $("#city_id").hide();
+                } else {
+                    $("#city_id").show();
+                }
+                $("#city_id").empty();
+                $("#city_id").prepend(res.msg);
+                if (cityid > 0){
+                    $("#city_id").val(cityid);
+                }
+            }
+        },
+        error: function(e){
+            showErrorMsg(e.responseText);
+            return false;
+        }
+    });
+}
+
+//城市分站 - 自动获取三级乡镇列表
+function set_area_list(areaid) {
+    var pid =  $("#city_id").val();
+    $.ajax({
+        url: eyou_basefile + "?m=admin&c=Citysite&a=ajax_get_region&_ajax=1",
+        type: 'POST',
+        dataType: 'JSON',
+        async: false,
+        data: {pid:pid,level:3},
+        success: function(res){
+            if (res.code === 1){
+                if (1 == res.data.isempty) {
+                    $("#area_id").hide();
+                } else {
+                    $("#area_id").show();
+                }
+                $("#area_id").empty();
+                $("#area_id").prepend(res.msg);
+                if (areaid > 0){
+                    $("#area_id").val(areaid);
+                }
+            }
+        },
+        error: function(e){
+            showErrorMsg(e.responseText);
+            return false;
+        }
+    });
+}
+
+/**
+ * 判断URL是否合法http(s)
+ * @param  {[type]} URL [description]
+ * @return {[type]}     [description]
+ */
+function checkURL(URL) {
+    var str = URL,
+        Expression = /http(s)?:\/\/([\w-]+\.)+[\w-]+(\/[\w- .\/?%&=]*)?/,
+        objExp = new RegExp(Expression);
+    if(objExp.test(str) == true) {
+        return true
+    } else {
+        return false
+    }
 }

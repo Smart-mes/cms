@@ -23,6 +23,7 @@ class TagArclist extends Base
 {
     public $fieldLogic;
     public $archives_db;
+    public $url_screen_var;
 
     //初始化
     protected function _initialize()
@@ -35,6 +36,9 @@ class TagArclist extends Base
             $this->tid = $this->archives_db->where('aid', $this->aid)->getField('typeid');
         }
         /*--end*/
+        
+        // 定义筛选标识
+        $this->url_screen_var = config('global.url_screen_var');
     }
 
     /**
@@ -56,6 +60,85 @@ class TagArclist extends Base
      */
     public function getArclist($param = array(),  $row = 15, $orderby = '', $addfields = '', $orderway = '', $tagid = '', $tag = '', $pagesize = 0, $thumb = '', $arcrank = '')
     {
+        $condition = array();
+
+        /*自定义字段筛选*/
+        $url_screen_var = 0;
+        if (!empty($tag['url_params'])) {
+            $paramNew = $tag['url_params'] = json_decode(base64_decode($tag['url_params']), true);
+            $url_screen_var = !empty($paramNew[$this->url_screen_var]) ? $paramNew[$this->url_screen_var] : 0;
+        } else {
+            $UrlParams = $paramNew = input('param.');
+            $url_screen_var = !empty($paramNew[$this->url_screen_var]) ? $paramNew[$this->url_screen_var] : 0;
+            foreach ($UrlParams as $key => $value) {
+                if (in_array($key, ['m', 'c', 'a'])) {
+                    unset($UrlParams[$key]);
+                }
+            }
+            $tag['url_params'] = base64_encode(json_encode($UrlParams));
+        }
+        if (1 == $url_screen_var) {
+            /*自定义字段筛选*/
+            $field_where = [
+                'is_screening' => 1,
+                // 根据需求新增条件
+            ];
+            // 所有应用于搜索的自定义字段
+            $channelfield = Db::name('channelfield')->where($field_where)->field('channel_id,id,name,dtype,dfvalue')->select();
+            // 查询当前栏目所属模型
+            $channel_id = Db::name('arctype')->where('id', $paramNew['tid'])->getField('current_channel');
+            // 所有模型类别
+            $channeltype_list = config('global.channeltype_list');
+            $channel_table = array_search($channel_id, $channeltype_list);
+            // 查询获取aid初始sql语句
+            $wheres = [];
+            $where_multiple = [];
+            foreach ($channelfield as $key => $value) {
+                // 值不为空则执行
+                $fieldname = $value['name'];
+                if (!empty($fieldname) && !empty($paramNew[$fieldname])) {
+                    // 分割参数，判断多选或单选，拼装sql语句
+                    $val_arr  = explode('|', trim($paramNew[$fieldname], '|'));
+                    if (!empty($val_arr)) {
+                        if ('' == $val_arr[0]) {
+                            // 选择全部时拼装sql语句
+                            // $wheres[$fieldname] = ['NEQ', null];
+                        } else {
+                            if (1 == count($val_arr)) {
+                                // 多选字段类型
+                                if ('checkbox' == $value['dtype']) {
+                                    $val_arr[0] = addslashes($val_arr[0]);
+                                    $dfvalue_tmp = explode(',', $value['dfvalue']);
+                                    if (in_array($val_arr[0], $dfvalue_tmp)) {
+                                        array_push($where_multiple, "FIND_IN_SET('".$val_arr[0]."',{$fieldname})");
+                                    }
+                                } else {
+                                    $wheres[$fieldname] = $val_arr[0];
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            $where_multiple_str = "";
+            !empty($where_multiple) && $where_multiple_str = implode(' AND ', $where_multiple);
+            $aid_result = Db::name($channel_table.'_content')->field('aid')
+                ->where($wheres)
+                ->where($where_multiple_str)
+                ->select();
+            if (!empty($aid_result)) {
+                array_push($condition, "a.aid IN (".implode(',', get_arr_column($aid_result, "aid")).")");
+            } else {
+                $pages = Db::name('archives')->field("aid")->where("aid=0")->paginate($pagesize);
+                $result['pages'] = $pages; // 分页显示输出
+                $result['list'] = []; // 赋值数据集
+                return $result;
+            }
+            /*结束*/
+        }
+        /*--end*/
+
         $result = false;
 
         $channeltype = ("" != $param['channel'] && is_numeric($param['channel'])) ? intval($param['channel']) : '';
@@ -81,7 +164,7 @@ class TagArclist extends Base
             // 多语言
             $param['typeid'] = model('LanguageAttr')->getBindValue($param['typeid'], 'arctype');
             if (empty($param['typeid'])) {
-                echo '标签arclist报错：找不到与第一套【'.$this->main_lang.'】语言关联绑定的属性 typeid 值。';
+                echo '标签arclist报错：找不到与第一套【'.self::$main_lang.'】语言关联绑定的属性 typeid 值。';
                 return false;
             }
         }
@@ -145,8 +228,7 @@ class TagArclist extends Base
         }
 
         // 查询条件
-        $condition = array();
-        foreach (array('keyword','typeid','notypeid','flag','noflag','channel','joinaid') as $key) {
+        foreach (array('keyword','typeid','notypeid','flag','noflag','channel','joinaid','release') as $key) {
             if (isset($param[$key]) && $param[$key] !== '') {
                 if ($key == 'channel') {
                     array_push($condition, "a.channel IN ({$channeltype})");
@@ -211,7 +293,7 @@ class TagArclist extends Base
                         $where_flag_str = " (".implode(" OR ", $where_or_flag).") ";
                         array_push($condition, $where_flag_str);
                     }
-                } elseif ($key == 'keyword' && !empty($param[$key])) {
+                } elseif ($key == 'keyword' && trim($param[$key])) {
                     $keyword = str_replace('，', ',', $param[$key]);
                     $keywordArr = explode(',', $keyword);
                     $keywordArr = array_unique($keywordArr); // 去重
@@ -226,11 +308,39 @@ class TagArclist extends Base
                     }
                     $keyword = implode('|', $keywordArr);
                     $condition[] = Db::raw(" CONCAT(a.title,a.seo_keywords) REGEXP '$keyword' ");
+                } elseif ($key == 'release' && !empty($param[$key])){
+                    if('on' == $param[$key]){
+                        array_push($condition, "a.users_id > 0");
+                    }
                 } else {
                     array_push($condition, "a.{$key} = '".$param[$key]."'");
                 }
             }
         }
+
+        // 多城市站点
+        // if (config('city_switch_on')) {
+        //     if (!empty(self::$site_info)) {
+        //         if (self::$site_info['level'] == 1) { // 省份
+        //             // 包含全国、当前省份
+        //             array_push($condition, "(a.province_id IN (".self::$siteid.",0) AND a.city_id = 0)");
+        //         } else if (self::$site_info['level'] == 2) { // 城市
+        //             // 包含全国、当前城市
+        //             $condition[] = Db::raw(" ((a.city_id = ".self::$siteid." AND a.area_id = 0) OR a.province_id = 0) ");
+        //             // 包含全国、全省、当前城市
+        //             // $citysiteInfo = Db::name('citysite')->where(['id'=>self::$siteid])->cache(true, EYOUCMS_CACHE_TIME, 'citysite')->find();
+        //             // $condition[] = Db::raw(" ((a.city_id IN (".self::$siteid.",0) AND a.province_id = ".$citysiteInfo['parent_id'].") OR (a.province_id = 0)) ");
+        //         } else { // 区域
+        //             // 包含全国、当前区域
+        //             $condition[] = Db::raw(" (a.area_id = ".self::$siteid." OR a.province_id = 0) ");
+        //             // 包含全国、全省、全城市
+        //             // $citysiteInfo = Db::name('citysite')->where(['id'=>self::$siteid])->cache(true, EYOUCMS_CACHE_TIME, 'citysite')->find();
+        //             // $condition[] = Db::raw(" ((a.area_id IN (".self::$siteid.",0) AND a.city_id = ".$citysiteInfo['parent_id'].") OR (a.province_id = ".$citysiteInfo['topid']." AND a.city_id = 0) OR (a.province_id = 0)) ");
+        //         }
+        //     } else {
+        //         array_push($condition, "a.province_id = 0");
+        //     }
+        // }
 
         // 默认查询条件
         array_push($condition, "a.arcrank > -1");
@@ -250,7 +360,10 @@ class TagArclist extends Base
         
         // 给排序字段加上表别名
         $orderby = getOrderBy($orderby, $orderway, true);
-
+        
+        // 获取排序信息 --- 陈风任
+        $orderby = $this->GetSortData($orderby, $paramNew);
+        
         // 用于arclist标签的分页
         if (0 < $pagesize) {
             $tag['typeid'] = $typeid;
@@ -266,7 +379,7 @@ class TagArclist extends Base
         // 是否显示会员权限
         $users_level_list = $users_level_list2 = [];
         if ('on' == $arcrank || stristr(','.$addfields.',', ',arc_level_name,')) {
-            $users_level_list = Db::name('users_level')->field('level_id,level_name,level_value')->where('lang',$this->home_lang)->order('is_system desc, level_value asc')->getAllWithIndex('level_value');
+            $users_level_list = Db::name('users_level')->field('level_id,level_name,level_value')->where('lang',self::$home_lang)->order('is_system desc, level_value asc')->getAllWithIndex('level_value');
             if (stristr(','.$addfields.',', ',arc_level_name,')) {
                 $users_level_list2 = convert_arr_key($users_level_list, 'level_id');
             }
@@ -274,6 +387,8 @@ class TagArclist extends Base
 
         // 查询数据处理
         $aidArr = array();
+        $adminArr = array();
+        $usersArr = array();
         $addtableName = ''; // 附加字段的数据表名
         switch ($channeltype) {
             case '-1':
@@ -289,7 +404,7 @@ class TagArclist extends Base
                     ->alias('a')
                     ->join('__ARCTYPE__ b', 'b.id = a.typeid', 'LEFT')
                     ->where($where_str)
-                    ->where('a.lang', $this->home_lang)
+                    ->where('a.lang', self::$home_lang)
                     ->orderRaw($orderby)
                     ->limit($limit)
                     ->select();
@@ -300,7 +415,7 @@ class TagArclist extends Base
                 //         ->alias('a')
                 //         ->join('__ARCTYPE__ b', 'b.id = a.typeid', 'LEFT')
                 //         ->where($where_str)
-                //         ->where('a.lang', $this->home_lang)
+                //         ->where('a.lang', self::$home_lang)
                 //         ->limit(500)
                 //         ->select();
                 //     shuffle($result);
@@ -311,7 +426,7 @@ class TagArclist extends Base
                 //         ->alias('a')
                 //         ->join('__ARCTYPE__ b', 'b.id = a.typeid', 'LEFT')
                 //         ->where($where_str)
-                //         ->where('a.lang', $this->home_lang)
+                //         ->where('a.lang', self::$home_lang)
                 //         ->orderRaw($orderby)
                 //         ->limit($limit)
                 //         ->select();
@@ -320,6 +435,11 @@ class TagArclist extends Base
 
                 foreach ($result as $key => $val) {
                     array_push($aidArr, $val['aid']); // 收集文档ID
+                    array_push($adminArr, $val['admin_id']); // 收集admin_id
+                    array_push($usersArr, $val['users_id']); // 收集users_id     
+                                   
+                    $val['users_price'] = floatval($val['users_price']);
+                    $val['old_price'] = floatval($val['old_price']);
 
                     // 栏目链接
                     if ($val['is_part'] == 1) {
@@ -361,6 +481,39 @@ class TagArclist extends Base
                     }
 
                     $result[$key] = $val;
+                }
+
+                if ('on' == $arcrank) {
+                    $field = 'username,nickname,head_pic,users_id,admin_id';
+                    $userslist = Db::name('users')->field($field)
+                        ->where('admin_id','in',$adminArr)
+                        ->whereOr('users_id','in',$usersArr)
+                        ->select();
+                    foreach ($userslist as $key => $val) {
+                        $val['head_pic'] = get_default_pic($val['head_pic']);
+                        empty($val['nickname']) && $val['nickname'] = $val['username'];
+                        if (!empty($val['admin_id'])) {
+                            $adminLitpicArr[$val['admin_id']] = $val;
+                        }
+                        if (!empty($val['users_id'])) {
+                            $usersLitpicArr[$val['users_id']] = $val;
+                        }
+                    }
+                    $adminLitpic = Db::name('users')->field($field)->where('admin_id','>',0)->order('users_id asc')->find();
+                    $adminLitpic['head_pic'] = get_default_pic($adminLitpic['head_pic']);
+                    empty($adminLitpic['nickname']) && $adminLitpic['nickname'] = $adminLitpic['username'];
+
+                    foreach ($result as $key => $val) {
+                        if (!empty($val['users_id'])) {
+                            $users = !empty($usersLitpicArr[$val['users_id']]) ? $usersLitpicArr[$val['users_id']] : [];
+                        } elseif (!empty($val['admin_id'])) {
+                            $users = !empty($adminLitpicArr[$val['admin_id']]) ? $adminLitpicArr[$val['admin_id']] : [];
+                        } else {
+                            $users = $adminLitpic;
+                        }
+                        !empty($users) && $val['users'] = $users;
+                        $result[$key] = $val;
+                    }
                 }
 
                 /*附加表*/
@@ -457,11 +610,71 @@ class TagArclist extends Base
             }
         }
 
+        if (!empty($result) && 2 == $channeltype) {
+            // 查询商品规格并分类处理
+            $where = [
+                'aid' => ['IN', $aidArr],
+                'spec_stock' => ['gt', 0],
+            ];
+            $order = 'spec_price asc';
+            $product_spec = Db::name('product_spec_value')->where($where)->order($order)->select();
+            $product_spec = group_same_key($product_spec, 'aid');
+
+            // 查询用户信息
+            $Users = GetUsersLatestData();
+            $DiscountRate = !empty($Users) ? $Users['level_discount'] / 100 : 1;
+
+            // 处理价格及库存
+            $Spec = [];
+            foreach ($result as $key => $value) {
+                if (!empty($product_spec[$value['aid']][0])) {
+                    // 产品规格
+                    $Spec = $product_spec[$value['aid']][0];
+                    // 规格价格
+                    if (!empty($Spec) && $Spec['spec_price'] >= 0) {
+                        $result[$key]['old_price'] = floatval(sprintf("%.2f", $Spec['spec_price']));
+                        $result[$key]['users_price'] = floatval(sprintf("%.2f", $Spec['spec_price'] * $DiscountRate));
+                    }
+                    // 规格库存
+                    if (!empty($Spec) && $Spec['spec_stock'] >= 0) $result[$key]['stock_count'] = $Spec['spec_stock'];
+                    // 加入购物车 onclick
+                    $result[$key]['ShopAddCart'] = " onclick=\"ShopAddCart1625194556('{$value['aid']}', '{$Spec['spec_value_id']}', 1, '{$this->root_dir}');\" ";
+                } else {
+                    // 无规格
+                    $result[$key]['old_price'] = floatval(sprintf("%.2f", $value['users_price']));
+                    $result[$key]['users_price'] = floatval(sprintf("%.2f", $value['users_price'] * $DiscountRate));
+                    // 加入购物车 onclick
+                    $result[$key]['ShopAddCart'] = " onclick=\"ShopAddCart1625194556('{$value['aid']}', null, 1, '{$this->root_dir}');\" ";
+                }
+            }
+        }
+
         $data = [
             'tag' => $tag,
             'list' => $result,
         ];
         return $data;
+    }
+    
+    // 排序处理
+    private function GetSortData($orderby = '', $Param = [])
+    {
+        if (!empty($Param['sort']) && 'sales' == $Param['sort']) {
+            $orderby = 'a.sales_num desc, ' . $orderby;
+        } else if (!empty($Param['sort']) && 'price' == $Param['sort']) {
+            $orderby = 'a.users_price ' . $Param['sort_asc'] . ', ' . $orderby;
+        } else if (!empty($Param['sort']) && 'appraise' == $Param['sort']) {
+            $orderby = 'a.appraise desc, ' . $orderby;
+        } else if (!empty($Param['sort']) && 'new' == $Param['sort']) {
+            $orderby = 'a.add_time desc, ' . $orderby;
+        } else if (!empty($Param['sort']) && 'collection' == $Param['sort']) {
+            $orderby = 'a.collection desc, ' . $orderby;
+        } else if (!empty($Param['sort']) && 'click' == $Param['sort']) {
+            $orderby = 'a.click desc, ' . $orderby;
+        } else if (!empty($Param['sort']) && 'download' == $Param['sort']) {
+            $orderby = 'a.downcount desc, ' . $orderby;
+        }
+        return $orderby;
     }
 
     // 生成hash唯一串

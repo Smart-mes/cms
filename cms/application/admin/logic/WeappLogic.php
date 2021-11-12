@@ -328,7 +328,7 @@ class WeappLogic extends Model
 
             /*更新的SQL文件列表*/
             $sql_file = !empty($val['sql_file']) ? $val['sql_file'] : array();
-            $sqlfileArr = array_merge($sqlfileArr, $val['sql_file']);
+            $sqlfileArr = array_merge($sqlfileArr, $sql_file);
             /*--end*/
         }
         /*--end*/

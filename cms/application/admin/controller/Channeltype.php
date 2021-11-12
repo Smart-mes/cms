@@ -271,18 +271,18 @@ class Channeltype extends Base
                         Db::name('arctype')->where([
                             'channeltype'    => $post['id'],
                         ])->update([
-                            'is_release'   => $post['is_release'],
+                            'is_release'   => !empty($post['is_release']) ? $post['is_release'] : 0,
                             'update_time'   => getTime(),
                         ]);
                     }
                     /*留言模型 - 同步邮箱模板的开启与关闭*/
                     if (8 == $post['id']) {
-                        Db::name('smtp_tpl')->where([
-                                'send_scene'    => 1,
-                            ])->update([
-                                'is_open'   => intval($post['smtp_is_open']),
-                                'update_time'   => getTime(),
-                            ]);
+                        // Db::name('smtp_tpl')->where([
+                        //         'send_scene'    => 1,
+                        //     ])->update([
+                        //         'is_open'   => intval($post['smtp_is_open']),
+                        //         'update_time'   => getTime(),
+                        //     ]);
                         
                         /*留言间隔时间 - 多语言*/
                         $paramData = [

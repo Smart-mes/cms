@@ -30,11 +30,10 @@
                         <input type="text" name="add_time_end" id="add_time_end" autocomplete="off" value="{$Request.param.add_time_end}" class="qsbox" placeholder="结束日期">
                     </div>
                     <div class="sDiv2">
-                        <input type="text" size="50" name="order_code" value="{$Request.param.keywords}" class="qsbox" style="width: 200px;" placeholder="搜索订单号...">
+                        <input type="text" size="50" name="order_code" value="{$Request.param.order_code}" class="qsbox" style="width: 200px;" placeholder="搜索订单号...">
                         <input type="submit" class="btn" value="搜索">
 						<i class="fa fa-search"></i>
                     </div>
-
                 </div>
             </form>
         </div>
@@ -327,37 +326,6 @@
         $('.fa-refresh').click(function(){
             location.href = location.href;
         });
-
-        {eq name="$is_syn_theme_shop" value="1"}
-            syn_theme_shop();
-        {/eq}
-        function syn_theme_shop()
-        {
-            layer_loading('订单初始化');
-            // 确定
-            $.ajax({
-                type : 'get',
-                url : "{:url('Shop/ajax_syn_theme_shop')}",
-                data : {_ajax:1},
-                dataType : 'json',
-                success : function(res){
-                    layer.closeAll();
-                    if(res.code == 1){
-                        layer.msg(res.msg, {icon: 1, time: 1000});
-                    }else{
-                        layer.alert(res.msg, {icon: 2, title:false}, function(){
-                            window.location.reload();
-                        });
-                    }
-                },
-                error: function(e){
-                    layer.closeAll();
-                    layer.alert(ey_unknown_error, {icon: 2, title:false}, function(){
-                        window.location.reload();
-                    });
-                }
-            })
-        }
     });
 
     function OrderQueryStatus(){

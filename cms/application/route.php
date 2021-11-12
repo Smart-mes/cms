@@ -52,9 +52,9 @@ config('ey_config.web_tpl_theme', $web_tpl_theme);
 /*辨识响应式模板，还是PC与移动的分离模板*/
 $num = 0;
 $response_type = 0; // 默认是响应式
-$tpldirList = ["template/{$web_tpl_theme}pc","template/{$web_tpl_theme}mobile"];
+$tpldirList = ["template/{$web_tpl_theme}pc/index.htm","template/{$web_tpl_theme}mobile/index.htm"];
 foreach ($tpldirList as $key => $val) {
-    if (is_dir($val)) {
+    if (file_exists($val)) {
         $num++;
         if ($num >= 2) {
             $response_type = 1; // PC与移动端分离
@@ -82,6 +82,9 @@ config('ey_config.system_home_default_lang', $system_home_default_lang);
 // 是否https链接
 $is_https = !empty($globalTpCache['web_is_https']) ? true : config('is_https');
 config('is_https', $is_https);
+// 前台默认区域
+// $site_default_home = !empty($globalTpCache['site_default_home']) ? $globalTpCache['site_default_home'] : config('ey_config.site_default_home');
+// config('ey_config.site_default_home', $site_default_home);
 
 // 是否存在问答插件
 $is_ask_weapp = false;
@@ -117,33 +120,55 @@ if ('on' == trim($uiset, '/')) { // 可视化页面必须是兼容模式的URL
     config('ey_config.seo_inlet', $seo_inlet);
 
     if (3 == $seo_pseudo) {
-        $lang_rewrite = [];
-        $lang_rewrite_str = '';
-        /*多语言*/
-        $lang = input('param.lang/s');
-        if (is_language()) {
-            if (!stristr($request->baseFile(), 'index.php')) {
-                if (!empty($lang) && $lang != $system_home_default_lang) {
-                    $lang_rewrite_str = '<lang>/';
+        $request = request();
+        $lang_rewrite = $site_rewrite = [];
+        $lang_rewrite_str = $site_rewrite_str = '';
+        if (config('city_switch_on')) { // 多城市与多语言只能开启一个，多城市优先级高于多语言
+            if (stristr($request->baseFile(), 'index.php')) {
+                $site = input('param.site/s');
+                if (!empty($site) && $request->subDomain() != $site) {
+                    $site_rewrite_str .= '<site>/';
                 }
-            } else {
-                if (get_current_lang() != get_default_lang()) {
-                    $lang_rewrite_str .= '<lang>/';
+            }
+
+            if (!empty($site_rewrite_str)) {
+                $site_rewrite = [
+                    // 首页
+                    $site_rewrite_str.'$' => [
+                        'home/Index/index',
+                        ['method' => 'get', 'ext' => ''],
+                        'cache'=>1
+                    ],
+                ];
+            }
+            $lang_rewrite_str = $site_rewrite_str;
+        }
+        else { // 多语言
+            $lang = input('param.lang/s');
+            if (is_language()) {
+                if (!stristr($request->baseFile(), 'index.php')) {
+                    if (!empty($lang) && $lang != $system_home_default_lang) {
+                        $lang_rewrite_str = '<lang>/';
+                    }
+                } else {
+                    if (get_current_lang() != get_default_lang()) {
+                        $lang_rewrite_str .= '<lang>/';
+                    }
                 }
+            }
+
+            if (!empty($lang_rewrite_str)) {
+                $lang_rewrite = [
+                    // 首页
+                    $lang_rewrite_str.'$' => [
+                        'home/Index/index',
+                        ['method' => 'get', 'ext' => ''],
+                        'cache'=>1
+                    ],
+                ];
             }
         }
 
-        if (!empty($lang_rewrite_str)) {
-            $lang_rewrite = [
-                // 首页
-                $lang_rewrite_str.'$' => [
-                    'home/Index/index',
-                    ['method' => 'get', 'ext' => ''],
-                    'cache'=>1
-                ],
-            ];
-        }
-        /*--end*/
         if (1 == $seo_rewrite_format || 3 == $seo_rewrite_format) { // 精简伪静态
             $home_rewrite = [
                 // 会员中心
@@ -518,10 +543,10 @@ if ('on' == trim($uiset, '/')) { // 可视化页面必须是兼容模式的URL
             }
             /*--end*/
         }
-        $home_rewrite = array_merge($lang_rewrite, $home_rewrite);
+        $home_rewrite = array_merge($lang_rewrite, $site_rewrite, $home_rewrite);
     }
     else if (2 == $seo_pseudo) {
-        $lang_rewrite_str = '';
+        $lang_rewrite_str = $site_rewrite_str = '';
         $home_rewrite = [];
 
         if (false === $is_ask_weapp) {

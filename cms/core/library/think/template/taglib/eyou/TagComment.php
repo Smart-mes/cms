@@ -48,7 +48,7 @@ class TagComment extends Base
     var eyou_data_json_1611563866 = {$JsonData};
 </script>
 
-<script type="text/javascript" src="{$this->root_dir}/public/static/common/js/tag_comment.js?v={$version}"></script>
+<script type="text/javascript" src="{$this->root_dir}/public/static/common/js/tag_comment.js?t={$version}"></script>
 EOF;
         return $result;
     }

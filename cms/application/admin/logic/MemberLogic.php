@@ -45,7 +45,7 @@ class MemberLogic extends Model
         // api_Service_checkVersion
         $tmp_str = 'L2luZGV4LnBocD9tPWFwaSZjPVVwZ3JhZGUmYT1jaGVja1RoZW1lVmVyc2lvbg==';
         $this->service_url = base64_decode($this->service_ey).base64_decode($tmp_str);
-        $this->upgrade_url = $this->service_url . '&domain='.request()->host(true).'&v=' . $this->version.'&type=theme_users';
+        $this->upgrade_url = $this->service_url . '&domain='.request()->host(true).'&v=' . $this->version.'&type=theme_users&cms_version='.getVersion();
         $this->planPath_pc = 'template/'.TPL_THEME.'pc/';
         $this->planPath_m = 'template/'.TPL_THEME.'mobile/';
     }
@@ -57,11 +57,8 @@ class MemberLogic extends Model
     {
         error_reporting(0);//关闭所有错误报告
         $web_users_tpl_theme = tpCache('web.web_users_tpl_theme');
-        if (empty($web_users_tpl_theme)) {
-            $web_users_tpl_theme = 'users'; 
-        }
-        
-        if ('v1.0.1' > $this->version && !file_exists($this->planPath_pc.$web_users_tpl_theme)) {
+        empty($web_users_tpl_theme) && $web_users_tpl_theme = 'users';
+        if (!file_exists($this->planPath_pc.$web_users_tpl_theme)) {
             return $this->OneKeyUpgrade();
         } else {
             return true;

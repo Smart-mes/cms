@@ -483,17 +483,27 @@
     /* 生成静态页面代码 */
     var typeid = "{$typeid}";
     var is_del = "{$is_del}";
-    if(typeid > 0){
-      $.ajax({
-        url:__root_dir__+"/index.php?m=home&c=Buildhtml&a=upHtml&lang="+__lang__,
-          type:'POST',
-          dataType:'json',
-          data:{'typeid':typeid,'is_del':is_del,ctl_name:'Arctype',_ajax:1},
-          success:function(data){
+    if (typeid > 0) {
+        {eq name='$eyou.seo_pseudo' value='2'}
+        $.ajax({
+            url: __root_dir__ + "/index.php?m=home&c=Buildhtml&a=upHtml&lang=" + __lang__,
+            type: 'POST',
+            dataType: 'json',
+            data: {'typeid': typeid, 'is_del': is_del, ctl_name: 'Arctype', _ajax: 1},
+            success: function (data) {
 
-          }
-      });
-    } 
+            }
+        });
+        {/eq}
+        {notempty name='$eyou.zzbaidutoken'}
+        // 百度自动推送
+        push_zzbaidu('{$eyou.typeurl}', '{$eyou.handle}');
+        {/notempty}
+        {notempty name='$eyou.bdminipro'}
+        //百度小程序 API 提交 (自动推送)
+        push_bdminipro(typeid, 1);
+        {/notempty}
+    }
     /* end */
 </script>
 

@@ -1,7 +1,16 @@
 <?php
+// +----------------------------------------------------------------------
+// | ThinkPHP [ WE CAN DO IT JUST THINK ]
+// +----------------------------------------------------------------------
+// | Copyright (c) 2006~2018 http://thinkphp.cn All rights reserved.
+// +----------------------------------------------------------------------
+// | Licensed ( http://www.apache.org/licenses/LICENSE-2.0 )
+// +----------------------------------------------------------------------
+// | Author: liu21st <liu21st@gmail.com>
+// +----------------------------------------------------------------------
 
 //------------------------
-// 助手函数
+// ThinkPHP 助手函数
 //-------------------------
 
 use think\Cache;
@@ -146,6 +155,49 @@ if (!function_exists('input')) {
             $data = eyPreventShell($data) ? $data : '';
         }
         /*--end*/
+
+        static $city_switch_on = null;
+        null === $city_switch_on && $city_switch_on = config('city_switch_on');
+        if (!empty($city_switch_on)) {
+            if (('site' == $key || preg_match('/^site\//i', $key)) && in_array($method, ['param','get']) && stristr(request()->baseFile(), 'index.php')) {
+                $current_site = '';
+                /*兼容伪静态多城市切换*/
+                $pathinfo = request()->pathinfo();
+                if (!empty($pathinfo)) {
+                    $s_arr = explode('/', $pathinfo);
+                    if ('m' == $s_arr[0]) {
+                        $s_arr[0] = $s_arr[1];
+                    }
+                    $count = \think\Db::name('citysite')->where(['domain'=>$s_arr[0]])->cache(true, EYOUCMS_CACHE_TIME, 'citysite')->count();
+                    if (!empty($count)) {
+                        $current_site = $s_arr[0];
+                    }
+                }
+                /*--end*/
+
+                /*支持独立域名配置*/
+                // if (empty($current_site)) {
+                //     $subDomain = request()->subDomain();
+                //     if (!empty($subDomain) && 'www' != $subDomain) {
+                //         $siteInfo = \think\Db::name('citysite')->where('domain',$subDomain)->cache(true, EYOUCMS_CACHE_TIME, 'citysite')->find();
+                //         if (!empty($siteInfo['is_open'])) {
+                //             $current_site = $siteInfo['domain'];
+                //         }
+                //     }
+                // }
+                /*--end*/
+
+                if (isset($data['site'])) {
+                    $site = trim($data['site'], '/');
+                    $site = trim($site);
+                    empty($site) && $data['site'] = $current_site;
+                } else if (is_string($data)) {
+                    $site = trim($data, '/');
+                    $site = trim($site);
+                    empty($site) && $data = $current_site;
+                }
+            }
+        }
 
         return $data;
     }
@@ -971,7 +1023,7 @@ if (!function_exists('code_validate')) {
 
     if (!function_exists('DedeM')) {
         /**
-         * 兼容织梦CMS
+         * 兼容写法
          * @param string $name 表名
          * @return DB对象
          */

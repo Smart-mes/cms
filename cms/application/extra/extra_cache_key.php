@@ -25,6 +25,27 @@ return array(
     'common_weapp_getWeappList'     => array(
         'tag'=>'weapp', 'options'=>array('expire'=>0, 'prefix'=>'')
     ),
+    'global_get_province_list'     => array(
+        'tag'=>'region', 'options'=>array('expire'=>0, 'prefix'=>'')
+    ),
+    'global_get_city_list'     => array(
+        'tag'=>'region', 'options'=>array('expire'=>0, 'prefix'=>'')
+    ),
+    'global_get_area_list'     => array(
+        'tag'=>'region', 'options'=>array('expire'=>0, 'prefix'=>'')
+    ),
+    'global_get_citysite_list'     => array(
+        'tag'=>'citysite', 'options'=>array('expire'=>0, 'prefix'=>'')
+    ),
+    'global_get_site_province_list'     => array(
+        'tag'=>'citysite', 'options'=>array('expire'=>0, 'prefix'=>'')
+    ),
+    'global_get_site_city_list'     => array(
+        'tag'=>'citysite', 'options'=>array('expire'=>0, 'prefix'=>'')
+    ),
+    'global_get_site_area_list'     => array(
+        'tag'=>'citysite', 'options'=>array('expire'=>0, 'prefix'=>'')
+    ),
 
     /* -------------------------前台使用------------------------- */
     // 'home_base_global_assign'     => array(

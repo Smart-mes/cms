@@ -47,14 +47,14 @@ class TagLoad extends Base
                     if ($ver == 'on') {
                         $parseStr .= static_version($val);
                     } else {
-                        $parseStr .= '<script type="text/javascript" src="' . $val . '?v='.$version.'"></script>';
+                        $parseStr .= '<script type="text/javascript" src="' . $val . '?t='.$version.'"></script>';
                     }
                     break;
                 case 'css':
                     if ($ver == 'on') {
                         $parseStr .= static_version($val);
                     } else {
-                        $parseStr .= '<link rel="stylesheet" type="text/css" href="' . $val . '?v='.$version.'" />';
+                        $parseStr .= '<link rel="stylesheet" type="text/css" href="' . $val . '?t='.$version.'" />';
                     }
                     break;
                 case 'php':

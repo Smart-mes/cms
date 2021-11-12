@@ -63,7 +63,7 @@
                 </dl>
                 <dl class="row">
                     <dt class="tit">
-                        <label>列表页面名称</label>
+                        <label>栏目页面名称</label>
                     </dt>
                     <dd class="opt">
                         <label><input type="radio" name="seo_html_listname" value="1" {if condition="isset($config.seo_html_listname) && $config.seo_html_listname eq 1"}checked="checked"{/if}>{notempty name='$root_dir'}子目录名称/{/notempty}顶级目录名称/lists_ID.html（<a href="javascript:void(0);" onclick="view_exp('lists_2_1');">查看例子</a><span id="lists_2_1" class="none">：__SITE_URL____ROOT_DIR__<span id="exp_seo_html_arcdir">{$seo_html_arcdir_1}</span>/news/lists_1.html</span>）</label>&nbsp;
@@ -71,6 +71,8 @@
                         <label><input type="radio" name="seo_html_listname" value="2" {if condition="!isset($config.seo_html_listname) || $config.seo_html_listname neq 1"}checked="checked"{/if}>{notempty name='$root_dir'}子目录名称/{/notempty}父级目录名称/子目录名称/（<a href="javascript:void(0);" onclick="view_exp('lists_2_2');">查看例子</a><span id="lists_2_2" class="none">：__SITE_URL____ROOT_DIR__<span id="exp_seo_html_arcdir">{$seo_html_arcdir_1}</span>/news/lol/</span>）</label>&nbsp;
                         <br/>
                         <label><input type="radio" name="seo_html_listname" value="3" {if condition="isset($config.seo_html_listname) && $config.seo_html_listname eq 3"}checked="checked"{/if}>{notempty name='$root_dir'}子目录名称/{/notempty}子目录名称/（<a href="javascript:void(0);" onclick="view_exp('lists_2_3');">查看例子</a><span id="lists_2_3" class="none">：__SITE_URL____ROOT_DIR__<span id="exp_seo_html_arcdir">{$seo_html_arcdir_1}</span>/lol/</span>）</label>&nbsp;
+                        <br/>
+                        <label><input type="radio" name="seo_html_listname" value="4" {if condition="isset($config.seo_html_listname) && $config.seo_html_listname eq 4"}checked="checked"{/if}>自定义（<a href="javascript:void(0);" onclick="view_exp('lists_2_4');">点击查看</a><span id="lists_2_4" class="none">：在【栏目管理】新增/编辑栏目可以自定义文件保存目录和列表命名规则</span>）</label>&nbsp;
                         <span class="err"></span>
                         <p class="notic"></p>
                     </dd>
@@ -80,11 +82,13 @@
                         <label>文档页面名称</label>
                     </dt>
                     <dd class="opt">
-                        <label><input type="radio" name="seo_html_pagename" value="1" {if condition="isset($config.seo_html_pagename) && $config.seo_html_pagename eq 1"}checked="checked"{/if}>{notempty name='$root_dir'}子目录名称/{/notempty}顶级目录名称/ID.html（<a href="javascript:void(0);" onclick="view_exp('view_2_3');">查看例子</a><span id="view_2_3" class="none">：__SITE_URL____ROOT_DIR__<span id="exp_seo_html_arcdir">{$seo_html_arcdir_1}</span>/news/10.html</span>）</label>&nbsp;
+                        <label><input type="radio" name="seo_html_pagename" value="1" {if condition="isset($config.seo_html_pagename) && $config.seo_html_pagename eq 1"}checked="checked"{/if}>{notempty name='$root_dir'}子目录名称/{/notempty}顶级目录名称/ID.html（<a href="javascript:void(0);" onclick="view_exp('view_2_1');">查看例子</a><span id="view_2_1" class="none">：__SITE_URL____ROOT_DIR__<span id="exp_seo_html_arcdir">{$seo_html_arcdir_1}</span>/news/10.html</span>）</label>&nbsp;
                         <br/>
-                        <label><input type="radio" name="seo_html_pagename" value="2" {if condition="!isset($config.seo_html_pagename) || $config.seo_html_pagename neq 1"}checked="checked"{/if}>{notempty name='$root_dir'}子目录名称/{/notempty}父级目录名称/子目录名称/ID.html（<a href="javascript:void(0);" onclick="view_exp('view_2_4');">查看例子</a><span id="view_2_4" class="none">：__SITE_URL____ROOT_DIR__<span id="exp_seo_html_arcdir">{$seo_html_arcdir_1}</span>/news/lol/20.html</span>）</label>&nbsp;
+                        <label><input type="radio" name="seo_html_pagename" value="2" {if condition="!isset($config.seo_html_pagename) || $config.seo_html_pagename neq 1"}checked="checked"{/if}>{notempty name='$root_dir'}子目录名称/{/notempty}父级目录名称/子目录名称/ID.html（<a href="javascript:void(0);" onclick="view_exp('view_2_2');">查看例子</a><span id="view_2_2" class="none">：__SITE_URL____ROOT_DIR__<span id="exp_seo_html_arcdir">{$seo_html_arcdir_1}</span>/news/lol/20.html</span>）</label>&nbsp;
                         <br/>
-                        <label><input type="radio" name="seo_html_pagename" value="3" {if condition="isset($config.seo_html_pagename) && $config.seo_html_pagename eq 3"}checked="checked"{/if}>{notempty name='$root_dir'}子目录名称/{/notempty}子目录名称/ID.html（<a href="javascript:void(0);" onclick="view_exp('view_2_5');">查看例子</a><span id="view_2_5" class="none">：__SITE_URL____ROOT_DIR__<span id="exp_seo_html_arcdir">{$seo_html_arcdir_1}</span>/lol/20.html</span>）</label>&nbsp;
+                        <label><input type="radio" name="seo_html_pagename" value="3" {if condition="isset($config.seo_html_pagename) && $config.seo_html_pagename eq 3"}checked="checked"{/if}>{notempty name='$root_dir'}子目录名称/{/notempty}子目录名称/ID.html（<a href="javascript:void(0);" onclick="view_exp('view_2_3');">查看例子</a><span id="view_2_3" class="none">：__SITE_URL____ROOT_DIR__<span id="exp_seo_html_arcdir">{$seo_html_arcdir_1}</span>/lol/20.html</span>）</label>&nbsp;
+                        <br/>
+                        <label><input type="radio" name="seo_html_pagename" value="4" {if condition="isset($config.seo_html_pagename) && $config.seo_html_pagename eq 4"}checked="checked"{/if}>自定义（<a href="javascript:void(0);" onclick="view_exp('view_2_4');">点击查看</a><span id="view_2_4" class="none">：在【栏目管理】新增/编辑栏目可以自定义文件保存目录和文档命名规则</span>）</label>&nbsp;
                         <span class="err"></span>
                         <p class="notic"></p>
                     </dd>
@@ -120,7 +124,7 @@
                     <label>栏目标题格式</label>
                 </dt>
                 <dd class="opt">
-                    <label><input type="radio" name="seo_liststitle_format" value="1" {if condition="isset($config.seo_liststitle_format) AND $config.seo_liststitle_format eq 1"}checked="checked"{/if}>栏目名称_网站名称</label>&nbsp;
+                    <label><input type="radio" name="seo_liststitle_format" value="1" {if condition="isset($config.seo_liststitle_format) AND $config.seo_liststitle_format eq 1"}checked="checked"{/if}>栏目名称_第N页</label>&nbsp;
                     <br/>
                     <label><input type="radio" name="seo_liststitle_format" value="2" {if condition="!isset($config.seo_liststitle_format) OR $config.seo_liststitle_format eq 2"}checked="checked"{/if}>栏目名称_第N页_网站名称</label>&nbsp;
                     <span class="err"></span>
@@ -166,6 +170,23 @@
 <script type="text/javascript">
 
     $(function(){
+        // 栏目页面名称
+        $('input[name=seo_html_listname]').click(function(){
+            var seo_html_listname = $(this).val();
+            var seo_html_pagename = $('input[name=seo_html_pagename]:checked').val();
+            if (4 == seo_html_listname && 4 != seo_html_pagename) {
+                layer.alert('文档页面名称也可以自定义哦！', {icon: 6, closeBtn:false, title: false});
+            }
+        });
+        // 文档页面名称
+        $('input[name=seo_html_pagename]').click(function(){
+            var seo_html_pagename = $(this).val();
+            var seo_html_listname = $('input[name=seo_html_listname]:checked').val();
+            if (4 == seo_html_pagename && 4 != seo_html_listname) {
+                layer.alert('栏目页面名称也可以自定义哦！', {icon: 6, closeBtn:false, title: false});
+            }
+        });
+
         $('input[name=seo_pseudo]').click(function(){
             var _this = this;
             $('#dl_seo_dynamic_format').hide();
@@ -330,7 +351,7 @@
                             $('#seo_force_inlet1').attr('checked','');
                             $('label[for=seo_force_inlet0]').addClass('selected');
                             $('#seo_force_inlet0').attr('checked','checked');
-                            layer.alert('不支持去除index.php，请<a href="http://www.eyoucms.com/plus/view.php?aid=7874" target="_blank">点击查看教程</a>', {icon: 2, title:false});
+                            layer.alert('不支持去除index.php，请<a href="javascript:void(0);" onclick="layer.closeAll();click_to_eyou_1575506523(\'https://www.eyoucms.com/plus/view.php?aid=7874\',\'去掉URL中的index.php教程\');">点击查看教程</a>', {icon: 2, title:false});
                         }
                     }
                 });

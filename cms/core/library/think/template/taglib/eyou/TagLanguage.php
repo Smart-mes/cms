@@ -36,7 +36,7 @@ class TagLanguage extends Base
         
         $map = ['status'=>1];
         if ('default' == $type) {
-            $map['mark'] = ['NEQ', $this->home_lang];
+            $map['mark'] = ['NEQ', self::$home_lang];
         }
 
         /*关闭多语言*/
@@ -87,7 +87,7 @@ class TagLanguage extends Base
             /*--end*/
             
             /*标记被选中效果*/
-            if ($val['mark'] == $this->home_lang) {
+            if ($val['mark'] == self::$home_lang) {
                 $val['currentstyle'] = $this->currentstyle;
             } else {
                 $val['currentstyle'] = '';

@@ -19,7 +19,7 @@
                         <input id="web_status1" name="web_status" value="1" type="radio" {if condition="isset($config.web_status) AND $config.web_status eq 1"} checked="checked"{/if}>
                         <input type="hidden" id="old_web_status" value="{$config.web_status|default='0'}">
                     </div>
-                    <p class="notic"></p>
+                    <!-- <p class="notic2 red none" id="web_status_tips" style="text-indent: 1em;">提示：关闭网站，系统会切换成动态URL模式！</p> -->
                     {eq name="$web_cmsmode" value="2"}
                     <dd class="variable">
                         <div><p><b>变量名</b></p></div>
@@ -28,6 +28,26 @@
                     {/eq}
                 </dd>
             </dl>
+            <div id="div_web_status_close" class="{if condition='!isset($config.web_status) OR empty($config.web_status)'}none{/if}">
+                <dl class="row">
+                    <dt class="tit">
+                        <label for="web_status_url">&nbsp;</label>
+                    </dt>
+                    <dd class="opt">
+                        <input id="web_status_url" name="web_status_url" value="{$config.web_status_url|default=''}" class="input-txt" type="text" placeholder="关闭后，访问网站跳转的URL，http://" />
+                        <p class="notic">如果设置跳转URL，优先级别高于静态模板路径，URL必须带有http:// 或 https://</p>
+                    </dd>
+                </dl>
+                <dl class="row">
+                    <dt class="tit">
+                        <label for="web_status_tpl">&nbsp;</label>
+                    </dt>
+                    <dd class="opt">
+                        <input id="web_status_tpl" name="web_status_tpl" value="{$config.web_status_tpl|default=''}" class="input-txt" type="text" placeholder="关闭后，访问网站显示的静态模板路径，public/close.html" />
+                        <p class="notic">静态模板路径优先级低于跳转URL，设置路径前面不要带有子目录</p>
+                    </dd>
+                </dl>
+            </div>
             <dl class="row">
                 <dt class="tit">
                     <label for="web_name">网站名称</label>
@@ -308,19 +328,27 @@
 
         // 关闭站点
         $('input[name=web_status]').click(function(){
-            var seo_pseudo = {$seo_pseudo|default=0};
-            var old_web_status = $('#old_web_status').val();
-            if(2 == seo_pseudo && old_web_status == 0 && $(this).val() == 1){
-                layer.msg('关闭网站，系统会切换成动态URL模式！', {
-                    btnAlign: 'c',
-                    time: 20000, //20s后自动关闭
-                    btn: ['知道了']
-                });
+            $('#div_web_status_close').hide();
+            // $('#web_status_tips').hide();
+            // var seo_pseudo = {$seo_pseudo|default=0};
+            // var old_web_status = $('#old_web_status').val();
+            // if(2 == seo_pseudo && old_web_status == 0 && $(this).val() == 1){
+            //     $('#web_status_tips').show();
+            // }
+            if ($(this).val() == 1) {
+                $('#div_web_status_close').show();
             }
         });
     });
 
     function adsubmit(){
+        if($('input[name=web_status]:checked').val() == 1){
+            if($('input[name=web_status_url]').val() != '' && !checkURL($('input[name=web_status_url]').val())){
+                showErrorMsg('跳转的URL格式不正确！');
+                $('input[name=web_status_url]').focus();
+                return false;
+            }
+        }
         layer_loading("正在处理");
         $('#handlepost').submit();
     }

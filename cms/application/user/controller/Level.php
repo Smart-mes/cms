@@ -154,6 +154,18 @@ class Level extends Base
         );
         $this->assign('eyou', $eyou);
 
+        // 跳转链接
+        $referurl = input('param.referurl/s', null, 'htmlspecialchars_decode,urldecode');
+        if (empty($referurl)) {
+            if (isset($_SERVER['HTTP_REFERER']) && stristr($_SERVER['HTTP_REFERER'], $this->request->host())) {
+                $referurl = $_SERVER['HTTP_REFERER'];
+            } else {
+                $referurl = url("user/Users/centre");
+            }
+        }
+        cookie('referurl', $referurl);
+        $this->assign('referurl', $referurl);
+
         return $this->fetch('users/level_centre');
     }
 

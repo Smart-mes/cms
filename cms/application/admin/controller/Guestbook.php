@@ -139,6 +139,8 @@ class Guestbook extends Base
                     //如果是区域类型,转换名称
                     $val['attr_value'] = Db::name('region')->where('id','in',$val['attr_value'])->column('name');
                     $val['attr_value'] = implode('',$val['attr_value']);
+                }else if(10 == $val['attr_input_type']){
+                    $val['attr_value'] = date('Y-m-d H:i:s',$val['attr_value']);
                 }
                 if (preg_match('/(\.(jpg|gif|png|bmp|jpeg|ico|webp))$/i', $val['attr_value'])) {
                     if (!stristr($val['attr_value'], '|')) {
@@ -655,6 +657,8 @@ class Guestbook extends Base
                 $val['attr_value'] = implode('',$val['attr_value']);
             } else if ($val['attr_input_type'] == 4) {
                 $val['attr_value'] = filter_line_return($val['attr_value'], '、');
+            }else if(10 == $val['attr_input_type']){
+                $val['attr_value'] = date('Y-m-d H:i:s',$val['attr_value']);
             } else {
                 if (preg_match('/(\.(jpg|gif|png|bmp|jpeg|ico|webp))$/i', $val['attr_value'])) {
                     if (!stristr($val['attr_value'], '|')) {
@@ -744,6 +748,8 @@ class Guestbook extends Base
                     if ($v['attr_input_type'] == 9){
                         $v['attr_value'] = Db::name('region')->where('id','in',$v['attr_value'])->column('name');
                         $attr_value[$k]['attr_value'] = implode('',$v['attr_value']);
+                    }else if(10 == $val['attr_input_type']){
+                        $val['attr_value'] = date('Y-m-d H:i:s',$val['attr_value']);
                     }
                 }
 

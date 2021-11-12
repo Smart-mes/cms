@@ -30,17 +30,37 @@ class TagDiyurl extends Base
 
         $parseStr = "";
         
-        if (in_array($this->request->controller(), ['Search', 'Lists'])) {
+        if (in_array(self::$request->controller(), ['Search', 'Lists', 'Tags', 'Buildhtml'])) {
             // 获取URL链接上的所有参数
-            $Param = $this->request->param();
+            $Param = self::$request->get();
             // 获取已处理好的 tid
             $Param['tid'] = !empty($this->tid) ? $this->tid : '';
             // 排序条件
             $SortAsc = !empty($Param['sort_asc']) && 'desc' == $Param['sort_asc'] ? 'asc' : 'desc';
             // 伪静态下则获取 request 数据
-            $Param['m'] = !empty($Param['m']) ? $Param['m'] : $this->request->module();
-            $Param['c'] = !empty($Param['c']) ? $Param['c'] : $this->request->controller();
-            $Param['a'] = !empty($Param['a']) ? $Param['a'] : $this->request->action();
+            $Param['m'] = 'home';
+            $Param['c'] = !empty($Param['c']) ? $Param['c'] : self::$request->controller();
+            $Param['a'] = !empty($Param['a']) ? $Param['a'] : self::$request->action();
+
+            /*--------------兼容生成静态页面 start---------------*/
+            if (self::$request->controller() == 'Buildhtml') {
+                if (!empty($Param['tid'])) {
+                    $Param['c'] = 'Lists';
+                    $Param['a'] = 'index';
+                } else if (!empty($Param['tagid'])) {
+                    $Param['c'] = 'Tags';
+                    $Param['a'] = 'lists';
+                }
+                unset($Param['page']);
+            }
+            /*--------------兼容生成静态页面 end---------------*/
+
+            if (empty($Param['tid'])) {
+                unset($Param['tid']);
+            }
+            if (self::$main_lang == self::$home_lang) {
+                unset($Param['lang']);
+            }
             // 当前模型、控制器、方法
             $DynamicURL = "{$Param['m']}/{$Param['c']}/{$Param['a']}";
             // 删除指定参数
@@ -81,6 +101,14 @@ class TagDiyurl extends Base
                     break;
                 case "login":     // 登录
                     $parseStr = url('user/Users/login');
+                    break;
+                case "login_users": // 登录后跳转到会员中心
+                    $url = url('user/Users/login');
+                    if (stristr($url, '?')) {
+                        $parseStr = $url."&referurl=".urlencode(url('user/Users/index'));
+                    } else {
+                        $parseStr = $url."?referurl=".urlencode(url('user/Users/index'));
+                    }
                     break;
                 case "reg":     // 注册
                     $parseStr = url('user/Users/reg');

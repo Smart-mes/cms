@@ -1,9 +1,29 @@
+var ey_jquery_1624608277 = false;
+if (!window.jQuery) {
+    ey_jquery_1624608277 = true;
+} else {
+    var ey_jq_ver_1624608277 = jQuery.fn.jquery;
+    if (ey_jq_ver_1624608277 < '1.8.0') {
+        ey_jquery_1624608277 = true;
+    }
+}
+if (ey_jquery_1624608277) {
+    document.write(unescape("%3Cscript src='"+root_dir_1606379494+"/public/static/common/js/jquery.min.js' type='text/javascript'%3E%3C/script%3E"));
+    document.write(unescape("%3Cscript type='text/javascript'%3E try{jQuery.noConflict();}catch(e){} %3C/script%3E"));
+}
+
+if (!window.layer || !layer.v) {
+    document.write(unescape("%3Cscript src='"+root_dir_1606379494+"/public/plugins/layer-v3.1.0/layer.js' type='text/javascript'%3E%3C/script%3E"));
+}
+
 /**
  * 收藏、取消
  * @return {[type]} [description]
  */
-function ey_1606378141(aid,obj)
+function ey_1606378141(aid,cla,obj)
 {
+    var cancel_1606379494 = window['cancel_1606379494_'+aid];
+    var collected_1606379494 = window['collected_1606379494_'+aid];
     var users_id = getCookie_1606378141('users_id');
     if (!users_id) {
         if (document.getElementById('ey_login_id_1609665117')) {
@@ -12,7 +32,9 @@ function ey_1606378141(aid,obj)
             if (!window.layer) {
                 alert('请先登录');
             } else {
-                var layerindex = layer.alert('请先登录', {id: 'layer_collection_1606378141' , icon: 5, title: false, closeBtn: false});
+                var layerindex = layer.alert('请先登录', {id: 'layer_collection_1606378141' , icon: 5, title: false}, function(){
+                    window.location.href = loginurl_1606379494;
+                });
                 //重新给指定层设定top等
                 var top = 150;
                 var top2 = document.getElementById("layer_collection_1606378141").parentNode.style.top;
@@ -45,26 +67,57 @@ function ey_1606378141(aid,obj)
             var json = ajax.responseText;
             var res = JSON.parse(json);
             if (1 == res.code) {
-                var afterHtml = '';
-                if (res.data.opt == 'add') {
-                        afterHtml = collected_1606379494;
-                    if (document.getElementById("ey_cnum_1606379494_"+aid)) {
-                        var collection_num = document.getElementById("ey_cnum_1606379494_"+aid).innerHTML;
-                        collection_num = parseInt(collection_num) + 1;
-                        document.getElementById("ey_cnum_1606379494_"+aid).innerHTML = collection_num;
-                    }
-                } else {
-                    afterHtml = cancel_1606379494;//加入收藏
-                    if (document.getElementById("ey_cnum_1606379494_"+aid)) {
-                        var collection_num = document.getElementById("ey_cnum_1606379494_"+aid).innerHTML;
-                        collection_num = parseInt(collection_num) - 1;
-                        if (collection_num < 0) {
-                            collection_num = 0;
+                if ('on' == cla){
+                    if (res.data.opt == 'add') {
+                        if (cancel_1606379494) {
+                            obj.classList.remove(cancel_1606379494);
                         }
-                        document.getElementById("ey_cnum_1606379494_"+aid).innerHTML = collection_num;
+                        if (collected_1606379494) {
+                            obj.classList.add(collected_1606379494);
+                        }
+                        if (document.getElementById("ey_cnum_1606379494_"+aid)) {
+                            var collection_num = document.getElementById("ey_cnum_1606379494_"+aid).innerHTML;
+                            collection_num = parseInt(collection_num) + 1;
+                            document.getElementById("ey_cnum_1606379494_"+aid).innerHTML = collection_num;
+                        }
+                    } else {
+                        if (collected_1606379494) {
+                            obj.classList.remove(collected_1606379494);
+                        }
+                        if (cancel_1606379494) {
+                            obj.classList.add(cancel_1606379494);
+                        }
+                        if (document.getElementById("ey_cnum_1606379494_"+aid)) {
+                            var collection_num = document.getElementById("ey_cnum_1606379494_"+aid).innerHTML;
+                            collection_num = parseInt(collection_num) - 1;
+                            if (collection_num < 0) {
+                                collection_num = 0;
+                            }
+                            document.getElementById("ey_cnum_1606379494_"+aid).innerHTML = collection_num;
+                        }
                     }
+                }else{
+                    var afterHtml = '';
+                    if (res.data.opt == 'add') {
+                        afterHtml = collected_1606379494;
+                        if (document.getElementById("ey_cnum_1606379494_"+aid)) {
+                            var collection_num = document.getElementById("ey_cnum_1606379494_"+aid).innerHTML;
+                            collection_num = parseInt(collection_num) + 1;
+                            document.getElementById("ey_cnum_1606379494_"+aid).innerHTML = collection_num;
+                        }
+                    } else {
+                        afterHtml = cancel_1606379494;//加入收藏
+                        if (document.getElementById("ey_cnum_1606379494_"+aid)) {
+                            var collection_num = document.getElementById("ey_cnum_1606379494_"+aid).innerHTML;
+                            collection_num = parseInt(collection_num) - 1;
+                            if (collection_num < 0) {
+                                collection_num = 0;
+                            }
+                            document.getElementById("ey_cnum_1606379494_"+aid).innerHTML = collection_num;
+                        }
+                    }
+                    obj.innerHTML = afterHtml;
                 }
-                obj.innerHTML = afterHtml;
                 if (!window.layer) {
                     alert(res.msg);
                 } else {
@@ -80,8 +133,10 @@ function ey_1606378141(aid,obj)
  * 异步判断是否收藏
  * @return {[type]} [description]
  */
-function ey_1609377550(aid)
+function ey_1609377550(aid,cla)
 {
+    var cancel_1606379494 = window['cancel_1606379494_'+aid];
+    var collected_1606379494 = window['collected_1606379494_'+aid];
     var users_id = getCookie_1606378141('users_id');
 
     if ((document.getElementById("ey_1606378141_"+aid) || document.getElementById("ey_cnum_1606379494_"+aid)) && 0 < aid) {
@@ -118,16 +173,34 @@ function ey_1609377550(aid)
                 var res = JSON.parse(json);
                 if (1 == res.code) {
                     if (0 < users_id) {
-                        // 收藏之后的html文案
-                        if (obj) obj.innerHTML = collected_1606379494;
+                        if ('on' == cla){
+                            if (cancel_1606379494) {
+                                obj.classList.remove(cancel_1606379494);
+                            }
+                            if (collected_1606379494) {
+                                obj.classList.add(collected_1606379494);
+                            }
+                        } else{
+                            // 收藏之后的html文案
+                            if (obj) obj.innerHTML = collected_1606379494;
+                        }
                     }
                     if (document.getElementById("ey_cnum_1606379494_"+aid)) {
                         document.getElementById("ey_cnum_1606379494_"+aid).innerHTML = res.data.total;
                     }
                 } else {
                     if (0 < users_id) {
-                        // 收藏之前的html文案
-                        if (obj) obj.innerHTML = cancel_1606379494;
+                        if ('on' == cla){
+                            if (collected_1606379494) {
+                                obj.classList.remove(collected_1606379494);
+                            }
+                            if (cancel_1606379494) {
+                                obj.classList.add(cancel_1606379494);
+                            }
+                        } else{
+                            // 收藏之后的html文案
+                            if (obj) obj.innerHTML = cancel_1606379494;
+                        }
                     }
                     if (document.getElementById("ey_cnum_1606379494_"+aid)) {
                         document.getElementById("ey_cnum_1606379494_"+aid).innerHTML = res.data.total;

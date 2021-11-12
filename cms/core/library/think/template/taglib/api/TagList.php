@@ -46,6 +46,11 @@ class TagList extends Base
         $param['typeid'] = $typeid = !empty($param['typeid']) ? $param['typeid'] : $this->tid;
         $titlelen = !empty($param['titlelen']) ? intval($param['titlelen']) : 100;
         $infolen = !empty($param['infolen']) ? intval($param['infolen']) : 160;
+        if (!empty($param['addfields']) && empty($addfields)) {
+            $addfields = $param['addfields'];
+        }
+        $addfields = trim($addfields, "'");
+        
         if (!empty($param['channelid'])) {
             if (empty($param['typeid']) && empty($param['channel'])) {
                 $param['channel'] = intval($param['channelid']);

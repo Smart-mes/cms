@@ -36,8 +36,11 @@ class ShopComment extends Base
     {
         $functionLogic = new \app\common\logic\FunctionLogic;
         $assign_data = $functionLogic->comment_index();
-        
         $this->assign($assign_data);
+
+        $web_shopcomment_switch = tpCache('web.web_shopcomment_switch');
+        $this->assign('web_shopcomment_switch', intval($web_shopcomment_switch));
+
         return $this->fetch();
     }
 
@@ -78,7 +81,7 @@ class ShopComment extends Base
             $Comment['content'] = !empty($Comment['content']) ? htmlspecialchars_decode(unserialize($Comment['content'])) : '';
 
             // 会员信息
-            $Users = Db::name('users')->field('users_id, username, nickname, mobile')->find($Service['users_id']);
+            $Users = Db::name('users')->field('users_id, username, nickname, mobile')->find($Comment['users_id']);
             $Users['nickname'] = empty($Users['nickname']) ? $Users['username'] : $Users['nickname'];
 
             // 加载数据
@@ -107,5 +110,35 @@ class ShopComment extends Base
                 $this->error('删除失败');
             }
         }
+    }
+
+    /**
+     * 开启/关闭评价模块功能
+     * @return [type] [description]
+     */
+    public function ajax_open_close()
+    {
+        if (IS_AJAX_POST) {
+            $value = input('param.value/d');
+            if (1 == $value) {
+                $web_shopcomment_switch = 0;
+            } else {
+                $web_shopcomment_switch = 1;
+            }
+            /*多语言*/
+            if (is_language()) {
+                $langRow = \think\Db::name('language')->order('id asc')
+                    ->cache(true, EYOUCMS_CACHE_TIME, 'language')
+                    ->select();
+                foreach ($langRow as $key => $val) {
+                    tpCache('web', ['web_shopcomment_switch'=>$web_shopcomment_switch], $val['mark']);
+                }
+            } else { // 单语言
+                tpCache('web', ['web_shopcomment_switch'=>$web_shopcomment_switch]);
+            }
+            /*--end*/
+            $this->success("操作成功");
+        }
+        $this->error("操作失败");
     }
 }

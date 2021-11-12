@@ -53,7 +53,7 @@ class TagPrenext extends Base
                     'a.aid'     => ['GT', $aid],
                     'a.channel' => $channel,
                     'a.status'  => 1,
-                    'a.lang'    => $this->home_lang,
+                    'a.lang'    => self::$home_lang,
                     'a.is_del'  => 0,
                     'a.arcrank' => ['EGT', 0],
                 ])
@@ -80,7 +80,7 @@ class TagPrenext extends Base
                     'a.aid'     => ['LT', $aid],
                     'a.channel' => $channel,
                     'a.status'  => 1,
-                    'a.lang'    => $this->home_lang,
+                    'a.lang'    => self::$home_lang,
                     'a.is_del'  => 0,
                     'a.arcrank' => ['EGT', 0],
                 ])

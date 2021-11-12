@@ -63,6 +63,7 @@ class Seo extends Base
         $config = tpCache($inc_type);
         $config['seo_pseudo'] = tpCache('seo.seo_pseudo');
         $seo_pseudo_list = get_seo_pseudo_list();
+        if (!empty($this->globalConfig['web_citysite_open'])) unset($seo_pseudo_list[2]); // 多站点不支持静态模式
         $this->assign('seo_pseudo_list', $seo_pseudo_list);
 
         /* 生成静态页面代码 - 多语言统一设置URL模式 */

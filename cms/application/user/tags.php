@@ -10,7 +10,7 @@ return array(
     ),
     // 视图内容过滤
     'view_filter'  => array(
-
+        'app\\user\\behavior\\ViewFilterBehavior',
     ),
     // 日志写入
     'log_write'    => array(),

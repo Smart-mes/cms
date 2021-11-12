@@ -46,8 +46,8 @@
                 </dt>
                 <dd class="opt">
                     <div class="onoff">
-                        <label for="is_repeat_title1" class="cb-enable {if condition='!isset($field.is_repeat_title) || $field.is_repeat_title eq 1'}selected{/if}">允许</label>
-                        <label for="is_repeat_title0" class="cb-disable {if condition='isset($field.is_repeat_title) && $field.is_repeat_title eq 0'}selected{/if}">不允许</label>
+                        <label for="is_repeat_title1" class="cb-enable {if condition='!isset($field.is_repeat_title) || $field.is_repeat_title eq 1'}selected{/if}">开启</label>
+                        <label for="is_repeat_title0" class="cb-disable {if condition='isset($field.is_repeat_title) && $field.is_repeat_title eq 0'}selected{/if}">关闭</label>
                         <input id="is_repeat_title1" name="is_repeat_title" value="1" type="radio" {if condition="!isset($field.is_repeat_title) || $field.is_repeat_title eq 1"} checked="checked"{/if}>
                         <input id="is_repeat_title0" name="is_repeat_title" value="0" type="radio" {if condition="isset($field.is_repeat_title) && $field.is_repeat_title eq 0"} checked="checked"{/if}>
                     </div>
@@ -67,7 +67,7 @@
                     <p class="notic">同一个IP在指定间隔秒数之内不能提交留言！</p>
                 </dd>
             </dl>
-            <dl class="row">
+            <!-- <dl class="row">
                 <dt class="tit">
                     <label>留言邮箱提醒</label>
                 </dt>
@@ -81,7 +81,7 @@
                     <p class="notic">客户端提交留言后，管理员会第一时间收到邮箱提醒！</p>
                     <p id="txt_smtp_is_open" class="none">提交保存后，请检查【<a href="javascript:void(0);" onclick="smtp_config();">邮件配置</a>】是否正常发送与接收！</p>
                 </dd>
-            </dl>
+            </dl> -->
             <dl class="row">
                 <dt class="tit">
                     <label for="channel_guestbook_time">留言跳转时间</label>
@@ -103,32 +103,22 @@
                 </dd>
             </dl>
             <script type="text/javascript">
-                $(function(){
-                    $('input[name="smtp_is_open"]').click(function(){
-                        if (1 == $(this).val()) {
-                            $('#txt_smtp_is_open').show();
-                        } else {
-                            $('#txt_smtp_is_open').hide();
-                        }
-                    });
-                });
+                // $(function(){
+                //     $('input[name="smtp_is_open"]').click(function(){
+                //         if (1 == $(this).val()) {
+                //             $('#txt_smtp_is_open').show();
+                //         } else {
+                //             $('#txt_smtp_is_open').hide();
+                //         }
+                //     });
+                // });
 
-                function smtp_config()
-                {
-                    parent.$('#Index_switch_map', parent.window.parent.document).removeClass('on');
-                    parent.$('#System_web', parent.window.parent.document).addClass('on');
-                    parent.$('#workspace', parent.window.parent.document).attr('src', "{:url('System/smtp', ['goback'=>'off'])}");
-                    //iframe窗
-                    // var iframes = layer.open({
-                    //     type: 2,
-                    //     title: '邮件配置',
-                    //     fixed: true, //不固定
-                    //     shadeClose: false,
-                    //     shade: 0.3,
-                    //     content: "{:url('System/smtp', ['iframes'=>1])}"
-                    // });
-                    // layer.full(iframes);
-                }
+                // function smtp_config()
+                // {
+                //     parent.$('#Index_switch_map', parent.window.parent.document).removeClass('on');
+                //     parent.$('#System_web', parent.window.parent.document).addClass('on');
+                //     parent.$('#workspace', parent.window.parent.document).attr('src', "{:url('System/smtp', ['goback'=>'off'])}");
+                // }
             </script>
             {/in}
 

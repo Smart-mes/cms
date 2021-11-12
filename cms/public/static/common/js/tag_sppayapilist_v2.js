@@ -122,6 +122,14 @@ function AlertPayImg(data) {
         },
         cancel: function() {
             window.clearInterval(PayPolling);
+            var submit_order_type = $('#submit_order_type').val();
+            if (undefined != submit_order_type && '0' === submit_order_type) {
+                if (b1decefec6b39feb3be1064e27be2a9.shop_centre_url) {
+                    window.location.href = b1decefec6b39feb3be1064e27be2a9.shop_centre_url;
+                } else {
+                    window.location.reload();
+                }
+            }
         }
     });
 }

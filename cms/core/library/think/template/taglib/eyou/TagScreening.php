@@ -50,9 +50,7 @@ class TagScreening extends Base
      */
     public function getScreening($currentstyle='', $addfields='', $addfieldids='', $alltxt='', $typeid='')
     {
-        if ($this->home_lang != $this->main_lang) {
-            return false;
-        }
+        if (self::$home_lang != self::$main_lang) return false;
         
         $param = input('param.');
         // 定义筛选标识
@@ -64,15 +62,15 @@ class TagScreening extends Base
         if (!isset($param[$url_screen_var]) && 3 == $seo_pseudo) {
             $arctype_where = [
                 'dirname' => $this->dirname,
-                'lang'    => $this->home_lang,
+                'lang'    => self::$home_lang,
             ];
             $this->tid = Db::name('arctype')->where($arctype_where)->getField('id');
-        }else{
+        } else {
             $this->tid = input('param.tid/d');
         }
-        if (!empty($typeid)) {
-            $this->tid = $typeid;
-        }
+
+        if (!empty($typeid)) $this->tid = $typeid;
+        
         // 查询数据条件
         $where = [
             'a.is_screening' => 1,
@@ -85,7 +83,7 @@ class TagScreening extends Base
         if (!empty($addfields)) {
             $addfieldids = '';
             $where['a.name'] = array('IN',$addfields);
-        }else if (!empty($addfieldids)){
+        } else if (!empty($addfieldids)) {
             $where['a.id'] = array('IN',$addfieldids);
         }
 
@@ -126,7 +124,7 @@ class TagScreening extends Base
                 $param_query = request()->param();
             }
 
-            /* 生成静态页面代码 */
+            // 生成静态页面代码
             if (2 == $seo_pseudo && !isMobile()) {
                 $param_query['m'] = 'home';
                 $param_query['c'] = 'Lists';
@@ -136,41 +134,35 @@ class TagScreening extends Base
                 unset($param_query['fid']);
                 unset($param_query['lang']);
             }
-            /* end */
 
-            /*筛选时，去掉url上的页码page参数*/
+            // 筛选时，去掉url上的页码page参数
             unset($param_query['page']);
-            /*end*/
             
             // 筛选值处理
             if ('region' == $value['dtype']) {
-                // 类型为区域则执行
-                // 处理自定义参数名称
-                if (!empty($alltxt)) {
+                // 类型为区域则执行，处理自定义参数名称
+                $region_alltxt = $alltxt;
+                if (!empty($region_alltxt)) {
                     // 等于OFF表示关闭，不需要此项
-                    if ('off' == $alltxt) {
-                        $alltxt = '';    
-                    }
-                }else{
-                    $alltxt = '全部';
+                    if ('off' == $region_alltxt) $region_alltxt = '';
+                } else {
+                    $region_alltxt = '全部';
+
                 }
-                // 拼装数组
-                $all[0] = [
-                    'id'   => '',
-                    'name' => $alltxt,
-                ];
-                if (isset($param[$name]) && !empty($param[$name])) {
-                    // 搜索点击的name值
-                    $is_data = $param[$name];
-                }else{
-                    $is_data = $alltxt;
+                $all = [];
+                if (!empty($region_alltxt)) {
+                    // 拼装数组
+                    $all[0] = [
+                        'id'   => '',
+                        'name' => $region_alltxt,
+                    ];
                 }
 
-                /*参数值含有单引号、双引号、分号，直接跳转404*/
-                if (preg_match('#(\'|\"|;)#', $is_data)) {
-                    abort(404,'页面不存在');
-                }
-                /*end*/
+                // 搜索点击的name值
+                $is_data = isset($param[$name]) && !empty($param[$name]) ? $param[$name] : $region_alltxt;
+
+                // 参数值含有单引号、双引号、分号，直接跳转404
+                if (preg_match('#(\'|\"|;)#', $is_data)) abort(404,'页面不存在');
 
                 // 处理后台添加的区域数据
                 $RegionData = [];
@@ -187,36 +179,32 @@ class TagScreening extends Base
                     $RegionData[$name_key]['name'] = $name_value;
                 }
                 // 合并数组
-                $RegionData = array_merge($all,$RegionData);
+                $RegionData = array_merge($all, $RegionData);
 
                 // 处理参数输出
                 foreach ($RegionData as $kk => $vv) {
                     // 参数拼装URL
                     if (!empty($vv['id'])) {
                         $param_query[$name] = $vv['id'];
-                    }else{
+                    } else {
                         unset($param_query[$name]);
                     }
                     unset($param_query['s']);
-                    /* 筛选标识始终追加在最后 */
+                    // 筛选标识始终追加在最后
                     unset($param_query[$url_screen_var]);
                     $param_query[$url_screen_var] = 1;
-                    /* end */
                     if (!empty($typeid)) {
                         // 存在typeid表示在首页展示
                         unset($param_query['m']);
                         unset($param_query['c']);
                         unset($param_query['a']);
                         unset($param_query['tid']);
-                        if (empty($param_query['page'])) {
-                            $param_query['page'] = 1;
-                        }
+                        if (empty($param_query['page'])) $param_query['page'] = 1;
                         $url = ROOT_DIR.'/index.php?m=home&c=Lists&a=index&tid='.$typeid.'&'.urlencode(http_build_query($param_query));
-                    }else{
+                    } else {
                         $url = ROOT_DIR.'/index.php?'.urlencode(http_build_query($param_query));
                     }
-                    $url = urldecode($url);
-                    $url = $this->auto_hide_index($url, $seo_pseudo);
+                    $url = $this->auto_hide_index(urldecode($url), $seo_pseudo);
                     // 拼装onClick事件
                     $RegionData[$kk]['onClick'] = $row[$key]['onClick']." data-url='{$url}'";
                     // 拼装onchange参数
@@ -230,7 +218,7 @@ class TagScreening extends Base
                         $RegionData[$kk]['name']         = "<b>{$vv['name']}</b>";
                         $RegionData[$kk]['SelectValue']  = "selected";
                         $RegionData[$kk]['currentstyle'] = $currentstyle;
-                    }else if ($vv['name'] == $alltxt && $is_data == $alltxt) {
+                    } else if ($vv['name'] == $region_alltxt && $is_data == $region_alltxt) {
                         $RegionData[$kk]['name']         = "<b>{$vv['name']}</b>";
                         $RegionData[$kk]['SelectValue']  = "selected";
                         $RegionData[$kk]['currentstyle'] = $currentstyle;
@@ -238,34 +226,25 @@ class TagScreening extends Base
                 }
                 // 数据赋值到数组中
                 $row[$key]['dfvalue'] = $RegionData;
-            }else{
+            } else {
                 // 类型不为区域则执行
                 $dfvalue = explode(',', $value['dfvalue']);
-                $all[0] = '全部';
+                $all[0] = [];
                 if (!empty($alltxt)) {
                     // 等于OFF表示关闭，不需要此项
-                    if ('off' == $alltxt) {
-                        $all[0] = '';    
-                    }else{
-                        $all[0] = $alltxt;
-                    }
+                    if ('off' != $alltxt) $all[0] = $alltxt;
+                } else {
+                    $all[0] = '全部';
                 }
 
-                if (isset($param[$name]) && !empty($param[$name])) {
-                    // 搜索点击的name值
-                    $is_data = $param[$name];
-                }else{
-                    $is_data = $alltxt;
-                }
+                // 搜索点击的name值
+                $is_data = isset($param[$name]) && !empty($param[$name]) ? $param[$name] : $alltxt;
 
-                /*参数值含有单引号、双引号、分号，直接跳转404*/
-                if (preg_match('#(\'|\"|;)#', $is_data)) {
-                    abort(404,'页面不存在');
-                }
-                /*end*/
-                
+                // 参数值含有单引号、双引号、分号，直接跳转404
+                if (preg_match('#(\'|\"|;)#', $is_data)) abort(404,'页面不存在');
+
                 // 合并数组
-                $dfvalue  = array_merge($all,$dfvalue);
+                $dfvalue  = array_merge($all, $dfvalue);
                 // 处理参数输出
                 $data_new = [];
                 foreach ($dfvalue as $kk => $vv) {
@@ -285,13 +264,13 @@ class TagScreening extends Base
                         $data_new[$kk]['SelectValue']  = "selected";
                         $data_new[$kk]['currentstyle'] = $currentstyle;
 
-                    }else if ($vv.'|' == $is_data) {
+                    } else if ($vv.'|' == $is_data) {
                         // 多选类型选中
                         $data_new[$kk]['name']         = "<b>{$vv}</b>";
                         $data_new[$kk]['SelectValue']  = "selected";
                         $data_new[$kk]['currentstyle'] = $currentstyle;
 
-                    }else if ($vv == $all[0] && empty($is_data)) {
+                    } else if ($vv == $all[0] && empty($is_data)) {
                         // “全部” 按钮选中
                         $data_new[$kk]['name']         = "<b>{$vv}</b>";
                         $data_new[$kk]['SelectValue']  = "selected";
@@ -302,7 +281,7 @@ class TagScreening extends Base
                     if ($all[0] == $vv) {
                         // 若选中 “全部” 按钮则清除这个字段参数
                         unset($param_query[$name]);
-                    }else if ('checkbox' == $value['dtype']) {
+                    } else if ('checkbox' == $value['dtype']) {
                         // 等于多选类型，则拼装上-号，用于搜索时分割，可匹配数据
                         $param_query[$name] = $vv.'|';
                     }
@@ -318,15 +297,12 @@ class TagScreening extends Base
                         unset($param_query['c']);
                         unset($param_query['a']);
                         unset($param_query['tid']);
-                        if (empty($param_query['page'])) {
-                            $param_query['page'] = 1;
-                        }
+                        if (empty($param_query['page'])) $param_query['page'] = 1;
                         $url = ROOT_DIR.'/index.php?m=home&c=Lists&a=index&tid='.$typeid.'&'.urlencode(http_build_query($param_query));
                     }else{
                         $url = ROOT_DIR.'/index.php?'.urlencode(http_build_query($param_query));
                     }
-                    $url = urldecode($url);
-                    $url = $this->auto_hide_index($url, $seo_pseudo);
+                    $url = $this->auto_hide_index(urldecode($url), $seo_pseudo);
                     // 封装onClick
                     $data_new[$kk]['onClick'] = $row[$key]['onClick']." data-url='{$url}'";
                     // 封装onchange事件

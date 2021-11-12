@@ -1,4 +1,13 @@
 <?php
+// +----------------------------------------------------------------------
+// | ThinkPHP [ WE CAN DO IT JUST THINK ]
+// +----------------------------------------------------------------------
+// | Copyright (c) 2006~2018 http://thinkphp.cn All rights reserved.
+// +----------------------------------------------------------------------
+// | Licensed ( http://www.apache.org/licenses/LICENSE-2.0 )
+// +----------------------------------------------------------------------
+// | Author: liu21st <liu21st@gmail.com>
+// +----------------------------------------------------------------------
 
 namespace think;
 
@@ -85,6 +94,11 @@ class App
 
             $_thinks = self::thinkEncode(0);
             $request->filter($config['default_filter']);
+
+            // 多城市切换 by 小虎哥
+            if (!$config['lang_switch_on'] && $config['city_switch_on']) {
+                self::switchCitysite();
+            }
 
             // 多语言切换 by 小虎哥
             $config['lang_switch_on'] && self::switchLanguage();
@@ -775,5 +789,17 @@ class App
     private static function switchLanguage() 
     {
         switch_language();
+    }
+
+    /**
+     * 多城市切换
+     *
+     * @author 小虎哥
+     * @param string $lang   语言变量值
+     * @return void
+     */
+    private static function switchCitysite() 
+    {
+        switch_citysite();
     }
 }

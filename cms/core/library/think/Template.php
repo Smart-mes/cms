@@ -1,4 +1,13 @@
 <?php
+// +----------------------------------------------------------------------
+// | ThinkPHP [ WE CAN DO IT JUST THINK ]
+// +----------------------------------------------------------------------
+// | Copyright (c) 2006~2018 http://thinkphp.cn All rights reserved.
+// +----------------------------------------------------------------------
+// | Licensed ( http://www.apache.org/licenses/LICENSE-2.0 )
+// +----------------------------------------------------------------------
+// | Author: liu21st <liu21st@gmail.com>
+// +----------------------------------------------------------------------
 
 namespace think;
 
@@ -548,7 +557,7 @@ class Template
                     $file  = $array['file'];
                     if ( (defined('MODULE_NAME') && 'admin' != MODULE_NAME) || !defined('MODULE_NAME') && 'admin' != Request::instance()->module() ) {
                         if (!empty($is_mobile)) {
-                            if (file_exists('./template/'.TPL_THEME.'pc/'.$web_users_tpl_theme.'/'.$users_wap_tpl_dir) && preg_match('/^users(_([^\/]*))?\//i', $file)) {
+                            if (file_exists('./template/'.TPL_THEME.'pc/'.$web_users_tpl_theme.'/'.$users_wap_tpl_dir.'/users_login.htm') && preg_match('/^users(_([^\/]*))?\//i', $file)) {
                                 $file = str_ireplace("{$web_users_tpl_theme}/", "{$web_users_tpl_theme}/{$users_wap_tpl_dir}/", $file);
                             }
                             else if (file_exists('./template/'.TPL_THEME.'pc/ask/'.$users_wap_tpl_dir) && preg_match('/^ask(_([^\/]*))?\//i', $file)) {
@@ -622,7 +631,7 @@ class Template
                     $file  = $array['file'];
                     if ( (defined('MODULE_NAME') && 'admin' != MODULE_NAME) || !defined('MODULE_NAME') && 'admin' != Request::instance()->module() ) {
                         if (!empty($is_mobile)) {
-                            if (file_exists('./template/'.TPL_THEME.'pc/'.$web_users_tpl_theme.'/'.$users_wap_tpl_dir) && preg_match('/^users(_([^\/]*))?\//i', $file)) {
+                            if (file_exists('./template/'.TPL_THEME.'pc/'.$web_users_tpl_theme.'/'.$users_wap_tpl_dir.'/users_login.htm') && preg_match('/^users(_([^\/]*))?\//i', $file)) {
                                 $file = str_ireplace("{$web_users_tpl_theme}/", "{$web_users_tpl_theme}/{$users_wap_tpl_dir}/", $file);
                             }
                             else if (file_exists('./template/'.TPL_THEME.'pc/ask/'.$users_wap_tpl_dir) && preg_match('/^ask(_([^\/]*))?\//i', $file)) {

@@ -37,7 +37,7 @@ class TagStatic extends Base
         }
 
         /*多语言*/
-        $paramlang = input('param.lang/s');
+        $paramlang = self::$home_lang;
         if (!empty($lang)) {
             $paramlang = $lang;
         }
@@ -60,8 +60,6 @@ class TagStatic extends Base
 
         $file = !empty($href) ? $href : $file;
 
-        static $request = null;
-        null == $request && $request = Request::instance();
         $parseStr = '';
 
         // 文件方式导入
@@ -70,7 +68,7 @@ class TagStatic extends Base
             $file = $val;
             // ---判断本地文件是否存在，否则返回false，以免@get_headers方法导致崩溃
             if (is_http_url($file)) { // 判断http路径
-                if (preg_match('/^http(s?):\/\/'.$request->host(true).'/i', $file)) { // 判断当前域名的本地服务器文件(这仅用于单台服务器，多台稍作修改便可)
+                if (preg_match('/^http(s?):\/\/'.self::$request->host(true).'/i', $file)) { // 判断当前域名的本地服务器文件(这仅用于单台服务器，多台稍作修改便可)
                     // $pattern = '/^http(s?):\/\/([^.]+)\.([^.]+)\.([^\/]+)\/(.*)$/';
                     $pattern = '/^http(s?):\/\/([^\/]+)(.*)$/';
                     preg_match_all($pattern, $file, $matches);//正则表达式
@@ -87,7 +85,7 @@ class TagStatic extends Base
                         if (!file_exists(realpath(ltrim($filename, '/')))) {
                             continue;
                         }
-                        $file = $request->domain().$filename;
+                        $file = self::$request->domain().$filename;
                     }
                 } else { // 不是本地文件禁止使用该方法
                     return $this->toHtml($file);
@@ -98,7 +96,7 @@ class TagStatic extends Base
             } else {
                 if (!preg_match('/^\//i',$file)) {
                     if (!empty($is_mobile)) {
-                        if (file_exists('./template/'.TPL_THEME.'pc/'.$web_users_tpl_theme.'/'.$users_wap_tpl_dir) && preg_match('/^users(_([^\/]*))?\//i', $file)) {
+                        if (file_exists('./template/'.TPL_THEME.'pc/'.$web_users_tpl_theme.'/'.$users_wap_tpl_dir.'/users_login.htm') && preg_match('/^users(_([^\/]*))?\//i', $file)) {
                             $file = str_ireplace("{$web_users_tpl_theme}/", "{$web_users_tpl_theme}/{$users_wap_tpl_dir}/", $file);
                         }
                         else if (file_exists('./template/'.TPL_THEME.'pc/ask/'.$users_wap_tpl_dir) && preg_match('/^ask(_([^\/]*))?\//i', $file)) {
@@ -118,7 +116,7 @@ class TagStatic extends Base
                 } else {
 /*
                     if (!empty($is_mobile)) {
-                        if (file_exists('./template/'.TPL_THEME.'pc/'.$web_users_tpl_theme.'/'.$users_wap_tpl_dir) && preg_match('/\/users(_([^\/]*))?\//i', $file)) {
+                        if (file_exists('./template/'.TPL_THEME.'pc/'.$web_users_tpl_theme.'/'.$users_wap_tpl_dir.'/users_login.htm') && preg_match('/\/users(_([^\/]*))?\//i', $file)) {
                             $file = str_ireplace("{$web_users_tpl_theme}/", "{$web_users_tpl_theme}/{$users_wap_tpl_dir}/", $file);
                         }
                         else if (file_exists('./template/'.TPL_THEME.'pc/ask/'.$users_wap_tpl_dir) && preg_match('/\/ask(_([^\/]*))?\//i', $file)) {
@@ -147,8 +145,12 @@ class TagStatic extends Base
                 }
 
                 try{
-                    $fileStat = stat(ROOT_PATH . ltrim($file, '/'));
-                    $update_time = !empty($fileStat['mtime']) ? $fileStat['mtime'] : getTime();
+                    if (self::$request->controller() == 'Buildhtml') {
+                        $update_time = getTime();
+                    } else {
+                        $fileStat = stat(ROOT_PATH . ltrim($file, '/'));
+                        $update_time = !empty($fileStat['mtime']) ? $fileStat['mtime'] : getTime();
+                    }
                 } catch (\Exception $e) {
                     $update_time = getTime();
                 }

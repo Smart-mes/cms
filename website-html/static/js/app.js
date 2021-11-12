@@ -159,10 +159,10 @@ $(document).ready(function () {
 	new Swiper(".about-page  .honour-swiper .swiper", {
 		slidesPerView: 3,
 		spaceBetween: 40,
-		pagination: {
-			el: ".about-page  .honour-swiper .swiper-pagination",
-			clickable: true,
-		},
+		// pagination: {
+		// 	el: ".about-page  .honour-swiper .swiper-pagination",
+		// 	clickable: true,
+		// },
 		navigation: {
 			nextEl: ".about-page  .honour-swiper .swiper-button-next",
 			prevEl: ".about-page  .honour-swiper .swiper-button-prev",

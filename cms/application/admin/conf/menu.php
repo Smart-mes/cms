@@ -309,7 +309,7 @@ return  array(
             '1004' => array(
                 'id'=>1004,
                 'parent_id'=>1000,
-                'name' => '投稿管理',
+                'name' => '草稿管理',
                 'controller'=>'Archives',
                 'action'=>'index_draft',
                 'url'=>'', 

@@ -74,7 +74,7 @@ class Lists extends Base
         }
         $map['a.is_del'] = 0; // 回收站功能
         $map['a.lang']   = $this->home_lang; // 多语言
-        $row             = M('arctype')->field('a.id, a.current_channel, b.nid')
+        $row             = Db::name('arctype')->field('a.id, a.current_channel, b.nid')
             ->alias('a')
             ->join('__CHANNELTYPE__ b', 'a.current_channel = b.id', 'LEFT')
             ->where($map)
@@ -101,14 +101,17 @@ class Lists extends Base
             : 'lists_' . $this->nid;
         /*--end*/
 
-        /*多语言内置模板文件名*/
-        if (!empty($this->home_lang)) {
+        if (config('city_switch_on') && !empty($this->home_site)) { // 多站点内置模板文件名
+            $viewfilepath = TEMPLATE_PATH . $this->theme_style_path . DS . $viewfile . "_{$this->home_site}." . $this->view_suffix;
+            if (file_exists($viewfilepath)) {
+                $viewfile .= "_{$this->home_site}";
+            }
+        } else if (config('lang_switch_on') && !empty($this->home_lang)) { // 多语言内置模板文件名
             $viewfilepath = TEMPLATE_PATH . $this->theme_style_path . DS . $viewfile . "_{$this->home_lang}." . $this->view_suffix;
             if (file_exists($viewfilepath)) {
                 $viewfile .= "_{$this->home_lang}";
             }
         }
-        /*--end*/
 
         // /*模板文件*/
         // $viewfile = $filename = !empty($result['templist'])
@@ -194,7 +197,9 @@ class Lists extends Base
 
                     $result['templist'] = !empty($arctype_info['templist']) ? $arctype_info['templist'] : 'lists_'. $arctype_info['nid'];
                     $result['dirpath'] = $arctype_info['dirpath'];
+                    $result['diy_dirpath'] = $arctype_info['diy_dirpath'];
                     $result['typeid'] = $arctype_info['typeid'];
+                    $result['rulelist']  = $arctype_info['rulelist'];
                 }
                 break;
             }
@@ -229,9 +234,13 @@ class Lists extends Base
         // seo
         $result['seo_title'] = set_typeseotitle($result['typename'], $result['seo_title']);
 
-        /*获取当前页面URL*/
-        $result['pageurl'] = $this->request->url(true);
-        /*--end*/
+        $result['pageurl'] = $this->request->url(true); // 获取当前页面URL
+        $result['pageurl_m'] = pc_to_mobile_url($result['pageurl'], $result['typeid']); // 获取当前页面对应的移动端URL
+        // 移动端域名
+        $result['mobile_domain'] = '';
+        if (!empty($this->eyou['global']['web_mobile_domain_open']) && !empty($this->eyou['global']['web_mobile_domain'])) {
+            $result['mobile_domain'] = $this->eyou['global']['web_mobile_domain'] . '.' . $this->request->rootDomain(); 
+        }
 
         /*给没有type前缀的字段新增一个带前缀的字段，并赋予相同的值*/
         foreach ($result as $key => $val) {
@@ -281,7 +290,7 @@ class Lists extends Base
                     'lang'     => $this->home_lang,
                     'add_time' => array('gt', getTime() - $channel_guestbook_interval),
                 );
-                $count = M('guestbook')->where($map)->count('aid');
+                $count = Db::name('guestbook')->where($map)->count('aid');
                 if ($count > 0) {
                     if ($this->home_lang == 'cn') {
                         $msg = '同一个IP在'.$channel_guestbook_interval.'秒之内不能重复提交！';
@@ -419,11 +428,11 @@ class Lists extends Base
                 }
                 $md5data         = md5(serialize($formdata));
                 $data['md5data'] = $md5data;
-                $guestbookRow    = M('guestbook')->field('aid')->where(['md5data' => $md5data])->find();
+                $guestbookRow    = Db::name('guestbook')->field('aid')->where(['md5data' => $md5data])->find();
                 /*--end*/
                 $dataStr = '';
                 if (empty($guestbookRow)) { // 非重复表单的才能写入数据库
-                    $aid = M('guestbook')->insertGetId($data);
+                    $aid = Db::name('guestbook')->insertGetId($data);
                     if ($aid > 0) {
                         $res = $this->saveGuestbookAttr($aid, $typeid);
                         if ($res){
@@ -449,9 +458,17 @@ class Lists extends Base
                         'update_time' => getTime(),
                     ]);
                 }
+                
+                if ($this->home_lang == 'cn') {
+                    $msg = '操作成功';
+                } else if ($this->home_lang == 'zh') {
+                    $msg = '操作成功';
+                } else {
+                    $msg = 'success';
+                }
                 $channel_guestbook_time = tpSetting('channel_guestbook.channel_guestbook_time');
                 $channel_guestbook_time = !empty($channel_guestbook_time) ? intval($channel_guestbook_time) : 5;
-                $this->success('操作成功！', $gourl, $dataStr, $channel_guestbook_time);
+                $this->success($msg, $gourl, $dataStr, $channel_guestbook_time);
             }
         }
 
@@ -506,11 +523,19 @@ class Lists extends Base
         /*--end*/
 
         foreach ($post as $k => $v) {
-            if (!strstr($k, 'attr_'))
-                continue;
-
+            if (!strstr($k, 'attr_')) continue;
             $attr_id = str_replace('attr_', '', $k);
-            is_array($v) && $v = implode(PHP_EOL, $v);
+            if (is_array($v)) {
+                $v = implode(PHP_EOL, $v);
+            } else {
+                $ga_data = Db::name('guestbook_attribute')->where([
+                    'attr_id'   => $attr_id,
+                    'lang'      => $this->home_lang,
+                ])->find();
+                if (!empty($ga_data) && 10 == $ga_data['attr_input_type']){
+                    $v = strtotime($v);
+                }
+            }
 
             /*多语言*/
             if (!empty($attrArr)) {
@@ -529,7 +554,7 @@ class Lists extends Base
                 'add_time'    => getTime(),
                 'update_time' => getTime(),
             );
-            M('GuestbookAttr')->add($adddata);
+            Db::name('GuestbookAttr')->add($adddata);
         }
     }
 }

@@ -163,6 +163,8 @@
                         <a href="javascript:void(0);" onclick="tag_call('web_users_switch');" class="ncap-btn ncap-btn-green">查看教程</a>
                     </dd>
                 </dl>
+
+                {neq name='$usersTplVersion' value='v3'}
                 <dl class="row">
                     <dt class="tit">
                         <label for="uname">{eq name='$usersTplVersion' value='v2'}PC左侧菜单{else /}左侧菜单{/eq}</label>
@@ -171,6 +173,8 @@
                         <a href="javascript:void(0);" onclick="menu_index();" class="ncap-btn ncap-btn-green">管理</a>
                     </dd>
                 </dl>
+                {/neq}
+
                 {eq name='$usersTplVersion' value='v2'}
                 <dl class="row">
                     <dt class="tit">
@@ -229,15 +233,6 @@
         // 点击刷新数据
         $('.fa-refresh').click(function(){
             location.href = location.href;
-        });
-
-        $('input[name="oauth[oauth_open]"]').click(function(){
-            var oauth_open = $(this).val();
-            if (1 == oauth_open) {
-                $('#oauth_list').show();
-            } else {
-                $('#oauth_list').hide();
-            }
         });
 
         // 颜色选择
@@ -308,30 +303,6 @@
                 $(obj).removeAttr('checked');
                 return false;
             }
-        });
-    }
-
-    function set_oauth_config(obj)
-    {
-        var title = $(obj).data('title');
-        var oauth = $(obj).data('oauth');
-        var url = "{:url('Member/ajax_set_oauth_config')}";
-        if (url.indexOf('?') > -1) {
-            url += '&';
-        } else {
-            url += '?';
-        }
-        url += 'oauth='+oauth;
-        //iframe窗
-        layer.open({
-            type: 2,
-            title: title,
-            fixed: true, //不固定
-            shadeClose: false,
-            shade: 0.3,
-            maxmin: true, //开启最大化最小化按钮
-            area: ['80%', '80%'],
-            content: url
         });
     }
 

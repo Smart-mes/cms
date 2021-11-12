@@ -23,12 +23,14 @@ use think\Cookie;
 class TagSporder extends Base
 {   
     public $users_id = 0;
+    public $usersTplVersion    = '';
     
     //初始化
     protected function _initialize()
     {
         parent::_initialize();
         $this->users_id = session('users_id');
+        $this->usersTplVersion = getUsersTplVersion();
     }
 
     /**
@@ -45,7 +47,7 @@ class TagSporder extends Base
             $Where = [
                 'a.order_id' => $order_id,
                 'a.users_id' => $this->users_id,
-                'a.lang'     => $this->home_lang,
+                'a.lang'     => self::$home_lang,
             ];
 
             // 订单主表
@@ -133,6 +135,18 @@ class TagSporder extends Base
                     $ValueData = unserialize($value['data']);
                     $spec_value = !empty($ValueData['spec_value']) ? htmlspecialchars_decode($ValueData['spec_value']) : '';
                     $spec_value = htmlspecialchars_decode($spec_value);
+                    $product_spec_list = [];
+                    $spec_value_arr = explode('<br/>', $spec_value);
+                    foreach ($spec_value_arr as $sp_key => $sp_val) {
+                        $sp_arr = explode('：', $sp_val);
+                        if (trim($sp_arr[0]) && !empty($sp_arr[0])) {
+                            $product_spec_list[] = [
+                                'name'  => !empty($sp_arr[0]) ? trim($sp_arr[0]) : '',
+                                'value' => !empty($sp_arr[1]) ? trim($sp_arr[1]) : '',
+                            ];
+                        }
+                    }
+                    $result['DetailsData'][$key]['product_spec_list'] = $product_spec_list;
 
                     // 旧参数+规格值
                     $attr_value = !empty($ValueData['attr_value']) ? htmlspecialchars_decode($ValueData['attr_value']) : '';
@@ -159,16 +173,21 @@ class TagSporder extends Base
                     $result['DetailsData'][$key]['arcurl'] = $arcurl;
                     $result['DetailsData'][$key]['has_deleted'] = $has_deleted;
                     $result['DetailsData'][$key]['msg_deleted'] = $msg_deleted;
+                    $result['DetailsData'][$key]['product_price'] = floatval($value['product_price']);
 
                     // 图片处理
                     $result['DetailsData'][$key]['litpic'] = handle_subdir_pic(get_default_pic($value['litpic']));
 
                     // 小计
                     $result['DetailsData'][$key]['subtotal'] = $value['product_price'] * $value['num'];
-                    $result['DetailsData'][$key]['subtotal'] = sprintf("%.2f", $result['DetailsData'][$key]['subtotal']);
+                    $result['DetailsData'][$key]['subtotal'] = floatval(sprintf("%.2f", $result['DetailsData'][$key]['subtotal']));
                     // 合计金额
                     $result['OrderData']['TotalAmount'] += $result['DetailsData'][$key]['subtotal'];
-                    $result['OrderData']['TotalAmount'] = sprintf("%.2f", $result['OrderData']['TotalAmount']);
+                    $result['OrderData']['TotalAmount'] = floatval(sprintf("%.2f", $result['OrderData']['TotalAmount']));
+
+                    // 去掉金额小数点末尾的0
+                    $result['OrderData']['shipping_fee'] = floatval(sprintf("%.2f", $result['OrderData']['shipping_fee']));
+                    $result['OrderData']['order_amount'] = floatval(sprintf("%.2f", $result['OrderData']['order_amount']));
                 }
                 if (!empty($virtual_delivery)){
                     $result['OrderData']['virtual_delivery'] = $virtual_delivery;
@@ -230,12 +249,33 @@ class TagSporder extends Base
                 // 封装取消订单JS
                 $result['OrderData']['CancelOrder']   = " onclick=\"CancelOrder('{$order_id}');\" ";
                 // 封装收货地址
-                $result['OrderData']['ConsigneeInfo'] = $result['OrderData']['consignee'].' '.$result['OrderData']['mobile'].' '.$result['OrderData']['country'].' '.$result['OrderData']['province'].' '.$result['OrderData']['city'].' '.$result['OrderData']['district'].' '.$result['OrderData']['address'];
+                if ($this->usersTplVersion == 'v3') {
+                    $result['OrderData']['ConsigneeInfo'] = $result['OrderData']['province'].' '.$result['OrderData']['city'].' '.$result['OrderData']['district'].' '.$result['OrderData']['address'];
+                } else {
+                    $result['OrderData']['ConsigneeInfo'] = $result['OrderData']['consignee'].' '.$result['OrderData']['mobile'].' '.$result['OrderData']['country'].' '.$result['OrderData']['province'].' '.$result['OrderData']['city'].' '.$result['OrderData']['district'].' '.$result['OrderData']['address'];
+                }
+                //售后
+                $result['OrderData']['ServiceList'] = urldecode(url('user/Shop/service_list', ['order_id' => $order_id]));
+                // 封装订单催发货JS
+                $result['OrderData']['OrderRemind'] = " onclick=\"OrderRemind('{$order_id}','{$result['OrderData']['order_code']}');\" ";
+                //评价
+                $result['OrderData']['AddProduct'] = urldecode(url('user/ShopComment/comment_list', ['order_id' => $order_id]));
+                //确认收货
+                $result['OrderData']['Confirm'] = " onclick=\"Confirm('{$order_id}','{$result['OrderData']['order_code']}');\" ";
+                //未付款过期时间
+                $result['OrderData']['paymentExpire'] = $result['OrderData']['add_time'] + config('global.get_shop_order_validity') - getTime();
 
                 // 传入JS参数
                 $data['shop_order_cancel'] = url('user/Shop/shop_order_cancel');
+                $data['shop_member_confirm'] = url('user/Shop/shop_member_confirm');
+                $data['shop_order_remind']   = url('user/Shop/shop_order_remind');
                 $data_json = json_encode($data);
                 $version   = getCmsVersion();
+                if (empty($this->usersTplVersion) || 'v1' == $this->usersTplVersion) {
+                    $jsfile = "tag_sporder.js";
+                } else {
+                    $jsfile = "tag_sporder_{$this->usersTplVersion}.js";
+                }
                 // 循环中第一个数据带上JS代码加载
                 if ($result['OrderData']['prom_type'] == 0 && $virtual_delivery_status){
                 $result['OrderData']['hidden'] = <<<EOF
@@ -250,14 +290,14 @@ class TagSporder extends Base
     dom.innerHTML=document.getElementById('virtual_delivery_1575423534').innerHTML;
     panel_body.appendChild(dom);
 </script>
-<script type="text/javascript" src="{$this->root_dir}/public/static/common/js/tag_sporder.js?v={$version}"></script>
+<script type="text/javascript" src="{$this->root_dir}/public/static/common/js/tag_sporder.js?t={$version}"></script>
 EOF;
                 }else{
                     $result['OrderData']['hidden'] = <<<EOF
 <script type="text/javascript">
     var eeb8a85ee533f74014310e0c0d12778 = {$data_json};
 </script>
-<script type="text/javascript" src="{$this->root_dir}/public/static/common/js/tag_sporder.js?v={$version}"></script>
+<script type="text/javascript" src="{$this->root_dir}/public/static/common/js/{$jsfile}?t={$version}"></script>
 EOF;
                 }
                 return $result;

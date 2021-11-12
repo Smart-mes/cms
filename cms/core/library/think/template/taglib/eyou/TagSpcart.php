@@ -24,6 +24,7 @@ class TagSpcart extends Base
      */
     public $users_id = 0;
     public $users    = [];
+    public $usersTplVersion    = '';
 
     //初始化
     protected function _initialize()
@@ -33,6 +34,7 @@ class TagSpcart extends Base
         $this->users    = session('users');
         $this->users_id = session('users_id');
         $this->users_id = !empty($this->users_id) ? $this->users_id : 0;
+        $this->usersTplVersion = getUsersTplVersion();
     }
 
     /**
@@ -43,7 +45,7 @@ class TagSpcart extends Base
         // 查询条件
         $condition = [
             'a.users_id' => $this->users_id,
-            'a.lang'     => $this->home_lang,
+            'a.lang'     => self::$home_lang,
             'b.arcrank'  => array('egt','0'),  // 带审核稿件不查询(同等伪删除)
         ];
         $field = 'a.*, b.aid, b.title, b.litpic, b.users_price, b.stock_count, b.attrlist_id, b.is_del, c.spec_price, c.spec_stock';
@@ -65,7 +67,7 @@ class TagSpcart extends Base
             $list[$key]['StatusMark']  = '';
             if (!empty($value['spec_value_id'])) {
                 // 购物车商品存在规格并且价格不为空，则覆盖商品原来的价格
-                if (!empty($value['spec_price'])) $list[$key]['users_price'] = $value['spec_price'];
+                if (!empty($value['spec_price'])) $list[$key]['users_price'] = floatval($value['spec_price']);
 
                 if (!empty($value['spec_stock']) && 0 < $value['spec_stock']) {
                     // 购物车商品存在规格并且库存不为空，则覆盖商品原来的库存
@@ -161,6 +163,7 @@ class TagSpcart extends Base
         $result = [
             'TotalAmount' => 0,
             'TotalNumber' => 0,
+            'TotalCartNumber' => 0,
             'AllSelected' => 0,
         ];
         $selected = 0;
@@ -175,18 +178,21 @@ class TagSpcart extends Base
                 // 折扣率百分比
                 $discount_price = $level_discount / 100;
                 $value['users_price']      = $value['users_price'] * $discount_price;
+                $value['users_price']      = floatval(sprintf("%.2f", $value['users_price']));
                 $list[$key]['users_price'] = $value['users_price'];
             }
             $list[$key]['subtotal'] = 0;
             if (!empty($value['users_price'])) {
                 // 计算小计
                 $list[$key]['subtotal'] = $value['users_price'] * $value['product_num'];
-                $list[$key]['subtotal'] = sprintf("%.2f", $list[$key]['subtotal']);
+                $list[$key]['subtotal'] = floatval(sprintf("%.2f", $list[$key]['subtotal']));
+                //计算购车商品总件数
+                $result['TotalCartNumber'] += $value['product_num'];
                 // 计算购物车中已勾选的产品总数和总额
                 if (!empty($value['selected'])) {
                     // 合计金额
                     $result['TotalAmount'] += $list[$key]['subtotal'];
-                    $result['TotalAmount'] = sprintf("%.2f", $result['TotalAmount']);
+                    $result['TotalAmount'] = floatval(sprintf("%.2f", $result['TotalAmount']));
                     // 合计数量
                     $result['TotalNumber'] += $value['product_num'];
                     // 选中的产品个数
@@ -218,7 +224,7 @@ class TagSpcart extends Base
                 if (!empty($spec_value_id)) {
                     $SpecWhere = [
                         'aid'           => $value['product_id'],
-                        'lang'          => $this->home_lang,
+                        'lang'          => self::$home_lang,
                         'spec_value_id' => ['IN',$spec_value_id]
                     ];
                     $ProductSpecData = M("product_spec_data")->where($SpecWhere)->field('spec_name,spec_value')->select();
@@ -275,11 +281,14 @@ EOF;
 
         // 下单地址
         $result['ShopOrderUrl']  = urldecode(url('user/Shop/shop_under_order'));
-        $result['SubmitOrder']   = " onclick=\"SubmitOrder('{$result['ShopOrderUrl']}');\" ";
+        $result['SubmitOrder']   = " id='SubmitOrder_1625455820' onclick=\"SubmitOrder('{$result['ShopOrderUrl']}');\" ";
+        $result['SubmitOrder_0']   = " id='SubmitOrder_0_1625455820'  onclick=\"SubmitOrder_0();\" ";
         $result['InputChecked']  = " id=\"AllChecked\" onclick=\"Checked('*','{$result['AllSelected']}');\" ";
         $result['InputHidden']   = " <input type=\"hidden\" id=\"AllSelected\" value='{$result['AllSelected']}'> ";
+        $result['TotalCartNumberId'] = " id=\"TotalCartNumber\" ";
         $result['TotalNumberId'] = " id=\"TotalNumber\" ";
         $result['TotalAmountId'] = " id=\"TotalAmount\" ";
+        $result['BatchCartDel'] = " href=\"javascript:void(0);\" onclick=\"BatchCartDel();\" ";
          
         // 传入JS文件的参数
         $data['cart_unified_algorithm_url'] = url('user/Shop/cart_unified_algorithm');
@@ -287,13 +296,23 @@ EOF;
         $data['cart_del_url']               = url('user/Shop/cart_del');
         $data['move_to_collection_url']     = url('user/Shop/move_to_collection');
         $data['cart_stock_detection']       = url('user/Shop/cart_stock_detection', [], true, false, 1, 1);
+        $data['is_wap'] = 0;
+        if (isWeixin() || isMobile()) {
+            $data['is_wap'] = 1;
+        }
         $data_json = json_encode($data);
         $version = getCmsVersion();
+        // 会员模板版本号
+        if (empty($this->usersTplVersion) || 'v1' == $this->usersTplVersion) {
+            $jsfile = "tag_spcart.js";
+        } else {
+            $jsfile = "tag_spcart_{$this->usersTplVersion}.js";
+        }
         $result['hidden'] = <<<EOF
 <script type="text/javascript">
     var b82ac06cf24687eba9bc5a7ba92be4c8 = {$data_json};
 </script>
-<script type="text/javascript" src="{$this->root_dir}/public/static/common/js/tag_spcart.js?v={$version}"></script>
+<script type="text/javascript" src="{$this->root_dir}/public/static/common/js/{$jsfile}?t={$version}"></script>
 EOF;
         return $result;
     }

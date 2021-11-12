@@ -118,8 +118,27 @@ class Arctype extends Base
         /* 生成静态页面代码 */
         $typeid = input('param.typeid/d',0);
         $is_del = input('param.is_del/d',0);
+        $handle = input('param.handle/s','');
         $this->assign('typeid',$typeid);
         $this->assign('is_del',$is_del);
+        $seo_pseudo = tpCache('seo.seo_pseudo');//URL模式
+        $sitemap_zzbaidutoken = config('tpcache.sitemap_zzbaidutoken');//实时推送Url的token
+        $bdminipro = Db::name('weapp')->where(['code'=>'BdDiyminipro','status'=>1])->find();
+        $typeurl = '';
+        if (!empty($typeid)){
+            $typeData = Db::name('arctype')->where('id',$typeid)->find();
+            if (!empty($typeData)){
+                $typeurl = get_typeurl($typeData);
+            }
+        }
+        $eyou = [
+            'handle'=>$handle,
+            'typeurl'=>$typeurl,
+            'zzbaidutoken'=>$sitemap_zzbaidutoken,
+            'bdminipro'=>$bdminipro,
+            'seo_pseudo'=>$seo_pseudo
+        ];
+        $this->assign('eyou',$eyou);
         /* end */
         $recycle_switch = tpSetting('recycle.recycle_switch');
         $this->assign('recycle_switch', $recycle_switch);
@@ -135,6 +154,16 @@ class Arctype extends Base
         function_exists('set_time_limit') && set_time_limit(0);
         
         $this->language_access(); // 多语言功能操作权限
+
+        $seoConfig = tpCache('seo');
+        $seo_pseudo = !empty($seoConfig['seo_pseudo']) ? $seoConfig['seo_pseudo'] : config('ey_config.seo_pseudo');
+        $seo_html_arcdir = !empty($seoConfig['seo_html_arcdir']) ? $seoConfig['seo_html_arcdir'] : '';
+        $seo_html_listname = !empty($seoConfig['seo_html_listname']) ? $seoConfig['seo_html_listname'] : 2;
+        $seo_html_pagename = !empty($seoConfig['seo_html_pagename']) ? $seoConfig['seo_html_pagename'] : 2;
+        $is_diyseo_htmlpath = 0; // 是否自定义生成静态页面的规则
+        if (2 == $seo_pseudo && (4 == $seo_html_listname || 4 == $seo_html_pagename)) {
+            $is_diyseo_htmlpath = 1;
+        }
 
         if (IS_POST) {
             $post = input('post.');
@@ -160,9 +189,15 @@ class Arctype extends Base
                 }
                 /*--end*/
                 $dirpath = rtrim($post['dirpath'],'/');
-                /* ------临时代码，当能支持静态页面生成，再去掉 */
                 $dirpath = $dirpath . '/' . $dirname;
-                /* -----------end----------- */
+                $diy_dirpath = '';
+                if (1 == $is_diyseo_htmlpath) { // 自定义静态命名规则
+                    if (!empty($post['diy_dirpath'])) {
+                        $diy_dirpath = '/'.trim($post['diy_dirpath'],'/');
+                    }
+                } else {
+                    $diy_dirpath = $dirpath;
+                }
                 $typelink = !empty($post['is_part']) ? $post['typelink'] : '';
                 /*封面图的本地/远程图片处理*/
                 $is_remote = !empty($post['is_remote']) ? $post['is_remote'] : 0;
@@ -191,10 +226,15 @@ class Arctype extends Base
                     $addonField = $this->fieldLogic->handleAddonField($this->arctype_channel_id, $post['addonField']);
                 }
                 /*--end*/
+                // 列表/文档命名规则
+                $post['rulelist'] = trim($post['rulelist']);
+                $post['ruleview'] = trim($post['ruleview']);
+
                 $newData = array(
                     'topid' => $topid,
                     'dirname' => $dirname,
                     'dirpath'   => $dirpath,
+                    'diy_dirpath'   => $diy_dirpath,
                     'typelink' => $typelink,
                     'litpic'    => $litpic,
                     'channeltype'   => $channeltype,
@@ -224,7 +264,7 @@ class Arctype extends Base
                     adminLog('新增栏目：'.$data['typename']);
 
                     // 生成静态页面代码
-                    $this->success("操作成功!", url('Arctype/index', ['typeid'=>$insertId]));
+                    $this->success("操作成功!", url('Arctype/index', ['typeid'=>$insertId,'handle'=>'add']));
                     exit;
                 }
             }
@@ -267,6 +307,8 @@ class Arctype extends Base
         $this->assign('ptypename', $ptypename);
         $this->assign('grade',$grade);
         $this->assign('current_channel',$current_channel);
+        $this->assign('rulelist', "{栏目目录}/list_{tid}_{page}.html");
+        $this->assign('ruleview', "{栏目目录}/{aid}.html");
         
         /*发布文档的模型ID，用于是否显示文档模板列表*/
         $js_allow_channel_arr = '[';
@@ -292,6 +334,12 @@ class Arctype extends Base
         $assign_data['channeltype'] = 6;
         $assign_data['nid'] = 'arctype';
         /*--end*/
+        //url模式
+        $assign_data['seo_pseudo'] = $seo_pseudo;
+        $assign_data['seo_html_arcdir'] = $seo_html_arcdir;
+        $assign_data['seo_html_listname'] = $seo_html_listname;
+        $assign_data['seo_html_pagename'] = $seo_html_pagename;
+        $assign_data['is_diyseo_htmlpath'] = $is_diyseo_htmlpath;
 
         $this->assign($assign_data);
         return $this->fetch();
@@ -302,6 +350,16 @@ class Arctype extends Base
      */
     public function edit()
     {
+        $seoConfig = tpCache('seo');
+        $seo_pseudo = !empty($seoConfig['seo_pseudo']) ? $seoConfig['seo_pseudo'] : config('ey_config.seo_pseudo');
+        $seo_html_arcdir = !empty($seoConfig['seo_html_arcdir']) ? $seoConfig['seo_html_arcdir'] : '';
+        $seo_html_listname = !empty($seoConfig['seo_html_listname']) ? $seoConfig['seo_html_listname'] : 2;
+        $seo_html_pagename = !empty($seoConfig['seo_html_pagename']) ? $seoConfig['seo_html_pagename'] : 2;
+        $is_diyseo_htmlpath = 0; // 是否自定义生成静态页面的规则
+        if (2 == $seo_pseudo && (4 == $seo_html_listname || 4 == $seo_html_pagename)) {
+            $is_diyseo_htmlpath = 1;
+        }
+
         if (IS_POST) {
             $post = input('post.');
             if (!empty($post['id'])) {
@@ -333,9 +391,11 @@ class Arctype extends Base
                 }
                 /*--end*/
                 $dirpath  = rtrim($post['dirpath'], '/');
-                /* ------临时代码，当能支持静态页面生成，再去掉 */
                 $dirpath = $dirpath . '/' . $dirname;
-                /* -----------end----------- */
+                $diy_dirpath = '';
+                if (!empty($post['diy_dirpath'])) {
+                    $diy_dirpath = '/'.trim($post['diy_dirpath'],'/');
+                }
                 $typelink = !empty($post['is_part']) ? $post['typelink'] : '';
                 /*封面图的本地/远程图片处理*/
                 $is_remote = !empty($post['is_remote']) ? $post['is_remote'] : 0;
@@ -369,11 +429,15 @@ class Arctype extends Base
                     $addonField = $this->fieldLogic->handleAddonField($this->arctype_channel_id, $post['addonField']);
                 }
                 /*--end*/
+                // 列表/文档命名规则
+                $post['rulelist'] = trim($post['rulelist']);
+                $post['ruleview'] = trim($post['ruleview']);
 
                 $newData = array(
                     'topid' => $topid,
                     'dirname' => $dirname,
                     'dirpath'   => $dirpath,
+                    'diy_dirpath'   => $diy_dirpath,
                     'typelink' => $typelink,
                     'litpic'    => $litpic,
                     'channeltype'   => $channeltype,
@@ -395,7 +459,7 @@ class Arctype extends Base
                     adminLog('编辑栏目：'.$data['typename']);
 
                     // 生成静态页面代码
-                    $this->success("操作成功!", url('Arctype/index', ['typeid'=>$post['id']]));
+                    $this->success("操作成功!", url('Arctype/index', ['typeid'=>$post['id'],'handle'=>'edit']));
                     exit;
                 }
             }
@@ -507,9 +571,18 @@ class Arctype extends Base
         $assign_data['nid'] = 'arctype';
         /*--end*/
 
-        /*是否有旧参数存在，只要有旧参数，就可以启用旧参数功能*/
-        $assign_data['is_old_product_attr'] = Db::name("product_attr")->where('product_attr_id', 'gt', 0)->count();
+        /*之前标记旧参数可用，就开放入口*/
+        $assign_data['is_old_product_attr'] = tpSetting('system.system_old_product_attr', [], 'cn');
         /*end*/
+        //url模式
+        $assign_data['seo_pseudo'] = $seo_pseudo;
+        $assign_data['seo_html_arcdir'] = $seo_html_arcdir;
+        $assign_data['seo_html_listname'] = $seo_html_listname;
+        $assign_data['seo_html_pagename'] = $seo_html_pagename;
+        $assign_data['is_diyseo_htmlpath'] = $is_diyseo_htmlpath;
+
+        $assign_data['rulelist'] = "{栏目目录}/list_{tid}_{page}.html";
+        $assign_data['ruleview'] = "{栏目目录}/{aid}.html";
 
         $this->assign($assign_data);
         return $this->fetch();
@@ -584,6 +657,8 @@ class Arctype extends Base
         }
         $assign_data['info'] = $info;
 
+        $editor_addonFieldExt = [];
+        $first_html = 0;
         /*自定义字段*/
         $addonFieldExtList = model('Field')->getChannelFieldList(6, 0, $typeid, $info);
         $channelfieldBindRow = Db::name('channelfield_bind')->where([
@@ -594,8 +669,26 @@ class Arctype extends Base
                 if (!in_array($val['id'], $channelfieldBindRow)) {
                     unset($addonFieldExtList[$key]);
                 }
+                if ($val['dtype'] == 'htmltext') {
+                    if (empty($first_html)){
+                        $editor = tpSetting('editor');
+                        $addonFieldExtList[$key]['editor'] = $editor;
+                        $addonFieldExtList[$key]['first'] = 1;
+                        $first_html = 1;
+                    }
+                    $editor_addonFieldExt[] = $val['name'];
+
+                }
             }
         }
+
+        if (!empty($editor_addonFieldExt)){
+            $editor_addonFieldExt = implode(',',$editor_addonFieldExt);
+        }else{
+            $editor_addonFieldExt = '';
+        }
+        $assign_data['editor_addonFieldExt'] = $editor_addonFieldExt;
+
         $assign_data['addonFieldExtList'] = $addonFieldExtList;
         $assign_data['aid'] = $typeid;
         $assign_data['channeltype'] = 6;
@@ -619,118 +712,47 @@ class Arctype extends Base
         return $this->fetch();
     }
     
-    //伪删除 del->彻底删除 pseudo->伪删除
+    /**
+     * 伪删除 del->彻底删除 pseudo->伪删除
+     */
     public function pseudo_del()
     {
         if (IS_POST) {
-            $this->language_access();
+            $this->language_access(); // 多语言功能操作权限
+            
             $post = input('post.');
-            $del_id = eyIntval($post['del_id']);
+            $post['del_id'] = eyIntval($post['del_id']);
+
+            /*当前栏目信息*/
             $row = Db::name('arctype')->field('id, current_channel, typename')
                 ->where([
-                    'id'    => $del_id,
+                    'id'    => $post['del_id'],
                     'lang'  => $this->admin_lang,
                 ])
                 ->find();
-            if ('del' == $post['deltype']){
-                $id_arr = $row['id'];
-                // 多语言处理逻辑
-                if (is_language()) {
-                    $attr_name_arr = 'tid'.$row['id'];
-                    $id_arr_tmp = Db::name('language_attr')->where([
-                        'attr_name'  => $attr_name_arr,
-                        'attr_group' => 'arctype',
-                    ])->column('attr_value');
-                    if (!empty($id_arr_tmp)) {
-                        $id_arr = $id_arr_tmp;
-                    }
-
-                    $list = $this->arctype_db->field('id,del_method')
-                        ->where([
-                            'id' => ['IN', $id_arr],
-                        ])
-                        ->whereOr([
-                            'parent_id' => ['IN', $id_arr],
-                        ])->select();
-                }else{
-                    $list = $this->arctype_db->field('id,del_method')
-                        ->where([
-                            'parent_id' => ['IN', $id_arr],
-                        ])
-                        ->fetchsql(true)
-                        ->select();
-                }
-                // 删除条件逻辑
-                // 栏目逻辑
-                $map = 'is_del = 0 ';
-                // 多语言处理逻辑
-                if (is_language()) {
-                    $where = $map.' and (';
-                    $ids = get_arr_column($list, 'id');
-                    !empty($ids) && $where .= 'id IN ('.implode(',', $ids).') OR parent_id IN ('.implode(',', $ids).')';
-                }else{
-                    $ids = [$del_id];
-                    $where  = $map.' and (id='.$del_id.' or parent_id='.$del_id;
-                    if (0 == intval($row['parent_id'])) {
-                        foreach ($list as $value) {
-                            if (2 == intval($value['del_method'])) {
-                                $where .= ' or parent_id='.$value['id'];
-                            }
-                        }
-                    }
-                }
-                $where .= ')';
-
-                // 文章逻辑
-                $where1 = $map.' and typeid in (';
-
-                // 查询栏目回收站数据并拼装删除文章逻辑
-                $arctype  = $this->arctype_db->field('id')->where($where)->select();
-                foreach ($arctype as $key => $value) {
-                    $where1 .= $value['id'].',';
-                }
-                $where1 = rtrim($where1,',');
-                $where1 .= ')';
-
-                // 栏目数据删除
-                $r = $this->arctype_db->where($where)->delete();
-                if($r){
-                    // Tag标签删除
-                    Db::name('taglist')->where([
-                        'typeid'    => ['IN', $ids],
-                    ])->delete();
-                    // 内容数据删除
-                    $r = $this->archives->where($where1)->delete();
-                    $msg = '';
-                    if (!$r) {
-                        $msg = '，文档清空失败！';
-                    }
-                    adminLog('删除栏目：'.$row['typename']);
-                    /*清空sql_cache_table数据缓存表 并 添加查询执行语句到mysql缓存表*/
-                    Db::name('sql_cache_table')->query('TRUNCATE TABLE '.config('database.prefix').'sql_cache_table');
-                    model('SqlCacheTable')->InsertSqlCacheTable(true);
-                    /* END */
-                    $this->success("操作成功".$msg);
-                }
-            }elseif ('pseudo' == $post['deltype']){
-                $r = model('arctype')->pseudo_del($del_id);
-                if (false !== $r) {
-                    adminLog('伪删除栏目：'.$row['typename']);
-                    /*清空sql_cache_table数据缓存表 并 添加查询执行语句到mysql缓存表*/
-                    Db::name('sql_cache_table')->query('TRUNCATE TABLE '.config('database.prefix').'sql_cache_table');
-                    model('SqlCacheTable')->InsertSqlCacheTable(true);
-                    /* END */
-                    $this->success('删除成功');
-                } else {
-                    $this->error('删除失败');
-                }
+            
+            if ('del' == $post['deltype']) {
+                $r = model('Arctype')->del($post['del_id']);
+                $logtxt = '删除栏目：'.$row['typename'];
+            } else {
+                $r = model('Arctype')->pseudo_del($post['del_id']);
+                $logtxt = '伪删除栏目：'.$row['typename'];
+            }
+            if (false !== $r) {
+                adminLog($logtxt);
+                /*清空sql_cache_table数据缓存表 并 添加查询执行语句到mysql缓存表*/
+                Db::name('sql_cache_table')->execute('TRUNCATE TABLE '.config('database.prefix').'sql_cache_table');
+                model('SqlCacheTable')->InsertSqlCacheTable(true);
+                /* END */
+                $this->success('删除成功');
             }
         }
-        $this->error('非法访问');
+
+        $this->error('删除失败');
     }
 
     /**
-     * 批量伪删除
+     * 批量伪删除/真删除
      */
     public function batch_pseudo_del()
     {
@@ -740,6 +762,7 @@ class Arctype extends Base
             $post = input('post.');
             $post['del_id'] = eyIntval($post['del_id']);
             if (!$post['del_id']) $this->error('未选择栏目');
+
             $typename = '';
             foreach ($post['del_id'] as $item) {
                 /*当前栏目信息*/
@@ -751,122 +774,28 @@ class Arctype extends Base
                     ->find();
 
                 $typename .= $row['typename'].',';
-                if ('del' == $post['deltype']){
-                    $id_arr = $row['id'];
-                    // 多语言处理逻辑
-                    if (is_language()) {
-                        $attr_name_arr = 'tid'.$row['id'];
-                        $id_arr_tmp = Db::name('language_attr')->where([
-                            'attr_name'  => $attr_name_arr,
-                            'attr_group' => 'arctype',
-                        ])->column('attr_value');
-                        if (!empty($id_arr_tmp)) {
-                            $id_arr = $id_arr_tmp;
-                        }
-                        $list = $this->arctype_db->field('id,del_method')
-                            ->where([
-                                'id' => ['IN', $id_arr],
-                            ])
-                            ->whereOr([
-                                'parent_id' => ['IN', $id_arr],
-                            ])->select();
-                    }else{
-                        $list = $this->arctype_db->field('id,del_method')
-                            ->where([
-                                'parent_id' => ['IN', $id_arr],
-                            ])
-                            ->select();
-                    }
 
-                    // 删除条件逻辑
-                    // 栏目逻辑
-//                    $map = 'is_del=1';
-                    $map = '1=1';
-                    // 多语言处理逻辑
-                    if (is_language()) {
-                        $where = $map.' and (';
-                        $ids = get_arr_column($list, 'id');
-                        !empty($ids) && $where .= 'id IN ('.implode(',', $ids).') OR parent_id IN ('.implode(',', $ids).')';
-                    }else{
-                        $ids = [$item];
-                        $where  = $map.' and (id='.$item.' or parent_id='.$item;
-                        if (0 == intval($row['parent_id'])) {
-                            foreach ($list as $value) {
-                                if (2 == intval($value['del_method'])) {
-                                    $where .= ' or parent_id='.$value['id'];
-                                }
-                            }
-                        }
-                    }
-                    $where .= ')';
-
-                    // 文章逻辑
-                    $where1 = $map.' and typeid in (';
-
-                    // 查询栏目回收站数据并拼装删除文章逻辑
-                    $arctype  = $this->arctype_db->field('id')->where($where)->select();
-                    foreach ($arctype as $key => $value) {
-                        $where1 .= $value['id'].',';
-                    }
-                    $where1 = rtrim($where1,',');
-                    $where1 .= ')';
-
-                    // 栏目数据删除
-                    $r = $this->arctype_db->where($where)->delete();
-                    if($r){
-                        // Tag标签删除
-                        Db::name('taglist')->where([
-                            'typeid'    => ['IN', $ids],
-                        ])->delete();
-                        // 内容数据删除
-                        $this->archives->where($where1)->delete();
-                    }
-                    $typename .= $row['typename'].',';
-                }elseif ('pseudo' == $post['deltype']) {
-                    model('arctype')->pseudo_del($item);
+                if ('del' == $post['deltype']) {
+                    model('Arctype')->del($item);
+                } else {
+                    model('Arctype')->pseudo_del($item);
                 }
             }
-            if ('del' == $post['deltype']){
-                adminLog('删除栏目：'.trim($typename,','));
-            }elseif ('pseudo' == $post['deltype']) {
-                adminLog('伪删除栏目：' . trim($typename, ','));
+
+            if ('del' == $post['deltype']) {
+                $logtxt = '删除栏目：'.trim($typename,',');
+            } else {
+                $logtxt = '伪删除栏目：'.trim($typename,',');
             }
+            adminLog($logtxt);
             /*清空sql_cache_table数据缓存表 并 添加查询执行语句到mysql缓存表*/
-            Db::name('sql_cache_table')->query('TRUNCATE TABLE '.config('database.prefix').'sql_cache_table');
+            Db::name('sql_cache_table')->execute('TRUNCATE TABLE '.config('database.prefix').'sql_cache_table');
             model('SqlCacheTable')->InsertSqlCacheTable(true);
             /* END */
             $this->success('删除成功');
-
         }
 
-        $this->error('非法访问');
-    }
-
-    /**
-     * 删除[1.2.7之后废弃]
-     */
-    public function del()
-    {
-        $this->language_access(); // 多语言功能操作权限
-        
-        $post = input('post.');
-        $post['del_id'] = eyIntval($post['del_id']);
-
-        /*当前栏目信息*/
-        $row = Db::name('arctype')->field('id, current_channel, typename')
-            ->where([
-                'id'    => $post['del_id'],
-                'lang'  => $this->admin_lang,
-            ])
-            ->find();
-        
-        $r = model('arctype')->del($post['del_id']);
-        if (false !== $r) {
-            adminLog('删除栏目：'.$row['typename']);
-            $this->success('删除成功');
-        } else {
-            $this->error('删除失败');
-        }
+        $this->error('删除失败');
     }
 
     /**
@@ -901,13 +830,8 @@ class Arctype extends Base
      */
     public function ajax_get_dirpinyin($typename = '')
     {
-        $typename = input('post.typename/s');
         $pinyin = get_pinyin($typename);
-
-        respose(array(
-            'status'    => 1,
-            'msg'   => $pinyin
-        ));
+        $this->success('提取成功', null, ['pinyin'=>$pinyin]);
     }
 
     /**
@@ -1236,6 +1160,7 @@ class Arctype extends Base
                 'parent_id' => 0,
                 'dirname'   => $dirname,
                 'dirpath'   => $dirpath,
+                'diy_dirpath'   => $dirpath,
                 'grade' => 0,
                 'templist'  => !empty($post['templist']) ? $post['templist'] : '',
                 'tempview'  => !empty($post['tempview']) ? $post['tempview'] : '',
@@ -1310,6 +1235,7 @@ class Arctype extends Base
                 'topid'     => $topid,
                 'dirname'   => $dirname,
                 'dirpath'   => $dirpath,
+                'diy_dirpath'   => $dirpath,
                 'grade' => intval($post['grade']),
                 'templist'  => !empty($post['templist']) ? $post['templist'] : '',
                 'tempview'  => !empty($post['tempview']) ? $post['tempview'] : '',

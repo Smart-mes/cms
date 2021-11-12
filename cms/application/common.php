@@ -360,7 +360,16 @@ if (!function_exists('write_html_cache'))
         $html_cache_status = config('HTML_CACHE_STATUS');
         $html_cache_arr = config('HTML_CACHE_ARR');
         if ($html_cache_status && !empty($html_cache_arr) && !empty($html)) {
-            $home_lang = get_home_lang(); // 多语言
+            // 多站点/多语言
+            $home_lang = 'cn';
+            $home_site = '';
+            $city_switch_on = config('city_switch_on');
+            if (!empty($city_switch_on)) {
+                $home_site = get_home_site();
+            } else {
+                $home_lang = get_home_lang();
+            }
+
             $request = \think\Request::instance();
             $param = input('param.');
 
@@ -416,10 +425,13 @@ if (!function_exists('write_html_cache'))
                     if (in_array('tid', $val['p'])) {
                         $tid = $param['tid'];
                         if (strval(intval($tid)) != strval($tid)) {
-                            $tid = \think\Db::name('arctype')->where([
-                                    'dirname'   => $tid,
-                                    'lang'  => $home_lang,
-                                ])->getField('id');
+                            $where = [
+                                'dirname'   => $tid,
+                            ];
+                            if (empty($city_switch_on)) {
+                                $where['lang'] =$home_lang;
+                            }
+                            $tid = \think\Db::name('arctype')->where($where)->getField('id');
                             $param['tid']   = $tid;
                         }
                     }
@@ -467,10 +479,13 @@ if (!function_exists('write_html_cache'))
                 }
                 /*end*/
 
+                // 多站点
+                !empty($home_site) && $home_site = DS.$home_site;
+
                 // 缓存时间
                 $web_cmsmode = 1;//tpCache('web.web_cmsmode');
                 if (1 == intval($web_cmsmode)) { // 永久
-                    $path = HTML_PATH.$val['filename'].DS.$home_lang;
+                    $path = HTML_PATH.$val['filename'].DS.$home_lang.$home_site;
                     if (isMobile() || $is_mobile_domain) {
                         $path .= "_mobile";
                     } else {
@@ -480,7 +495,7 @@ if (!function_exists('write_html_cache'))
                     tp_mkdir(dirname($filename));
                     !empty($html) && file_put_contents($filename, $html);
                 } else {
-                    $path = HTML_PATH.$val['filename'].DS.$home_lang;
+                    $path = HTML_PATH.$val['filename'].DS.$home_lang.$home_site;
                     if (isMobile()) {
                         $path .= "_mobile";
                     } else {
@@ -509,7 +524,16 @@ if (!function_exists('read_html_cache'))
         $html_cache_status = config('HTML_CACHE_STATUS');
         $html_cache_arr = config('HTML_CACHE_ARR');
         if ($html_cache_status && !empty($html_cache_arr)) {
-            $home_lang = get_home_lang();
+            // 多站点/多语言
+            $home_lang = 'cn';
+            $home_site = '';
+            $city_switch_on = config('city_switch_on');
+            if (!empty($city_switch_on)) {
+                $home_site = get_home_site();
+            } else {
+                $home_lang = get_home_lang();
+            }
+
             $request = \think\Request::instance();
             $seo_pseudo = config('ey_config.seo_pseudo');
             $param = input('param.');
@@ -558,10 +582,13 @@ if (!function_exists('read_html_cache'))
                     if (in_array('tid', $val['p'])) {
                         $tid = $param['tid'];
                         if (strval(intval($tid)) != strval($tid)) {
-                            $tid = \think\Db::name('arctype')->where([
-                                    'dirname'   => $tid,
-                                    'lang'  => $home_lang,
-                                ])->getField('id');
+                            $where = [
+                                'dirname'   => $tid,
+                            ];
+                            if (empty($city_switch_on)) {
+                                $where['lang'] =$home_lang;
+                            }
+                            $tid = \think\Db::name('arctype')->where($where)->getField('id');
                             $param['tid']   = $tid;
                         }
                     }
@@ -609,10 +636,13 @@ if (!function_exists('read_html_cache'))
                 }
                 /*end*/
 
+                // 多站点
+                !empty($home_site) && $home_site = DS.$home_site;
+
                 // 缓存时间
                 $web_cmsmode = 1;//tpCache('web.web_cmsmode');
                 if (1 == intval($web_cmsmode)) { // 永久
-                    $path = HTML_PATH.$val['filename'].DS.$home_lang;
+                    $path = HTML_PATH.$val['filename'].DS.$home_lang.$home_site;
                     if (isMobile() || $is_mobile_domain) {
                         $path .= "_mobile";
                     } else {
@@ -625,7 +655,7 @@ if (!function_exists('read_html_cache'))
                         exit();
                     }
                 } else {
-                    $path = HTML_PATH.$val['filename'].DS.$home_lang;
+                    $path = HTML_PATH.$val['filename'].DS.$home_lang.$home_site;
                     if (isMobile()) {
                         $path .= "_mobile";
                     } else {
@@ -661,13 +691,14 @@ if (!function_exists('is_local_images'))
      */
     function is_local_images($pic_url = '', $returnbool = false)
     {
-        $picPath  = parse_url($pic_url, PHP_URL_PATH);
-        // if (preg_match('/^([^:]*):?\/\/([^\/]+)(.*)\/(uploads\/allimg|public\/upload)\/(.*)\.([^\.]+)$/i', $pic_url) && file_exists('.'.$picPath)) {
-        if (!empty($picPath) && file_exists('.'.$picPath)) {
-            $picPath = preg_replace('#^'.ROOT_DIR.'/#i', '/', $picPath);
-            $pic_url = ROOT_DIR.$picPath;
-            if (true == $returnbool) {
-                return $pic_url;
+        if (stristr($pic_url, '//'.request()->host().'/')) {
+            $picPath  = parse_url($pic_url, PHP_URL_PATH);
+            $picPath = preg_replace('#^(/[/\w]+)?(/public/upload/|/public/static/|/uploads/|/weapp/)#i', '$2', $picPath);
+            if (!empty($picPath) && file_exists('.'.$picPath)) {
+                $pic_url = ROOT_DIR.$picPath;
+                if (true == $returnbool) {
+                    return $pic_url;
+                }
             }
         }
 
@@ -734,18 +765,21 @@ if (!function_exists('handle_subdir_pic'))
      * 处理子目录与根目录的图片平缓切换
      * @param string $str 图片路径或html代码
      */
-    function handle_subdir_pic($str = '', $type = 'img', $domain = false)
+    function handle_subdir_pic($str = '', $type = 'img', $domain = false, $clear_root_dir = false)
     {
         static $request = null;
         if (null === $request) {
             $request = \think\Request::instance();
         }
 
-        $root_dir = ROOT_DIR;
+        $root_dir = $add_root_dir = ROOT_DIR;
+        if ($clear_root_dir == true && $domain == false) {
+            $add_root_dir = '';
+        }
         switch ($type) {
             case 'img':
                 if (!is_http_url($str) && !empty($str)) {
-                    $str = preg_replace('#^(/[/\w]+)?(/public/upload/|/public/static/|/uploads/|/weapp/)#i', $root_dir.'$2', $str);
+                    $str = preg_replace('#^(/[/\w]+)?(/public/upload/|/public/static/|/uploads/|/weapp/)#i', $add_root_dir.'$2', $str);
                 }else if (is_http_url($str) && !empty($str)) {
                     $StrData = parse_url($str);
                     $strlen  = strlen($root_dir);
@@ -787,7 +821,7 @@ if (!function_exists('handle_subdir_pic'))
                                         $str = $tcp.$qnyData['domain'].$StrData['path'];
                                     }else{
                                         // 若切换了存储空间或访问域名，与数据库中存储的图片路径域名不一致时，访问本地路径，保证图片正常
-                                        $str = $root_dir.$StrData['path'];
+                                        $str = $add_root_dir.$StrData['path'];
                                     }
                                 }
                             }
@@ -803,7 +837,7 @@ if (!function_exists('handle_subdir_pic'))
                             }
                             else {
                                 // 关闭
-                                $str = $root_dir.$StrData['path'];
+                                $str = $add_root_dir.$StrData['path'];
                             }
                         }
                     }
@@ -811,18 +845,18 @@ if (!function_exists('handle_subdir_pic'))
                 break;
 
             case 'html':
-                $str = preg_replace('#(.*)(\#39;|&quot;|"|\')(/[/\w]+)?(/public/upload/|/public/plugins/|/uploads/)(.*)#iU', '$1$2'.$root_dir.'$4$5', $str);
+                $str = preg_replace('#(.*)(\#39;|&quot;|"|\')(/[/\w]+)?(/public/upload/|/public/plugins/|/uploads/)(.*)#iU', '$1$2'.$add_root_dir.'$4$5', $str);
                 break;
 
             case 'soft':
                 if (!is_http_url($str) && !empty($str)) {
-                    $str = preg_replace('#^(/[/\w]+)?(/public/upload/soft/|/uploads/soft/)#i', $root_dir.'$2', $str);
+                    $str = preg_replace('#^(/[/\w]+)?(/public/upload/soft/|/uploads/soft/)#i', $add_root_dir.'$2', $str);
                 }
                 break;
 
             case 'media':  //多媒体文件
                 if (!is_http_url($str) && !empty($str)) {
-                    $str = preg_replace('#^(/[/\w]+)?(/uploads/media/)#i', $root_dir.'$2', $str);
+                    $str = preg_replace('#^(/[/\w]+)?(/uploads/media/)#i', $add_root_dir.'$2', $str);
                 }
                 break;
 
@@ -1444,6 +1478,26 @@ if (!function_exists('gettoptype'))
     }
 }
 
+if (!function_exists('getparenttype')) 
+{
+    /**
+     * 获取当前栏目的上级栏目
+     */
+    function getparenttype($typeid, $field = 'typename')
+    {
+        $parent_list = model('Arctype')->getAllPid($typeid); // 获取当前栏目的所有父级栏目
+        if (!empty($parent_list)) {
+            array_pop($parent_list);
+        }
+        $result = end($parent_list); // 上级栏目
+        if (isset($result[$field]) && !empty($result[$field])) {
+            return handle_subdir_pic($result[$field]); // 支持子目录
+        } else {
+            return '';
+        }
+    }
+}
+
 if (!function_exists('get_main_lang')) 
 {
     /**
@@ -1451,14 +1505,17 @@ if (!function_exists('get_main_lang'))
      */
     function get_main_lang()
     {
-        $keys = 'common_get_main_lang';
-        $main_lang = \think\Cache::get($keys);
-        if (empty($main_lang) || (!empty($main_lang) && !preg_match('/^[a-z]{2}$/i', $main_lang))) {
-            $main_lang = \think\Db::name('language')->order('id asc')
-                ->limit(1)
-                ->cache(true, EYOUCMS_CACHE_TIME, 'language')
-                ->getField('mark');
-            \think\Cache::set($keys, $main_lang);
+        static $main_lang = null;
+        if (null === $main_lang) {
+            $keys = 'common_get_main_lang';
+            $main_lang = \think\Cache::get($keys);
+            if (empty($main_lang) || (!empty($main_lang) && !preg_match('/^[a-z]{2}$/i', $main_lang))) {
+                $main_lang = \think\Db::name('language')->order('id asc')
+                    ->limit(1)
+                    ->cache(true, EYOUCMS_CACHE_TIME, 'language')
+                    ->getField('mark');
+                \think\Cache::set($keys, $main_lang);
+            }
         }
 
         return $main_lang;
@@ -1472,11 +1529,14 @@ if (!function_exists('get_default_lang'))
      */
     function get_default_lang()
     {
-        $request = \think\Request::instance();
-        if (!stristr($request->baseFile(), 'index.php')) {
-            $default_lang = get_admin_lang();
-        } else {
-            $default_lang = \think\Config::get('ey_config.system_home_default_lang');
+        static $default_lang = null;
+        if (null === $default_lang) {
+            $request = \think\Request::instance();
+            if (!stristr($request->baseFile(), 'index.php')) {
+                $default_lang = get_admin_lang();
+            } else {
+                $default_lang = \think\Config::get('ey_config.system_home_default_lang');
+            }
         }
 
         return $default_lang;
@@ -1490,11 +1550,14 @@ if (!function_exists('get_current_lang'))
      */
     function get_current_lang()
     {
-        $request = \think\Request::instance();
-        if (!stristr($request->baseFile(), 'index.php')) {
-            $current_lang = get_admin_lang();
-        } else {
-            $current_lang = get_home_lang();
+        static $current_lang = null;
+        if (null === $current_lang) {
+            $request = \think\Request::instance();
+            if (!stristr($request->baseFile(), 'index.php')) {
+                $current_lang = get_admin_lang();
+            } else {
+                $current_lang = get_home_lang();
+            }
         }
 
         return $current_lang;
@@ -1508,12 +1571,15 @@ if (!function_exists('get_admin_lang'))
      */
     function get_admin_lang()
     {
-        $keys = \think\Config::get('global.admin_lang');
-        $admin_lang = \think\Cookie::get($keys);
-        if (empty($admin_lang) || (!empty($admin_lang) && !preg_match('/^[a-z]{2}$/i', $admin_lang))) {
-            $admin_lang = input('param.lang/s');
-            empty($admin_lang) && $admin_lang = get_main_lang();
-            \think\Cookie::set($keys, $admin_lang);
+        static $admin_lang = null;
+        if (null === $admin_lang) {
+            $keys = \think\Config::get('global.admin_lang');
+            $admin_lang = \think\Cookie::get($keys);
+            if (empty($admin_lang) || (!empty($admin_lang) && !preg_match('/^[a-z]{2}$/i', $admin_lang))) {
+                $admin_lang = input('param.lang/s');
+                empty($admin_lang) && $admin_lang = get_main_lang();
+                \think\Cookie::set($keys, $admin_lang);
+            }
         }
 
         return $admin_lang;
@@ -1527,17 +1593,19 @@ if (!function_exists('get_home_lang'))
      */
     function get_home_lang()
     {
-        $keys = \think\Config::get('global.home_lang');
-        $home_lang = \think\Cookie::get($keys);
-        if (empty($home_lang) || (!empty($home_lang) && !preg_match('/^[a-z]{2}$/i', $home_lang))) {
-            $home_lang = input('param.lang/s');
-            if (empty($home_lang)) {
-                $home_lang = \think\Db::name('language')->where([
-                        'is_home_default'   => 1,
-                        'status'    => 1,
-                    ])->getField('mark');
+        static $home_lang = null;
+        if (null === $home_lang) {
+            $keys = \think\Config::get('global.home_lang');
+            $home_lang = \think\Cookie::get($keys);
+            if (empty($home_lang) || (!empty($home_lang) && !preg_match('/^[a-z]{2}$/i', $home_lang))) {
+                $home_lang = input('param.lang/s');
+                if (empty($home_lang)) {
+                    $home_lang = \think\Db::name('language')->where([
+                            'is_home_default'   => 1,
+                        ])->getField('mark');
+                }
+                \think\Cookie::set($keys, $home_lang);
             }
-            \think\Cookie::set($keys, $home_lang);
         }
 
         return $home_lang;
@@ -1551,18 +1619,23 @@ if (!function_exists('is_language'))
      */
     function is_language()
     {
-        $module = \think\Request::instance()->module();
-        if (empty($module)) {
-            $system_langnum = tpCache('system.system_langnum');
-        } else {
-            $system_langnum = config('ey_config.system_langnum');
+        static $value = null;
+        if (null === $value) {
+            $module = \think\Request::instance()->module();
+            if (empty($module)) {
+                $system_langnum = tpCache('system.system_langnum');
+            } else {
+                $system_langnum = config('ey_config.system_langnum');
+            }
+
+            if (1 < intval($system_langnum)) {
+                $value = $system_langnum;
+            } else {
+                $value = false;
+            }
         }
 
-        if (1 < intval($system_langnum)) {
-            return $system_langnum;
-        } else {
-            return false;
-        }
+        return $value;
     }
 }
 
@@ -1575,6 +1648,11 @@ if (!function_exists('switch_language'))
      */
     function switch_language() 
     {
+        static $execute_end = false;
+        if (true === $execute_end) {
+            return true;
+        }
+
         static $request = null;
         if (null == $request) {
             $request = \think\Request::instance();
@@ -1605,7 +1683,7 @@ if (!function_exists('switch_language'))
         \think\Lang::setLangCookieVar($langCookieVar);
 
         /*单语言执行代码 - 排序不要乱改，影响很大*/
-        $langRow = \think\Db::name('language')->field('mark,is_home_default')
+        $langRow = \think\Db::name('language')->field('title,mark,is_home_default')
             ->order('id asc')
             ->cache(true, EYOUCMS_CACHE_TIME, 'language')
             ->select();
@@ -1614,6 +1692,7 @@ if (!function_exists('switch_language'))
             $lang = $langRow['mark'];
             \think\Config::set('cache.path', CACHE_PATH.$lang.DS);
             \think\Cookie::set($langCookieVar, $lang);
+            cookie('site_info', null);
             return true;
         }
         /*--end*/
@@ -1661,12 +1740,38 @@ if (!function_exists('switch_language'))
                 // $lang = \think\Db::name('language')->order('id asc')->getField('mark');
             } else {
                 abort(404,'页面不存在');
-                foreach ($langRow as $key => $val) {
+            }
+        }
+        $lang_info = [];
+        foreach ($langRow as $key => $val) {
+            if ($val['mark'] == $lang) {
+                $lang_info['lang_title'] = $val['title'];
+                /*单独域名*/
+                $inletStr = (1 == config('ey_config.seo_inlet')) ? '' : '/index.php'; // 去掉入口文件
+                $url = $val['url'];
+                if (empty($url)) {
                     if (1 == $val['is_home_default']) {
-                        $lang = $val['mark'];
-                        break;
+                        $url = ROOT_DIR.'/'; // 支持子目录
+                    } else {
+                        $seoConfig = tpCache('seo', [], $val['mark']);
+                        $seo_pseudo = !empty($seoConfig['seo_pseudo']) ? $seoConfig['seo_pseudo'] : config('ey_config.seo_pseudo');
+                        if (1 == $seo_pseudo) {
+                            $url = $request->domain().ROOT_DIR.$inletStr; // 支持子目录
+                            if (!empty($inletStr)) {
+                                $url .= '?';
+                            } else {
+                                $url .= '/?';
+                            }
+                            $url .= http_build_query(['lang'=>$val['mark']]);
+                        } else {
+                            $url = ROOT_DIR.$inletStr.'/'.$val['mark']; // 支持子目录
+                        }
                     }
                 }
+                /*--end*/
+                $lang_info['lang_url'] = $url;
+                cookie('lang_info', $lang_info);
+                break;
             }
         }
         \think\Config::set('cache.path', CACHE_PATH.$lang.DS);
@@ -1680,6 +1785,144 @@ if (!function_exists('switch_language'))
                 ]);
             }
         }
+
+        $execute_end = true;
+    }
+}
+
+if (!function_exists('get_default_site')) 
+{
+    /**
+     * 获取默认城市站点
+     */
+    function get_default_site()
+    {
+        static $default_site = null;
+        if (null === $default_site) {
+            $default_site = \think\Config::get('ey_config.site_default_home');
+            if (!empty($default_site)) {
+                $default_site = \think\Db::name('citysite')->where(['id'=>$default_site])->getField('domain');
+            }
+        }
+
+        return $default_site;
+    }
+}
+
+if (!function_exists('get_home_site')) 
+{
+    /**
+     * 获取前台当前城市站点
+     */
+    function get_home_site()
+    {
+        static $home_site = null;
+        if (null === $home_site) {
+            $home_site = input('param.site/s');
+            if (empty($home_site)) {
+                /*支持独立域名配置*/
+                $subDomain = request()->subDomain();
+                if (!empty($subDomain) && 'www' != $subDomain) {
+                    $siteInfo = \think\Db::name('citysite')->where('domain',$subDomain)->cache(true, EYOUCMS_CACHE_TIME, 'citysite')->find();
+                    if (!empty($siteInfo['is_open'])) {
+                        $home_site = $siteInfo['domain'];
+                    }
+                }
+                /*--end*/
+                empty($home_site) && $home_site = get_default_site();
+            }
+        }
+
+        return $home_site;
+    }
+}
+
+if (!function_exists('switch_citysite')) 
+{
+    /**
+     * 多城市切换
+     *
+     * @return void
+     */
+    function switch_citysite() 
+    {
+        static $execute_end = false;
+        if (true === $execute_end) {
+            return true;
+        }
+
+        $request = \think\Request::instance();
+        // 忽略后台
+        if (!stristr($request->baseFile(), 'index.php')) {
+            return true;
+        }
+        
+        $citysite_db = \think\Db::name('citysite');
+
+        /*验证二级域名、路径标识是否合法*/
+        $var_site = $request->param('site/s');
+        $var_site = trim($var_site, '/');
+        if (!empty($var_site)) {
+            if (!preg_match('/^([a-zA-Z0-9_-]+)$/i', $var_site)) {
+                abort(404,'页面不存在');
+            }
+        }
+        /*end*/
+
+        $current_site = '';
+        /*兼容伪静态多城市切换*/
+        $pathinfo = $request->pathinfo();
+        if (!empty($pathinfo)) {
+            $s_arr = explode('/', $pathinfo);
+            if ('m' == $s_arr[0]) {
+                $s_arr[0] = $s_arr[1];
+            }
+            $count = $citysite_db->where(['domain'=>$s_arr[0]])->cache(true, EYOUCMS_CACHE_TIME, 'citysite')->count();
+            if (!empty($count)) {
+                $current_site = $s_arr[0];
+            }
+        }
+        /*--end*/
+
+        $site = $request->param('site/s', $current_site);
+        $site = trim($site, '/');
+        if (!empty($site)) {
+            // 处理访问不存在的城市
+            $siteInfo = $citysite_db->where('domain',$site)->cache(true, EYOUCMS_CACHE_TIME, 'citysite')->find();
+            if (empty($siteInfo['domain'])) {
+                abort(404,'页面不存在');
+            } else {
+                $site_default_home = tpCache('site.site_default_home');
+                if ($siteInfo['id'] == $site_default_home) { // 设为默认站点跳转
+                    header('Location: '.ROOT_DIR.'/');
+                    exit;
+                }
+            }
+        } else {
+            $subDomain = $request->subDomain();
+            $web_basehost = tpCache('web.web_basehost');
+            $web_subDomain = $request->subDomain('', true, $web_basehost);
+            if (!empty($subDomain) && !in_array($subDomain, ['www', $web_subDomain])) {
+                $siteInfo = $citysite_db->where('domain',$subDomain)->cache(true, EYOUCMS_CACHE_TIME, 'citysite')->find();
+                if (!empty($siteInfo['is_open'])) {
+                    $site_default_home = tpCache('site.site_default_home');
+                    if ($site_default_home == $siteInfo['id']) { // 设为默认站点跳转
+                        $domain = preg_replace('/^(([^\:]+):)?(\/\/)?([^\/\:]*)(.*)$/i', '${4}', $web_basehost);
+                        $url = $request->scheme().'://'.$domain.ROOT_DIR;
+                        header('Location: '.$url);
+                        exit;
+                    } else {
+                        $site = $siteInfo['domain'];
+                    }
+                } else {
+                    abort(404,'页面不存在');
+                }
+            }
+            empty($site) && $site = 'www';
+        }
+
+        \think\Config::set('cache.path', CACHE_PATH.$site.DS);
+        $execute_end = true;
     }
 }
 
@@ -1841,79 +2084,167 @@ function sendSms($scene, $sender, $params,$unique_id=0,$sms_config = [])
     return $smsLogic->sendSms($scene, $sender, $params, $unique_id);
 }
 
-/**
- * 获得全部省份列表
- */
-function get_province_list()
-{
-    $result = extra_cache('global_get_province_list');
-    if ($result == false) {
-        $result = \think\Db::name('region')->field('id, name')
-            ->where('level',1)
-            ->getAllWithIndex('id');
-        extra_cache('global_get_province_list', $result);
+if (!function_exists('get_province_list')){
+    /**
+     * 获得全部省份列表
+     */
+    function get_province_list()
+    {
+        $result = extra_cache('global_get_province_list');
+        if ($result == false) {
+            $result = \think\Db::name('region')->field('id, name')
+                ->where('level',1)
+                ->getAllWithIndex('id');
+            extra_cache('global_get_province_list', $result);
+        }
+
+        return $result;
     }
-
-    return $result;
 }
 
-/**
- * 获得全部城市列表
- */
-function get_city_list()
-{
-    $result = extra_cache('global_get_city_list');
-    if ($result == false) {
-        $result = \think\Db::name('region')->field('id, name')
-            ->where('level',2)
-            ->getAllWithIndex('id');
-        extra_cache('global_get_city_list', $result);
+if (!function_exists('get_city_list')){
+    /**
+     * 获得全部城市列表
+     */
+    function get_city_list()
+    {
+        $result = extra_cache('global_get_city_list');
+        if ($result == false) {
+            $result = \think\Db::name('region')->field('id, name')
+                ->where('level',2)
+                ->getAllWithIndex('id');
+            extra_cache('global_get_city_list', $result);
+        }
+
+        return $result;
     }
-
-    return $result;
 }
 
-/**
- * 获得全部地区列表
- */
-function get_area_list()
-{
-    $result = extra_cache('global_get_area_list');
-    if ($result == false) {
-        $result = \think\Db::name('region')->field('id, name')
-            ->where('level',3)
-            ->getAllWithIndex('id');
-        extra_cache('global_get_area_list', $result);
+if (!function_exists('get_area_list')){
+    /**
+     * 获得全部地区列表
+     */
+    function get_area_list()
+    {
+        $result = extra_cache('global_get_area_list');
+        if ($result == false) {
+            $result = \think\Db::name('region')->field('id, name')
+                ->where('level',3)
+                ->getAllWithIndex('id');
+            extra_cache('global_get_area_list', $result);
+        }
+
+        return $result;
     }
-
-    return $result;
 }
 
-/**
- * 根据地区ID获得省份名称
- */
-function get_province_name($id)
-{
-    $result = get_province_list();
-    return empty($result[$id]) ? '' : $result[$id]['name'];
+if (!function_exists('get_province_name')){
+    /**
+     * 根据地区ID获得省份名称
+     */
+    function get_province_name($id)
+    {
+        $result = get_province_list();
+        return empty($result[$id]) ? '' : $result[$id]['name'];
+    }
 }
 
-/**
- * 根据地区ID获得城市名称
- */
-function get_city_name($id)
-{
-    $result = get_city_list();
-    return empty($result[$id]) ? '' : $result[$id]['name'];
+if (!function_exists('get_city_name')){
+    /**
+     * 根据地区ID获得城市名称
+     */
+    function get_city_name($id)
+    {
+        $result = get_city_list();
+        return empty($result[$id]) ? '' : $result[$id]['name'];
+    }
 }
 
-/**
- * 根据地区ID获得县区名称
- */
-function get_area_name($id)
-{
-    $result = get_area_list();
-    return empty($result[$id]) ? '' : $result[$id]['name'];
+if (!function_exists('get_area_name')){
+    /**
+     * 根据地区ID获得县区名称
+     */
+    function get_area_name($id)
+    {
+        $result = get_area_list();
+        return empty($result[$id]) ? '' : $result[$id]['name'];
+    }
+}
+
+if (!function_exists('get_citysite_list')){
+    /**
+     * 获得城市站点的全部列表
+     */
+    function get_citysite_list()
+    {
+        $result = extra_cache('global_get_citysite_list');
+        if (empty($result)) {
+            $result = \think\Db::name('citysite')->field('id, name, level, parent_id, topid, domain, initial')
+                ->where(['status'=>1])
+                ->order("id asc")
+                ->getAllWithIndex('id');
+            extra_cache('global_get_citysite_list', $result);
+        }
+
+        return $result;
+    }
+}
+
+if (!function_exists('get_site_province_list')){
+    /**
+     * 获得城市站点的全部省份列表
+     */
+    function get_site_province_list()
+    {
+        $result = extra_cache('global_get_site_province_list');
+        if (empty($result)) {
+            $result = \think\Db::name('citysite')->field('id, name, domain, parent_id')
+                ->where(['level'=>1, 'status'=>1])
+                ->order("sort_order asc, id asc")
+                ->getAllWithIndex('id');
+
+            extra_cache('global_get_site_province_list', $result);
+        }
+        return $result;
+    }
+}
+
+if (!function_exists('get_site_city_list')){
+    /**
+     * 获得城市站点的全部城市列表
+     */
+    function get_site_city_list()
+    {
+        $result = extra_cache('global_get_site_city_list');
+        if (empty($result)) {
+            $result = \think\Db::name('citysite')->field('id, name, parent_id')
+                ->where(['level'=>2, 'status'=>1])
+                ->order("sort_order asc, id asc")
+                ->getAllWithIndex('id');
+            extra_cache('global_get_site_city_list', $result);
+        }
+
+        return $result;
+    }
+}
+
+if (!function_exists('get_site_area_list')){
+    /**
+     * 获得城市站点的全部地区列表
+     */
+    function get_site_area_list()
+    {
+        $result = extra_cache('global_get_site_area_list');
+        if (empty($result)) {
+            $result = \think\Db::name('citysite')->field('id, name, parent_id')
+                ->where(['level'=>3, 'status'=>1])
+                ->order("sort_order asc, id asc")
+                ->getAllWithIndex('id');
+            extra_cache('global_get_site_area_list', $result);
+        }
+
+        return $result;
+    }
 }
 
 if (!function_exists('AddOrderAction')) 
@@ -2098,6 +2429,9 @@ if (!function_exists('GetMobileSendData'))
             
             // 发送给用户，选择用户的手机号
             $mobile = !empty($users['mobile']) ? $users['mobile'] : null;
+            if (empty($mobile)) {
+                $mobile = \think\Db::name('shop_order')->where('order_code', $OrderData['order_code'])->getField('mobile');
+            }
         }
 
         // 若未开启或手机号不存在则返回结束
@@ -2142,7 +2476,7 @@ if (!function_exists('download_file'))
      * @param $down_path 文件路径
      * @param $file_mime 文件类型
      */
-    function download_file($down_path = '', $file_mime = '')
+    function download_file($down_path = '', $file_mime = '', $file_name = '')
     {
         $down_path = iconv("utf-8","gb2312//IGNORE",$down_path);
         
@@ -2151,24 +2485,56 @@ if (!function_exists('download_file'))
         /*--end*/
 
         //文件名
-        $filename = explode('/', $down_path);
-        $filename = end($filename);
-        //以只读和二进制模式打开文件
-        $file = fopen('.'.$down_path, "rb");
-        //文件大小
-        $file_size = filesize('.'.$down_path);
-        //告诉浏览器这是一个文件流格式的文件    
-        header("Content-type: ".$file_mime);
+        $filename = basename($down_path);
+        if (!empty($file_name)) {
+            $arr = explode('.', $filename);
+            $ext = end($arr);
+            $arr1 = explode('.', $file_name);
+            unset($arr1[count($arr1) - 1]);
+            $filename = implode('.', $arr1).'.'.$ext;
+        }
+
+        //设置脚本的最大执行时间，设置为0则无时间限制
+        set_time_limit(0);
+        ini_set('max_execution_time', '0');
+
+        //文件大小 
+        preg_match("/^((\w)*:)?(\/\/).*$/", $down_path, $match);
+        if (empty($match)) { // 本地文件
+            $filesize = filesize('.'.$down_path);
+        } else { // 远程文件
+            $header_array = get_headers($down_path, true);
+            $filesize = $header_array['Content-Length'];
+        }
+        //告诉浏览器这是一个文件流格式的文件
+        // header("Content-type: ".$file_mime);    
+        //因为不知道文件是什么类型的，告诉浏览器输出的是字节流
+        header('content-type:application/octet-stream');
         //请求范围的度量单位
         Header("Accept-Ranges: bytes");
         //Content-Length是指定包含于请求或响应中数据的字节长度
-        Header("Accept-Length: " . $file_size);
+        Header("Accept-Length: " . $filesize);
         //用来告诉浏览器，文件是可以当做附件被下载，下载后的文件名称为$filename该变量的值。
-        Header("Content-Disposition: attachment; filename=" . $filename); 
-        //读取文件内容并直接输出到浏览器    
-        echo fread($file, $file_size);    
-        fclose($file);    
-        exit();
+        Header("Content-Disposition: attachment; filename=" . basename($filename)); 
+        
+        //针对大文件，规定每次读取文件的字节数为2MB，直接输出数据
+        $read_buffer = 1024 * 1024 * 2; // 2MB
+        if (is_http_url($down_path)) {
+            $file = fopen($down_path, 'rb');
+        } else {
+            $file = fopen('.' . $down_path, 'rb');
+        }
+        //总的缓冲的字节数
+        $sum_buffer = 0;
+        //只要没到文件尾，就一直读取
+        while(!feof($file) && $sum_buffer < $filesize) {
+            echo fread($file,$read_buffer);
+            $sum_buffer += $read_buffer;
+        }
+    
+        //关闭句柄
+        fclose($file);
+        exit;
     }
 }
 
@@ -2264,22 +2630,23 @@ if (!function_exists('get_archives_data'))
      * @param string $id 产品ID，购物车下单页传入aid，订单列表订单详情页传入product_id
      * @return return array_new
      */
-    function get_archives_data($array,$id)
+    function get_archives_data($array = [], $id = '')
     {
         // 目前定义订单中心和评论中使用
-        
         if (empty($array) || empty($id)) {
             return false;
         }
-        $array_new    = array();
 
-        $aids         = get_arr_column($array, $id);
-        $archivesList = \think\Db::name('archives')->field('*')->where('aid','IN',$aids)->getAllWithIndex('aid');
-        $typeids      = get_arr_column($archivesList, 'typeid');
-        $arctypeList  = \think\Db::name('arctype')->field('*')->where('id','IN',$typeids)->getAllWithIndex('id');
-        
-        foreach ($archivesList as $key2 => $val2) {
-            $array_new[$key2] = array_merge($arctypeList[$val2['typeid']],$val2);
+        static $array_new    = null;
+        if (null === $array_new) {
+            $aids         = get_arr_column($array, $id);
+            $archivesList = \think\Db::name('archives')->field('*')->where('aid','IN',$aids)->select();
+            $typeids      = get_arr_column($archivesList, 'typeid');
+            $arctypeList  = \think\Db::name('arctype')->field('*')->where('id','IN',$typeids)->getAllWithIndex('id');
+            
+            foreach ($archivesList as $key2 => $val2) {
+                $array_new[$val2['aid']] = array_merge($arctypeList[$val2['typeid']], $val2);
+            }
         }
 
         return $array_new;
@@ -2539,12 +2906,37 @@ if (!function_exists('getAllArctypeCount'))
      */
     function getAllArctypeCount($home_lang,$info,$id = 0,$view_suffix = ".htm",$aid = 0){
         $pagetotal = 0;
-        if ($id){
+        if ($id) {
             $map_arc['typeid'] = array('in',get_arr_column($info,'typeid'));
         }
-        $map_arc['is_del'] = 0;
+        // 可发布文档列表的频道模型
+        static $new_channel = null;
+        if (null === $new_channel) {
+            $allow_release_channel = config('global.allow_release_channel');
+            $arctypeRow = \think\Db::name('arctype')->field('channeltype,current_channel')->select();
+            foreach ($arctypeRow as $key => $val) {
+                if (in_array($val['channeltype'], $allow_release_channel)) {
+                    $new_channel[] = $val['channeltype'];
+                }
+                if (in_array($val['current_channel'], $allow_release_channel)) {
+                    $new_channel[] = $val['current_channel'];
+                }
+            }
+            $new_channel = array_unique($new_channel);
+        }
+        !empty($new_channel) && $map_arc['channel'] = ['IN', $new_channel];
+        $map_arc['arcrank'] = ['egt', 0];
         $map_arc['status'] = 1;
+        $map_arc['is_del'] = 0;
         $map_arc['lang'] = $home_lang;
+        /*定时文档显示插件*/
+        if (is_dir('./weapp/TimingTask/')) {
+            $TimingTaskRow = model('Weapp')->getWeappList('TimingTask');
+            if (!empty($TimingTaskRow['status']) && 1 == $TimingTaskRow['status']) {
+                $map_arc['add_time'] = array('elt', getTime()); // 只显当天或之前的文档
+            }
+        }
+        /*end*/
         $info = convert_arr_key($info,'typeid');
         $count_type = \think\Db::name('archives')->field("count(*) as count,typeid")->where($map_arc)->group("typeid")->select();
         $count_type = convert_arr_key($count_type,'typeid');
@@ -2609,6 +3001,52 @@ if (!function_exists('getAllArctypeCount'))
     }
 }
 
+//以下几个方法为生成静态时使用
+//获取所有需要生成的文档的aid集合
+if (!function_exists('getAllArchivesAid'))
+{
+    function getAllArchivesAid($typeid = 0, $home_lang){
+        $map = [];
+        if (!empty($typeid)){
+            $id_arr = [$typeid];
+            getAllChild($id_arr,$typeid,2);
+            $map['typeid'] = ['in',$id_arr];
+        }
+        // 可发布文档列表的频道模型
+        static $new_channel = null;
+        if (null === $new_channel) {
+            $allow_release_channel = config('global.allow_release_channel');
+            $arctypeRow = \think\Db::name('arctype')->field('channeltype,current_channel')->select();
+            foreach ($arctypeRow as $key => $val) {
+                if (in_array($val['channeltype'], $allow_release_channel)) {
+                    $new_channel[] = $val['channeltype'];
+                }
+                if (in_array($val['current_channel'], $allow_release_channel)) {
+                    $new_channel[] = $val['current_channel'];
+                }
+            }
+            $new_channel = array_unique($new_channel);
+        }
+        !empty($new_channel) && $map['channel'] = ['IN', $new_channel];
+        $map['arcrank'] = ['egt', 0];
+        $map['status'] = 1;
+        $map['is_del'] = 0;
+        $map['lang'] = $home_lang;
+        /*定时文档显示插件*/
+        if (is_dir('./weapp/TimingTask/')) {
+            $TimingTaskRow = model('Weapp')->getWeappList('TimingTask');
+            if (!empty($TimingTaskRow['status']) && 1 == $TimingTaskRow['status']) {
+                $map['add_time'] = array('elt', getTime()); // 只显当天或之前的文档
+            }
+        }
+        /*end*/
+        $aid_arr = \think\Db::name('archives')
+            ->where($map)
+            ->getField('aid',true);
+
+        return $aid_arr;
+    }
+}
 
 if (!function_exists('getAllArchives'))
 {
@@ -2622,8 +3060,22 @@ if (!function_exists('getAllArchives'))
             getAllChild($id_arr,$id,2);
             $map['a.typeid'] = ['in',$id_arr];
         }
-        $allow_release_channel = config('global.allow_release_channel');
-        $map['a.channel']  = ['IN', $allow_release_channel];
+        // 可发布文档列表的频道模型
+        static $new_channel = null;
+        if (null === $new_channel) {
+            $allow_release_channel = config('global.allow_release_channel');
+            $arctypeRow = \think\Db::name('arctype')->field('channeltype,current_channel')->select();
+            foreach ($arctypeRow as $key => $val) {
+                if (in_array($val['channeltype'], $allow_release_channel)) {
+                    $new_channel[] = $val['channeltype'];
+                }
+                if (in_array($val['current_channel'], $allow_release_channel)) {
+                    $new_channel[] = $val['current_channel'];
+                }
+            }
+            $new_channel = array_unique($new_channel);
+        }
+        !empty($new_channel) && $map['a.channel']  = ['IN', $new_channel];
         $map['a.lang'] = $home_lang;
         $map['a.is_jump'] = 0;
         $map['a.is_del'] = 0;
@@ -2662,8 +3114,22 @@ if (!function_exists('getPreviousArchives'))
             getAllChild($id_arr,$id,2);
             $map['a.typeid'] = ['in',$id_arr];
         }
-        $allow_release_channel = config('global.allow_release_channel');
-        $map['a.channel']  = ['IN', $allow_release_channel];
+        // 可发布文档列表的频道模型
+        static $new_channel = null;
+        if (null === $new_channel) {
+            $allow_release_channel = config('global.allow_release_channel');
+            $arctypeRow = \think\Db::name('arctype')->field('channeltype,current_channel')->select();
+            foreach ($arctypeRow as $key => $val) {
+                if (in_array($val['channeltype'], $allow_release_channel)) {
+                    $new_channel[] = $val['channeltype'];
+                }
+                if (in_array($val['current_channel'], $allow_release_channel)) {
+                    $new_channel[] = $val['current_channel'];
+                }
+            }
+            $new_channel = array_unique($new_channel);
+        }
+        !empty($new_channel) && $map['a.channel']  = ['IN', $new_channel];
         $map['a.lang'] = $home_lang;
         $map['a.is_jump'] = 0;
         $map['a.is_del'] = 0;
@@ -2704,8 +3170,22 @@ if (!function_exists('getNextArchives'))
             getAllChild($id_arr,$id,2);
             $map['a.typeid'] = ['in',$id_arr];
         }
-        $allow_release_channel = config('global.allow_release_channel');
-        $map['a.channel']  = ['IN', $allow_release_channel];
+        // 可发布文档列表的频道模型
+        static $new_channel = null;
+        if (null === $new_channel) {
+            $allow_release_channel = config('global.allow_release_channel');
+            $arctypeRow = \think\Db::name('arctype')->field('channeltype,current_channel')->select();
+            foreach ($arctypeRow as $key => $val) {
+                if (in_array($val['channeltype'], $allow_release_channel)) {
+                    $new_channel[] = $val['channeltype'];
+                }
+                if (in_array($val['current_channel'], $allow_release_channel)) {
+                    $new_channel[] = $val['current_channel'];
+                }
+            }
+            $new_channel = array_unique($new_channel);
+        }
+        !empty($new_channel) && $map['a.channel']  = ['IN', $new_channel];
         $map['a.lang'] = $home_lang;
         $map['a.is_jump'] = 0;
         $map['a.is_del'] = 0;
@@ -2795,10 +3275,12 @@ if (!function_exists('getAllContent'))
 if (!function_exists('getAllTags'))
 {
     //递归查询所有栏目内容
-    function getAllTags($aid_arr){
+    function getAllTags($aid_arr = []){
         $map = [];
         $info = [];
-        $map['aid'] = ['in',$aid_arr];
+        if (!empty($aid_arr)){
+            $map['aid'] = ['in',$aid_arr];
+        }
         $result = \think\Db::name('taglist')->field("aid,tag")->where($map)->select();
         if ($result) {
             foreach ($result as $key => $val) {
@@ -2835,19 +3317,20 @@ if (!function_exists('getOrderBy'))
                 $orderby = "a.click {$orderWay}";
                 break;
 
-            case 'id': // 兼容织梦的写法
+            case 'id': // 兼容写法
             case 'aid':
                 $orderby = "a.aid {$orderWay}";
                 break;
 
             case 'now':
-            case 'new': // 兼容织梦的写法
-            case 'pubdate': // 兼容织梦的写法
+            case 'new': // 兼容写法
+            case 'pubdate': // 兼容写法
             case 'add_time':
                 $orderby = "a.add_time {$orderWay}";
                 break;
 
-            case 'sortrank': // 兼容织梦的写法
+            case 'sortrank': // 兼容写法
+            case 'weight':
             case 'sort_order':
                 $orderby = "a.sort_order {$orderWay}";
                 break;
@@ -2978,6 +3461,8 @@ if (!function_exists('GetUsersLatestData'))
             /* END */
 
             /*会员数据处理*/
+            // 去掉余额小数点多余的0
+            $users['users_money'] = floatval($users['users_money']);
             // 头像处理
             $head_pic = get_head_pic(htmlspecialchars_decode($users['head_pic']));
             $users['head_pic'] = func_preg_replace(['http://thirdqq.qlogo.cn'], ['https://thirdqq.qlogo.cn'], $head_pic);
@@ -3025,6 +3510,9 @@ if (!function_exists('GetUsersLatestData'))
             return $LatestData;
         }else{
             // session中不存在会员ID则返回空
+            session('users_id', null);
+            session('users', null);
+            cookie('users_id', null);
             return false;
         }
     }
@@ -3183,14 +3671,13 @@ if (!function_exists('pay_success_logic'))
                     $data['mobile'] = GetMobileSendData(tpCache('sms'), $users, $orderData, 1, $paycode);
                 }
 
+                if ('balance' == $paycode) {
+                    $users = empty($users) ? \think\Db::name('users')->field('*')->find($orderData['users_id']) : $users;
+                    UsersMoneyRecording($order_code, $users, $orderData['order_amount'], '商品购买', 3);
+                }
+
                 // 订单操作完成，返回跳转
                 $url = url('user/Shop/shop_centre');
-                // if ('alipay' == $paycode) {
-                //     $url = url('user/Shop/shop_centre');
-                // } else {
-                //     $url = url('user/Shop/shop_order_details', ['order_id' => $orderData['order_id']]);
-                // }
-
                 if (true === $autoSendGoods) {
                     $msg = '支付订单完成！';
                 } else {
@@ -3269,27 +3756,37 @@ if (!function_exists('UsersMoneyRecording'))
      * 添加会员余额明细表
      * 参数说明：
      * $OrderCode  订单编号
-     * $UsersId    会员ID
+     * $Users      会员信息
      * $UsersMoney 记录余额
      * $Cause      订单状态，如过期，取消，退款，退货等
      * 返回说明：
      * return 无需返回
      */
-    function UsersMoneyRecording($OrderCode = null, $UsersId = null, $UsersMoney = null, $Cause = '订单过期')
+    function UsersMoneyRecording($OrderCode = null, $Users = [], $UsersMoney = null, $Cause = '商品退换货', $CauseType = 2)
     {
-        if (empty($OrderCode) || empty($UsersId) || empty($UsersMoney)) return false;
+        if (empty($OrderCode) || empty($Users) || empty($UsersMoney)) return false;
         $Time = getTime();
+        $pay_method = '';
         /*使用余额支付时，同时添加一条记录到金额明细表*/
-        $UsersOldMoney = $UsersId['users_money'];
-        $UsersNewMoney = sprintf("%.2f", $UsersId['users_money'] += $UsersMoney);
+        if (2 == $CauseType) {
+            $Status = 3;
+            $Cause = $Cause . '，退还使用余额，订单号：' . $OrderCode;
+            $UsersNewMoney = sprintf("%.2f", $Users['users_money'] += $UsersMoney);
+            $pay_method = 'balance';
+        } else if (3 == $CauseType) {
+            $Status = 2;
+            $Cause = $Cause . '，使用余额支付，订单号：' . $OrderCode;
+            $UsersNewMoney = sprintf("%.2f", $Users['users_money']);
+            $pay_method = 'balance';
+        }
         $MoneyData = [
-            'users_id'     => $UsersId['users_id'],
+            'users_id'     => $Users['users_id'],
             'money'        => $UsersMoney,
-            'users_old_money'  => $UsersOldMoney,
             'users_money'  => $UsersNewMoney,
-            'cause'        => $Cause.'，退还使用余额，订单号：' . $OrderCode,
-            'cause_type'   => 2,
-            'status'       => 3,
+            'cause'        => $Cause,
+            'cause_type'   => $CauseType,
+            'status'       => $Status,
+            'pay_method'   => $pay_method,
             'pay_details'  => '',
             'order_number' => $OrderCode,
             'add_time'     => $Time,
@@ -3372,7 +3869,7 @@ if (!function_exists('getTrueAid')) {
 if (!function_exists('SendNotifyMessage')) 
 {
     /**
-     * 添加会员余额明细表
+     * 发送站内信通知
      * 参数说明：
      * $ContentArr  需要存入的通知内容
      * $SendScene   发送来源
@@ -3446,4 +3943,222 @@ if (!function_exists('SendNotifyMessage'))
         }
     }
 }
- 
+
+if (!function_exists('usershomeurl')) 
+{
+    /**
+     * 个人主页URL
+     * @param  [type] $users_id [description]
+     * @return [type]           [description]
+     */
+    function usershomeurl($users_id)
+    {
+        $usershomeurl = '';
+        static $is_users_weapp = null;
+        static $users_seo_pseudo = 1;
+        if (is_dir('./weapp/Users/') && null === $is_users_weapp) {
+            $weappInfo = \think\Db::name('weapp')->field('data,status')->where(['code' => 'Users'])->find();
+            if (!empty($weappInfo['status'])) {
+                $is_users_weapp = true;
+                $weappInfo['data'] = unserialize($weappInfo['data']);
+                $users_seo_pseudo = !empty($weappInfo['data']['seo_pseudo']) ? intval($weappInfo['data']['seo_pseudo']) : 1;
+            }
+        }
+
+        if (true === $is_users_weapp) {
+            $usershomeurl = url('plugins/Users/userask', ['id'=>$users_id], true, false, $users_seo_pseudo);
+        }
+
+        return $usershomeurl;
+    }
+}
+
+if (!function_exists('restric_type_logic')) 
+{
+    /**
+     * 付费限制模式与之前三个字段 arc_level_id、 users_pricem、 users_free 组合逻辑兼容
+     * @param array $post [description]
+     */
+    function restric_type_logic(&$post = [])
+    {
+        if (empty($post['restric_type'])) { // 免费
+            $post['arc_level_id'] = 0;
+            $post['users_price'] = 0;
+            $post['users_free'] = 0;
+        } else if (1 == $post['restric_type']) { // 付费
+            $post['arc_level_id'] = 0;
+            $post['users_free'] = 0;
+            if (empty($post['users_price'])) {
+                return ['code'=>0, 'msg'=>'购买价格不能为空！'];
+            }
+        } else if (2 == $post['restric_type']) { // 会员专享
+            $post['users_price'] = 0;
+            $post['users_free'] = 1;
+        } else if (3 == $post['restric_type']) { // 会员付费
+            $post['users_free'] = 0;
+            if (empty($post['users_price'])) {
+                return ['code'=>0, 'msg'=>'购买价格不能为空！'];
+            }
+        }
+
+        return true;
+    }
+}
+
+if (!function_exists('clear_session_file')) 
+{
+    /**
+     * 清理过期的data/session文件
+     * @param array $post [description]
+     */
+    function clear_session_file()
+    {
+        $path = \think\Config::get('session.path');
+        if (!empty($path) && file_exists($path)) {
+            $time = getTime();
+            $web_login_expiretime = tpCache('web.web_login_expiretime');
+            empty($web_login_expiretime) && $web_login_expiretime = config('login_expire');
+            $files = glob($path.'/sess_*');
+            foreach ($files as $key => $file) {
+                clearstatcache(); // 清除文件状态缓存
+                $filemtime = filemtime($file);
+                if (false === $filemtime) {
+                    $filemtime = $time;
+                }
+                $filesize = filesize($file);
+                if (false === $filesize) {
+                    $filesize = 1;
+                }
+                if (empty($filesize) || (($time - $filemtime) > ($web_login_expiretime + 300))) {
+                    $referurl = '';
+                    if (isset($_SERVER['HTTP_REFERER'])) {
+                        $referurl = $_SERVER['HTTP_REFERER'];
+                    }
+                    @unlink($file);
+                }
+            }
+        }
+    }
+}
+
+if (!function_exists('func_thumb_img')) 
+{
+    /**
+     * 压缩图 - 从原始图来处理出来
+     * @param type $original_img  图片路径
+     * @param type $width     生成缩略图的宽度
+     * @param type $height    生成缩略图的高度
+     * @param type $quality   压缩系数
+     */
+    function func_thumb_img($original_img = '', $width = '', $height = '', $quality = 75)
+    {
+        // 缩略图配置
+        static $thumbextra = null;
+        static $thumbConfig = null;
+        if (null === $thumbextra) {
+            @ini_set('memory_limit', '-1'); // 内存不限制，防止图片大小过大，导致缩略图处理失败，网站打不开
+            $thumbConfig = tpCache('thumb');
+            $thumbextra = config('global.thumb');
+            empty($thumbConfig['thumb_width']) && $thumbConfig['thumb_width'] = $thumbextra['width'];
+            empty($thumbConfig['thumb_height']) && $thumbConfig['thumb_height'] = $thumbextra['height'];
+        }
+
+        $c_width = !empty($width) ? intval($width) : intval($thumbConfig['thumb_width']);
+        $c_height = !empty($height) ? intval($height) : intval($thumbConfig['thumb_height']);
+        if ((empty($c_width) && empty($c_height)) || stristr($original_img,'.gif')) {
+            return $original_img;
+        }
+
+        $original_img = preg_replace('#^(/[/\w]+)?(/public/upload/|/public/static/|/uploads/|/weapp/)#i', '$2', $original_img); // 支持子目录
+        $original_img = trim($original_img, '/');
+
+        //获取图像信息
+        $info = @getimagesize('./'.$original_img);
+        $img_width = !empty($info[0]) ? intval($info[0]) : 0;
+        $img_height = !empty($info[1]) ? intval($info[1]) : 0;
+
+        // 过滤实际图片大小比设置最大宽高小的，直接忽视
+        if (!empty($img_width) && !empty($img_height) && $img_width <= $c_width && $img_height <= $c_height) {
+            return $original_img;
+        }
+
+        //检测图像合法性
+        if (false === $info || (IMAGETYPE_GIF === $info[2] && empty($info['bits']))) {
+            return $original_img;
+        } else {
+            if (!empty($info['mime']) && stristr($info['mime'], 'bmp') && version_compare(PHP_VERSION,'7.2.0','<')) {
+                return $original_img;
+            }
+        }
+
+        try {
+            vendor('topthink.think-image.src.Image');
+            vendor('topthink.think-image.src.image.Exception');
+            $image = \think\Image::open('./'.$original_img);
+            $image->thumb($c_width, $c_height, 1)->save($original_img, NULL, $quality); //按照原图的比例生成一个最大为$width*$height的缩略图并保存
+        } catch (think\Exception $e) {}
+
+        return $original_img;
+    }
+}
+
+if (!function_exists('pc_to_mobile_url')) 
+{
+    /**
+     * 生成静态模式下且PC和移动端模板分离，自动获取移动端URL
+     * @access public
+     */
+    function pc_to_mobile_url($pageurl = '', $tid = '', $aid = '')
+    {
+        $url = '';
+        $webData = tpCache('web');
+        if (file_exists('./template/'.TPL_THEME.'mobile')) { // 分离式模板
+
+            $domain = request()->host(true);
+
+            /*是否开启手机站域名，并且配置*/
+            if (!empty($webData['web_mobile_domain_open']) && !empty($webData['web_mobile_domain'])) {
+                $domain = $webData['web_mobile_domain'] . '.' . request()->rootDomain();
+            }
+            /*end*/
+
+            if (!empty($aid)) { // 内容页
+                $url = url('home/View/index', ['aid' => $aid], true, $domain, 1, 1, 0);
+            } else if (!empty($tid)) { // 列表页
+                $url = url('home/Lists/index', ['tid' => $tid], true, $domain, 1, 1, 0);
+            } else { // 首页
+                $url = request()->scheme().'://'. $domain . ROOT_DIR . '/index.php';
+            }
+        } else { // 响应式模板
+            // 开启手机站域名，且配置
+            if (!empty($webData['web_mobile_domain_open']) && !empty($webData['web_mobile_domain'])) {
+                if (empty($pageurl)) {
+                    $url = request()->subDomain($webData['web_mobile_domain']) . ROOT_DIR . '/index.php';
+                } else {
+                    $url = !preg_match('/^(http(s?):)?\/\/(.*)$/i', $pageurl) ? request()->domain() . $pageurl : $pageurl;
+                    $url = preg_replace('/^(.*)(\/\/)([^\/]*)(\.?)(' . request()->rootDomain() . ')(.*)$/i', '${1}${2}' . $webData['web_mobile_domain'] . '.${5}${6}', $url);
+                }
+            }
+        }
+
+        return $url;
+    }
+}
+
+/**
+ * ------------- 此行代码请保持最底部 --------------
+ */
+if (!function_exists('function_1601946443')) 
+{
+    /**
+     * 引入插件公共函数
+     */
+    function function_1601946443()
+    {
+        $file_1601946443 = glob('weapp/*/function.php');
+        foreach ($file_1601946443 as $key => $val) {
+            include_once ROOT_PATH.$val;
+        }
+    }
+}
+// function_1601946443();

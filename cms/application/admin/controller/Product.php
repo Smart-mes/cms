@@ -292,7 +292,7 @@ class Product extends Base
 
             //做自动通过审核判断
             if ($admin_info['role_id'] > 0 && $auth_role_info['check_oneself'] < 1) {
-                unset($post['arcrank']);
+                $post['arcrank'] = -1;
             }
 
             // --存储数据
@@ -396,31 +396,18 @@ class Product extends Base
             $assign_data['preset_value'] = Db::name('product_spec_preset')->where('lang',$this->admin_lang)->field('preset_id,preset_mark_id,preset_name')->group('preset_mark_id')->order('preset_mark_id desc')->select();
         }
 
-        /*产品参数 - 只要旧参数表有记录，就表示旧参数功能可以启用*/
-        $is_showcanshu = 1; // 显示
-        $is_old_product_attr = 0; // 旧参数不存在
-        if (is_language()) {
-            $is_old_product_attr = 1;
+        /*产品参数 - 新旧兼容*/
+        $is_old_product_attr = tpSetting('system.system_old_product_attr', [], 'cn');
+        if (!empty($is_old_product_attr)) { // 旧产品参数
             $assign_data['canshu'] = $this->ajax_get_attr_input($typeid);
-        } else {
-            $is_old_product_attr = Db::name("product_attr")->where('product_attr_id', 'gt', 0)->count();
-            if (!empty($is_old_product_attr)) {
-                $assign_data['canshu'] = $this->ajax_get_attr_input($typeid);
-            } else {
-                $AttrList = [];
-                if (empty($shopConfig['shop_open'])) { // 关闭商城
-                    $is_showcanshu = 0; // 不显示
-                } else {
-                    $where = [
-                        'is_del' => 0,
-                        'status' => 1
-                    ];
-                    $AttrList = Db::name('shop_product_attrlist')->where($where)->order('sort_order asc')->select();
-                }
-                $assign_data['AttrList'] = $AttrList;
-            }
+        } else { // 新产品参数
+            $where = [
+                'lang'  => $this->admin_lang,
+                'status' => 1,
+                'is_del' => 0,
+            ];
+            $assign_data['AttrList'] = Db::name('shop_product_attrlist')->where($where)->order('sort_order asc, list_id asc')->select();
         }
-        $assign_data['is_showcanshu'] = $is_showcanshu;
         $assign_data['is_old_product_attr'] = $is_old_product_attr;
         /*--end*/
 
@@ -671,9 +658,9 @@ class Product extends Base
         }
     
         // SEO描述
-        if (!empty($info['seo_description'])) {
-            $info['seo_description'] = @msubstr(checkStrHtml($info['seo_description']), 0, config('global.arc_seo_description_length'), false);
-        }
+        // if (!empty($info['seo_description'])) {
+        //     $info['seo_description'] = @msubstr(checkStrHtml($info['seo_description']), 0, config('global.arc_seo_description_length'), false);
+        // }
 
         $assign_data['field'] = $info;
 
@@ -735,38 +722,27 @@ class Product extends Base
         }
         $assign_data['IsSame'] = $IsSame;
 
-        /*产品参数 - 以前产品含有旧参数，就依旧保持就参数的功能*/
-        $is_showcanshu = 1; // 显示
-        $is_old_product_attr = 0; // 旧参数不存在
-        if (is_language()) {
-            $is_old_product_attr = 1;
+        /*产品参数 - 新旧兼容*/
+        $is_old_product_attr = tpSetting('system.system_old_product_attr', [], 'cn');
+        if (!empty($is_old_product_attr)) { // 旧产品参数
             $assign_data['canshu'] = $this->ajax_get_attr_input($typeid, $id);
-        } else {
-            $is_old_product_attr = Db::name("product_attr")->where('aid', $id)->count();
-            if (!empty($is_old_product_attr)) {
-                $assign_data['canshu'] = $this->ajax_get_attr_input($typeid, $id);
-            } else {
-                if (empty($shopConfig['shop_open'])) { // 关闭商城
-                    $is_showcanshu = 0; // 不显示
-                }
+        } else { // 新产品参数
+            /*商品参数列表*/
+            $where = [
+                'lang'  => $this->admin_lang,
+                'status' => 1,
+                'is_del' => 0,
+            ];
+            $assign_data['AttrList'] = Db::name('shop_product_attrlist')->where($where)->order('sort_order asc, list_id asc')->select();
+            /*END*/
 
-                /*商品参数列表*/
-                $where = [
-                    'is_del' => 0,
-                    'status' => 1
-                ];
-                $assign_data['AttrList'] = Db::name('shop_product_attrlist')->where($where)->order('sort_order asc')->select();
-                /*END*/
-
-                /*商品参数值*/
-                $assign_data['canshu'] = '';
-                if (!empty($info['attrlist_id'])) {
-                    $assign_data['canshu'] = $this->ajax_get_shop_attr_input($typeid, $id, $info['attrlist_id']);
-                }
-                /*--end*/
+            /*商品参数值*/
+            $assign_data['canshu'] = '';
+            if (!empty($info['attrlist_id'])) {
+                $assign_data['canshu'] = $this->ajax_get_shop_attr_input($typeid, $id, $info['attrlist_id']);
             }
+            /*--end*/
         }
-        $assign_data['is_showcanshu'] = $is_showcanshu;
         $assign_data['is_old_product_attr'] = $is_old_product_attr;
         /*--end*/
 
@@ -1127,6 +1103,26 @@ class Product extends Base
         } else {
             return $str;
         }
+    }
+
+    /**
+     * 获取新版产品参数分组
+     */
+    public function ajax_get_shop_attrlist()
+    {
+        $list_id = input('param.list_id/d');
+        $html = "";
+        $where = [
+            'lang'  => $this->admin_lang,
+            'status' => 1,
+            'is_del' => 0,
+        ];
+        $AttrList = Db::name('shop_product_attrlist')->where($where)->order('sort_order asc, list_id asc')->select();
+        foreach ($AttrList as $key => $val) {
+            $selected = ($list_id == $val['list_id']) ? " selected='true' " : '';
+            $html .= "<option value='{$val['list_id']}' {$selected}>{$val['list_name']}</option>";
+        }
+        exit($html);
     }
 
     /**

@@ -121,3 +121,8 @@ function setOrderAddr(data)
 {
     parent.SelectEd('addr_id',data.addr_id,data);
 }
+
+function layer_colse() {
+    var parentObj = parent.layer.getFrameIndex(window.name);
+    parent.layer.close(parentObj);
+}
