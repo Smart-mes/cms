@@ -1,8 +1,8 @@
 @font-face {
   font-family: "iconfont"; /* Project id 2809127 */
-  src: url('https://at.alicdn.com/t/font_2809127_ljrx8mskj7.woff2?t=1636354177153') format('woff2'),
-       url('https://at.alicdn.com/t/font_2809127_ljrx8mskj7.woff?t=1636354177153') format('woff'),
-       url('https://at.alicdn.com/t/font_2809127_ljrx8mskj7.ttf?t=1636354177153') format('truetype');
+  src: url('https://at.alicdn.com/t/font_2809127_iy9pl6lkfjk.woff2?t=1636614267691') format('woff2'),
+       url('https://at.alicdn.com/t/font_2809127_iy9pl6lkfjk.woff?t=1636614267691') format('woff'),
+       url('https://at.alicdn.com/t/font_2809127_iy9pl6lkfjk.ttf?t=1636614267691') format('truetype');
 }
 
 .iconfont {
@@ -11,6 +11,22 @@
   font-style: normal;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+.icon-qiyeshuzihua:before {
+  content: "\e643";
+}
+
+.icon-zhinenghua:before {
+  content: "\e617";
+}
+
+.icon-wuli:before {
+  content: "\e672";
+}
+
+.icon-gongchang:before {
+  content: "\e6ae";
 }
 
 .icon-paid_annual_leave:before {
