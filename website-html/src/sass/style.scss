@@ -44,6 +44,7 @@
   overflow: hidden;
   min-width: $width;
   background: $column-bj;
+  padding:70px 0 100px 0;
   .column-title {
     margin-bottom: 50px;
   }
@@ -64,7 +65,7 @@
     }
   }
   .apply {
-    margin: 100px auto 3vw auto;
+    margin: 100px auto 0 auto;
     .wrapper {
       margin: 0 auto;
     }
@@ -1139,10 +1140,6 @@
 
 // 新闻动态
 .news-page{
-  padding-bottom:100px;
-	.news{
-		margin-bottom: 100px;
-	}
 	.arrow-tabs{
 		margin: 0 0 50px 0;
 		li{
@@ -1210,7 +1207,6 @@
 
 // 新闻详情!
 .news-details-page{
-  padding-bottom: 100px;
 	.news-container{
 		padding: 50px 0;
 		background:$white-color;
@@ -1259,7 +1255,6 @@
 }
 
 .case-page {
-	padding-bottom: 100px;
 	.arrow-tabs{
 		margin: 0 0 50px 0;	
 	}
@@ -1300,7 +1295,6 @@
 
 // 资料下载
 .download-page{
-	padding-bottom: 100px;
 	.down-list{
 		display: flex;
 		flex-wrap: wrap;
@@ -1396,7 +1390,6 @@
 
 // 课程培训
 .train-page{
-	padding-bottom: 100px;
 	.train-list{
 		display:flex;
 		flex-wrap: wrap;
@@ -1440,6 +1433,7 @@
 
 // 关于我们
 .about-page{
+
   background-image: url("../images/index/s2-bj.jpg");
   background-repeat: no-repeat;
 	.column-title{
@@ -1542,7 +1536,6 @@
     }
   }
  .history{
-   margin-bottom: 100px;
    .history-swiper{
     margin: 0 80px;
     // overflow: hidden;
@@ -1634,6 +1627,7 @@
 
 // 联系我们
 .contact-page{
+ padding-bottom: 0;
   .contact{
     overflow: hidden;
     background-image: url("../images/contact/contact-bj.png");
@@ -1648,14 +1642,12 @@
   }
   .map{
     height: 599px;
-    // background-image: url("../images/contact/contact-map-bj.jpg");
-    // background-repeat: no-repeat;
-    // background-position: center center;
     @include img-bj(center, center,"../images/contact/contact-map-bj.jpg");
   }  
 }
 // 招聘
 .recruit-page{
+  padding-bottom: 0;
   .recruit-list{
     padding-bottom: 80px;
     .recruit-item{
@@ -1798,7 +1790,6 @@
 }
 // 地图
 .map-page{
-  padding-bottom: 100px;
   background-color: $white-color;
   .breadcrumb{
     margin-bottom: 25px;
