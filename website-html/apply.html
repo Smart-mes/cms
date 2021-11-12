@@ -120,35 +120,67 @@
 			<!-- 当前位置 -->
 			<div class="wrapper">
 				<div class="message">
-					<ul class="form-list">
+					<ul class="form-list" id="city_i">
 						<li>
 							<div class="item">
 								<div class="label-box">您的姓名 <span class="red">*</span></div>
-								<div class="input-box"><input type="text" class="input" placeholder="请输入姓名"></div>
+								<div class="input-box"><input type="text" class="input"></div>
 							</div>
 						</li>
 						<li>
 							<div class="item">
-								<div class="label-box">公司名称 <span class="red">*</span></div>
-								<div class="input-box"><input type="text" class="input" placeholder="请输入公司名称"></div>
+								<div class="label-box">公司/学校 <span class="red">*</span></div>
+								<div class="input-box"><input type="text" class="input"></div>
 							</div>
 						</li>
 						<li>
 							<div class="item">
-								<div class="label-box">联系电话 <span class="red">*</span></div>
-								<div class="input-box"><input type="text" class="input" placeholder="请输入联系电话"></div>
+								<div class="label-box">电子邮件 <span class="red">*</span></div>
+								<div class="input-box"><input type="text" class="input"></div>
 							</div>
 						</li>
 						<li>
 							<div class="item">
-								<div class="label-box">邮箱地址</div>
-								<div class="input-box"><input type="text" class="input" placeholder="请输入邮箱地址"></div>
+								<div class="label-box">感兴趣的产品<span class="red">*</span></div>
+								<div class="input-box">
+									<!-- <input type="text" class="input" placeholder="请输入邮箱地址"> -->
+									<select type="text" class="input">
+										<option selected="selected" disabled="disabled" style='display: none' value=''>
+										</option>
+										<option value="PTC">PTC</option>
+										<option value=" Creo"> Creo</option>
+										<option value="PTC ">PTC </option>
+										<option value="PLM">PLM</option>
+										<option value="Windchill">Windchill</option>
+										<option value="PTC AR">PTC AR</option>
+										<option value="PTC IoT">PTC IoT</option>
+										<option value="Ansys结构">Ansys结构</option>
+										<option value="Ansys流体">Ansys流体</option>
+										<option value="Ansys电磁">Ansys电磁</option>
+										<option value="Smart. MES">Smart. MES</option>
+										<option value="其他产品">其他产品</option>
+									</select>
+								</div>
 							</div>
 						</li>
-						<li class="message-li">
+						<li>
 							<div class="item">
-								<div class="label-box">留言内容 <span class="red">*</span></div>
-								<div class="input-box"><textarea class="textarea"></textarea></div>
+								<div class="label-box">所在的省<span class="red">*</span></div>
+								<div class="input-box">
+									<!-- <input type="text" class="input" placeholder="请输入邮箱地址"> -->
+									<select type="text" class="input prov">
+									</select>
+								</div>
+							</div>
+						</li>
+						<li>
+							<div class="item">
+								<div class="label-box">所在市<span class="red">*</span></div>
+								<div class="input-box">
+									<!-- <input type="text" class="input" placeholder="请输入邮箱地址"> -->
+									<select type="text" class="input city">
+									</select>
+								</div>
 							</div>
 						</li>
 					</ul>
