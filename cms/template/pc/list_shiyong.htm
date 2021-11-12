@@ -1,0 +1,52 @@
+<div class="trial">
+    <div class="left">
+        <div class="subTitle-box">
+            <h3 class="underlined-title">免费试用</h3>
+        </div>
+    </div>
+    {eyou:guestbookform typeid="160" type='default'}
+    <form method="POST" class="am-form am-form-horizontal form-add form_message" enctype="multipart/form-data"
+     action="{$field.action}" onsubmit="return checkForm();">
+    <div class="right">
+        
+        <ul class="form-list">
+            <li>
+                <div class="item">
+                    <div class="label-box">{$field.itemname_48}<span class="red">*</span></div>
+                    <div class="input-box"><input type="text" class="input" name="{$field.attr_48}" id="attr_48"
+                            placeholder="请输入姓名"></div>
+                </div>
+            </li>
+            <li>
+                <div class="item">
+                    <div class="label-box">{$field.itemname_50}<span class="red">*</span></div>
+                    <div class="input-box"><input type="text" class="input" name="{$field.attr_50}" id="attr_50"
+                            placeholder="请输入公司名称"></div>
+                </div>
+            </li>
+            <li>
+                <div class="item">
+                    <div class="label-box">{$field.itemname_52}<span class="red">*</span></div>
+                    <div class="input-box"><input type="text" class="input" name="{$field.attr_52}" id="attr_52"
+                            placeholder="请输入联系电话"></div>
+                </div>
+            </li>
+            <li>
+                <div class="item">
+                    <div class="label-box">{$field.itemname_54}</div>
+                    <div class="input-box"><input type="text" class="input"name="{$field.attr_54}" id="attr_54"
+                            placeholder="请输入邮箱地址"></div>
+                </div>
+            </li>
+            <li>
+                <div class="item">
+                    <div class="label-box">{$field.itemname_56} <span class="red">*</span></div>
+                    <div class="input-box"><textarea class="textarea" name="{$field.attr_56}" id="attr_56"></textarea></div>
+                </div>
+            </li>
+        </ul>
+        <div class="btn-box">
+            <button class="btn"><i class="iconfont icon-submit"></i>提交</button>
+        </div>
+    </div>
+</div>

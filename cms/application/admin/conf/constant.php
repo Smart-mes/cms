@@ -1,0 +1,3 @@
+<?php
+define('INSTALL_DATE',1636251357);
+define('SERIALNUMBER','20211107101557SNnsdk');

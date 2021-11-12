@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>creo</title>
+    <link rel="stylesheet" href="{eyou:global name='web_templets_pc' /}/skin/css/style.min.css" />
+    <link rel="stylesheet" href="{eyou:global name='web_templets_pc' /}/skin/css/swiper.min.css">
+</head>
+<body>
+<!--网站公用头部——开始-->
+{eyou:include file="header.htm" /}
+<!--网站公用头部——结束-->
+<!-- header -->
+<div class="news-details-page page">
+ <!--网站公用自定义文件——开始-->
+ {eyou:include file="banner.htm" /}
+ <!--网站公用自定义文件——结束-->
+    <!-- c-banner -->
+    <div class="wrapper">
+        <div class="breadcrumb">
+            <i class="iconfont icon-shouye"></i>
+            {eyou:position style="" /}
+        </div>
+    </div>
+    <!-- 当前位置 -->
+    <div class="wrapper">
+        <div class="news-container">
+            <div class="news-title">
+                <h4 class="h4">{$eyou.field.title}</h4>
+            </div>
+            <ul class="news-info">
+                <li>作者： {$eyou.field.author}</li>
+                <li>日期： {$eyou.field.add_time|MyDate='Y-m-d H:i:s',###}</li>
+                <li>点击数：{eyou:arcclick /}</li>
+            </ul>
+            <div class="news-content">
+                {$eyou.field.content} 
+            </div>
+        </div>
+        <div class="news">
+            <div class="prenext">
+                {eyou:prenext get='pre' titlelen='30'}
+                <a href="{$field.arcurl}" title="{$field.title}" class="pre"> {eyou:lang name='sys11' /} : {$field.title} </a>
+                {eyou:else /}
+                <a class="next">{eyou:lang name='sys11' /}：{eyou:lang name='sys10' /}</a>
+               {/eyou:prenext}
+            </div>
+        </div>
+        <!-- 上篇 -->
+        <div class="news-more">
+            <h6 class="h6">随便看看</h6>
+            <div class="hd">
+                <h6 class="fl">案列标题</h6>
+                <span class="fr">发布日期</span>
+            </div>
+            <div class="bd">
+                <ul class="list">
+                    {eyou:arclist orderby='rand' titlelen='30' }
+                    <li>
+                        <span class="txt"><a href="{$field.arcurl}">{$field.seo_description|html_msubstr=###,0,60,true}</a></span>
+                        <span class="date">{$field.add_time|MyDate='Y-m-d',###}</span>
+                    </li>
+                    {/eyou:arclist} 
+                </ul>
+            </div>
+        </div>
+        <!-- 更多案列 -->
+    </div>
+</div>
+<!-- page -->
+<!--网站公用底部——开始-->
+{eyou:include file="footer.htm" /}
+<!--网站公用底部——结束-->
+<!-- footer -->
+<script src="{eyou:global name='web_templets_pc' /}/skin/js/build.js"></script>
+<script src="{eyou:global name='web_templets_pc' /}/skin/js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,49 @@
+ <div class="footer">
+        <div class="wrapper">
+            <div class="menu">
+                <div class="left">
+                    <ul class="company">
+                        <li><img src=".{eyou:global name='web_templets_pc' /}/skin/images/footer-logo.png" /></li>
+                        <li><i class="iconfont icon-phone"></i> 020-8556 4896</li>
+                        <li><i class="iconfont icon-address"></i>广州市天河区高唐路233号6栋802</li>
+                        <li><i class="iconfont icon-mail"></i> mkt@sunprocn.com</li>
+                        <li>
+                            <a href="#"><i class="iconfont icon-WeChat"></i></a>
+                            <a href="#"><i class="iconfont icon-weibo"></i></a>
+                        </li>
+                    </ul>
+                </div>
+               
+                <div class="right">
+                   
+                    <div class="menu-list">
+                        {eyou:channel type="top" row="4" id="field"}
+                        <div class="menu-item">
+                            <dl>
+                                <dt>{$field.typename}</dt>
+                                {eyou:channel name="$field.children" row="100" id="field2"}
+                                <dd><a href="{$field2.typeurl}">{$field2.typename}</a></dd>
+                                {/eyou:channel}
+                            </dl>
+                        </div>
+                        {/eyou:channel}
+                    </div>
+                </div>
+              
+            </div>
+            <div class="copyright">
+                <div class="c-left">  {eyou:global name='web_copyright' /}　{eyou:global name='web_recordnum' /}</div>
+                <div class="c-right">
+                    <div class="link_list">
+                        <span>友情链接</span>
+                        {eyou:flink titlelen='45' type='text'}
+                        <a href="{$field.url}" {$field.target}>{$field.title} </a>
+                        {/eyou:flink}
+                    </div>
+                    <div class="map">
+                        <a href="">网站地图</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>

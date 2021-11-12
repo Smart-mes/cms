@@ -1,0 +1,15 @@
+<div class="c-banner">
+    {eyou:assign name='toplitpic' value='$eyou.field.typeid|gettoptype=###,"litpic"'}
+    {eyou:empty name='$toplitpic'}
+    <img src="{eyou:global name='web_templets_pc' /}/skin/img/cate_bg_{$eyou.field.typeid|gettoptype=###,'id'}.jpg" alt="" class="cover">
+    {eyou:else /}
+    <img src="{$eyou.field.typeid|gettoptype=###,'litpic'}" alt="" class="cover">
+    {/eyou:empty}
+    <div class="txt-box cell-box">
+        <div class="cell">
+            <div class="wrapper">
+                <h3 class="underlined-title">{$eyou.field.typename}</h3>
+            </div>
+        </div>
+    </div>
+</div>

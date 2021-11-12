@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>在线留言</title>
+		<link rel="stylesheet" href="{eyou:global name='web_templets_pc' /}/skin/css/style.min.css" />
+		<link rel="stylesheet" href="{eyou:global name='web_templets_pc' /}/skin/css/swiper.min.css">
+	</head>
+	<body>
+	<!--网站公用头部——开始-->
+{eyou:include file="header.htm" /}
+<!--网站公用头部——结束-->
+		<!-- header -->
+		<div class="message-page page">
+  {eyou:include file="banner.htm" /}
+			<!-- c-banner -->
+			<div class="wrapper">
+				<div class="breadcrumb">
+					<i class="iconfont icon-shouye"></i>
+					{eyou:position style="" /}
+				</div>
+			</div>
+			<!-- 当前位置 -->
+			<div class="wrapper">
+        {eyou:guestbookform type='default'}
+        <form method="POST" class="am-form am-form-horizontal form-add form_message" enctype="multipart/form-data"
+      action="{$field.action}" onsubmit="return checkForm();">
+				<div class="message">
+					<ul class="form-list">
+						<li>
+							<div class="item">
+								<div class="label-box">{$field.itemname_24} <span class="red">*</span></div>
+								<div class="input-box"><input type="text" name="{$field.attr_24}" id="attr_24" class="input" placeholder="请输入姓名"></div>
+							</div>
+						</li>
+						<li>
+							<div class="item">
+								<div class="label-box">{$field.itemname_26} <span class="red">*</span></div>
+								<div class="input-box"><input type="text" name="{$field.attr_26}" id="attr_26" class="input" placeholder="请输入公司名称"></div>
+							</div>
+						</li>
+						<li>
+							<div class="item">
+								<div class="label-box">{$field.itemname_28} <span class="red">*</span></div>
+								<div class="input-box"><input type="text" name="{$field.attr_28}" id="attr_28" class="input" placeholder="请输入联系电话"></div>
+							</div>
+						</li>
+						<li>
+							<div class="item">
+								<div class="label-box">{$field.itemname_30}</div>
+								<div class="input-box"><input type="text" name="{$field.attr_30}" id="attr_30" class="input" placeholder="请输入邮箱地址"></div>
+							</div>
+						</li>
+						<li>
+							<div class="item">
+								<div class="label-box">{$field.itemname_32} <span class="red">*</span></div>
+								<div class="input-box"><textarea class="textarea" name="{$field.attr_32}" id="attr_32"></textarea></div>
+							</div>
+						</li>
+					</ul>
+					<div class="submit-btn">
+						<button class="btn"><i class="iconfont icon-submit"></i>提交</button>
+					</div>
+        </div>
+        {$field.hidden}
+	  </form>
+	  <script type="text/javascript">
+		function checkForm() {
+		  var phoneValue = document.getElementById('attr_28').value;
+		  var mailValue = document.getElementById('attr_30').value;
+  
+		  if (document.getElementById('attr_24').value.length == 0) {
+			alert('{$field.itemname_24}不能为空！');
+			return false;
+		  }
+		  if (document.getElementById('attr_26').value.length == 0) {
+			alert('{$field.itemname_26}不能为空！');
+			return false;
+		  }
+		  if (phoneValue.length == 0) {
+			alert('{$field.itemname_28}不能为空！');
+			return false;
+		  }
+		  if (document.getElementById('attr_32').value.length == 0) {
+			alert('{$field.itemname_32}不能为空！');
+			return false;
+		  }
+  
+		  // 其他验证
+		  if (!(/^1[3456789]\d{9}$/.test(phoneValue))) {
+			alert('手机格式不对！');
+			return false;
+		  }
+  
+		  if (mailValue.length !== 0) {
+			var reg = /^([a-zA-Z]|[0-9])(\w|\-)+@[a-zA-Z0-9]+\.([a-zA-Z]{2,4})$/;
+			if (!(reg.test(mailValue))) {
+			  alert("邮箱格式不正确");
+			  return false;
+			}
+		  }
+  
+		  return true;
+		}
+	  </script>
+        {/eyou:guestbookform}
+			</div>
+		</div>
+		<!-- page -->
+	<!--网站公用底部——开始-->
+  {eyou:include file="footer.htm" /}
+    <!--网站公用底部——结束-->
+		<!-- footer -->
+		<script src="{eyou:global name='web_templets_pc' /}/skin/js/build.js"></script>
+		<script src="{eyou:global name='web_templets_pc' /}/skin/js/app.js"></script>
+	</body>
+</html>
