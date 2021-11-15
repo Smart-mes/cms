@@ -8,7 +8,7 @@ $gray-color:#666;
 $light-gray-color:#999;
 $red-color: #d32229;
 $grey-blue: #9fa3ab;
-
+// 文字大小
 $font-42: 42px;
 $font-36: 36px;
 $font-32: 32px;
@@ -99,28 +99,27 @@ $box-shadow: 0px 6px 20px rgba(0, 0, 0, 0.1);
   }
 }
 
-:focus {
-  outline: none;
+input, button,select{
+  &:focus{outline: none;}
 }
-input:focus, button:focus,select:focus{
-  outline: none;
-  }
-a { text-decoration: none; color: #333; }
-a:hover { text-decoration: none;color: $color;}
+a { 
+  text-decoration: none; color: #333;
+  &:hover{ text-decoration: none;color: $color;}
+}
 .fl{float: left;}
 .fr{float: right;}
 .red {color: $red-color;}
 .p-20{padding: 20px;}
 
-.clearfix:after {
-  content: "";
-  display: block;
-  height: 0;
-  visibility: hidden;
-  clear: both;
-}
 .clearfix {
   *zoom: 1;
+  &::after {
+    content: "";
+    display: block;
+    height: 0;
+    visibility: hidden;
+    clear: both;
+  }
 }
 // 超出省列号
 .ellipsis{
@@ -310,7 +309,7 @@ a.index-more {
 // header,footer
 .h-70{height: 70px;}
 .header {
-  z-index: 99;
+  z-index: 999;
   position: fixed;
   width: 100%;
   min-width: $width;
@@ -324,12 +323,10 @@ a.index-more {
     top: 50%;
     margin-top: -20px;
 
-    a {
-      display: block;
-    }
+    a {display: block;}
     .logo-box {
-      @include inline-middle;
       position: relative;
+      @include inline-middle;
     }
     img {
       display: block;
@@ -370,15 +367,14 @@ a.index-more {
     font-size: 0;
     li {
       position: relative;
-      @include inline-top;
       margin-right: 3vw;
+      @include inline-top;
       &.nav-li {
         position: relative;
       }
-      .nav-link,
-      .tel {
+      .nav-link,.tel {
         display: block;
-        font-size: 16px;
+        font-size:$font-16;
         line-height: 70px;
         transition: all 0.3s ease;
         i {
@@ -422,13 +418,10 @@ a.index-more {
           visibility: visible;
         }
       }
-      &.active,
-      &.current {
+      &.active,&.current,&.hover{
         a.nav-link {
           color: #fff;
-          &:after {
-            transform: scaleX(1);
-          }
+          &:after {transform: scaleX(1);}
         }
       }
     }
@@ -464,13 +457,9 @@ a.index-more {
       line-height: 50px;
       font-size: $font-16;
       text-align: center;
-      a {
-        display: block;
-      }
+      a {display: block;}
       &:hover {
-        a {
-          color: $color;
-        }
+        a { color: $color;}
         background: #f0f0f0;
       }
     }
@@ -493,30 +482,19 @@ a.index-more {
     box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
     .logo {
       img {
-        &.show {
-          opacity: 0;
-        }
-        &.hide {
-          opacity: 1;
-        }
+        &.show { opacity: 0;}
+        &.hide { opacity: 1;}
       }
       .txt-box {
-        &:before {
-          background-color: #d6d6d6;
-        }
-        h3,
-        span {
-          color: #333;
-        }
+        &:before { background-color: #d6d6d6;}
+        h3, span {color: #333;}
       }
     }
     .nav {
       li {
         .nav-link {
           color: #000;
-          &:after {
-            background-color: $color;
-          }
+          &:after { background-color: $color; }
         }
         .tel {
           color: #555;
@@ -525,9 +503,7 @@ a.index-more {
         &.current {
           .nav-link {
             color: $color;
-            &:after {
-              transform: scaleX(1);
-            }
+            &:after {transform: scaleX(1);}
           }
         }
       }
@@ -725,12 +701,13 @@ a.index-more {
 }
 
 /*分页相关*/
-.pagelist ul{text-align:center;margin:20px 0;}
-.pagelist li{display:inline-block;margin:0 2px;}
-.pagelist li a{color:#666;display:inline-block;border:1px solid #ddd;padding:6px 15px;}
-.pagelist li a:hover{border-color:$color;background:$color;color:#fff;}
-.pagelist li.active a{border-color:$color;background:$color;color:#fff;}
-
+.pagelist{
+	ul{text-align:center;margin:20px 0;}
+	li{display:inline-block;margin:0 2px;}
+	li a{color:#666;display:inline-block;border:1px solid #ddd;padding:6px 15px;}
+	li a:hover{border-color:$color;background:$color;color:#fff;}
+	li.active a{border-color:$color;background:$color;color:#fff;}	
+}
 //上一页
 .page-prenext {
     margin: 50px  0;
@@ -799,32 +776,33 @@ a.index-more {
 }
 // 当前位置
 .breadcrumb{
+	margin-bottom:50px;	
 	padding: .7em .5em;
-	margin-bottom:50px;
 	font-size:$font-14;
-	line-height:20px;
-	i.iconfont{
-		margin-right: 5px;
-		@include inline-middle;
-		font-size:$font-14;
-		color: #999;
-	}
-		a{
+	color:$light-gray-color;
+	// line-height:20px;
+	// i.iconfont{
+	// 	margin-right: 5px;
+	// 	@include inline-middle;
+	// 	font-size:$font-14;
+	// 	color: #999;
+	// }
+	a{
 			@include inline-middle;
-			&:before{
-				content: '>';
-				font-size:$font-14;
-				color: #999;
-				margin: -2px 5px 0;
-				@include inline-middle;
-			}
-			&:first-of-type{
-				&:before{
-					display: none;
-				}
-			}
-		}
+			// &:before{
+			// 	content: '>';
+			// 	font-size:$font-14;
+			// 	color: #999;
+			// 	margin: -2px 5px 0;
+			// 	@include inline-middle;
+			// }
+			// &:first-of-type{
+			// 	&:before{
+			// 		display: none;
+			// 	}
+			// }
 	}
+}
 // 表单
 .form-list {
   display: flex;
@@ -886,7 +864,7 @@ a.index-more {
   }
 }
 
-	// 弹窗
+// 弹窗
 .job-popup{
     width: 580px;padding: 20px;font: 14px "microsoft yahei", arial, sans-serif;color: #555;overflow: hidden;position: relative;
     dl{float: left; margin: 4px 0; position: relative; width: 100%; min-height:40px ; overflow: hidden;}
@@ -900,7 +878,7 @@ a.index-more {
     dl dd input:focus{border: 1px solid #97cdf5;outline: 0;-webkit-box-shadow: 0 0 2px rgba(191,189,189,1);box-shadow: 0 0 2px rgba(191,189,189,1)}
     dl dd .bt{border: 0;padding: 8px 20px;background-color:#0e90d2;border-radius: 4px;color: #fff;}
     dl dd .bt:focus{border: 1px solid #97cdf5;outline: 0;-webkit-box-shadow: 0 0 2px rgba(191,189,189,1);box-shadow: 0 0 2px rgba(191,189,189,1)}
-     .tit{line-height: 40px;text-align: center;font-size:16px;font-weight: bold;height: 40px}
+    .tit{line-height: 40px;text-align: center;font-size:16px;font-weight: bold;height: 40px}
 }
 
 #bg{ display: none;position:fixed;top: 0%;left: 0%;width: 100%;height: 100%;background-color: black;z-index:1001;-moz-opacity: 0.7;opacity:.70;filter: alpha(opacity=70)}

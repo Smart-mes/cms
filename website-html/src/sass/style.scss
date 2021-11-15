@@ -274,10 +274,10 @@
           width: 350px;
           height: 50px;
           line-height: 50px;
-          color: #999;
+          color:$light-gray-color;
           text-align: center;
           cursor: default;
-          &.active {
+          &.active,&.hover {
             color: $white-color;
             background-image: url("../images/solution/creo/design-tabs.png");
             background-repeat: no-repeat;
@@ -1167,6 +1167,7 @@
 			.picture-box {
 			  position: relative;
 			  overflow: hidden;
+			  width: 350px;
 			  img{display: block;width: 100%;}
 			  .date {
 			    z-index: 1;
@@ -1196,9 +1197,9 @@
 				.desc{
 					overflow: hidden;
 					margin-top: 30px;
-					height: 75px;
-					font-size: $font-14;
+					// height: 75px;
 					line-height: 1.75;
+					font-size: $font-14;				
 				}
 			}
 		}
@@ -1835,10 +1836,11 @@
         }
       }
     }
-  }
-  
+  } 
 }
 
+/* 头 */
+.header{background-color: #1b2c59;}
 
 
 
