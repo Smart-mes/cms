@@ -15,11 +15,11 @@
 	</div>
 	<div class="search"><i class="iconfont icon-search"></i></div>
 	<ul class="nav">
-		<li class="active nav-li">
+		<li class="{eyou:eq name='$Request.param.m' value='Index'}active{/eyou:eq} nav-li">
 			<a href="{eyou:global name='web_cmsurl' /}" class="nav-link">首页</a>
 		</li>
-		{eyou:channel type='top' currentstyle='cur' typeid='72'  row='20'}
-		<li class="nav-li">
+		{eyou:channel type='top' currentstyle="active" typeid='72'  row='20'}
+		<li class="{$field.currentstyle} nav-li">
 			<a href="{$field.typeurl}" class="nav-link">{$field.typename}</a>
 			<ul class="nav-down">
 				{eyou:if condition='($key==0)'}

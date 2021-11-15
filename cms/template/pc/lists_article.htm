@@ -1,77 +1,81 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <title>Ansys</title>
     <link rel="stylesheet" href="{eyou:global name='web_templets_pc' /}/skin/css/style.min.css">
 </head>
-<body>
-<!--网站公用头部——开始-->
-{eyou:include file="header.htm" /}
-<!--网站公用头部——结束-->
-<!-- header -->
-<div class="news-page page">
- <!--网站公用自定义文件——开始-->
- {eyou:include file="banner.htm" /}
- <!--网站公用自定义文件——结束-->
-    <!-- banner -->
-    <div class="wrapper">
-        <div class="breadcrumb">
-            <i class="iconfont icon-shouye"></i>
-            <a class="link">{eyou:position style=""/}</a>
-        </div>
-    </div>
-    <!-- 当前位置 -->
-    <div class="news">
-        <div class="wrapper ">
-            <div class="arrow-tabs">
-                <ul class="tabs-hd">
-                    {eyou:channel type="first" row='10' currentstyle="hover"}
-                <li class="{$field.currentstyle}"><a href="{$field.typeurl}" title="{$field.typename}">{$field.typename}</a></li>
-            {/eyou:channel}
-                    <!-- <li class="active"><a>公司动态</a></li> -->    
-                </ul>
-                <div class="clear"></div>
-            </div>
-            <!-- tabs -->
-            <ul class="news-list">
-                {eyou:list titlelen='60' pagesize='8'}
-                <li>
-                    <div class="picture-box">
-                        <div class="date">
-                           <span class="month">{$field.add_time|MyDate='m',###}/</span>
-						  <span>{$field.add_time|MyDate='d',###}</span>
-						   <span>{$field.add_time|MyDate='Y',###}</span>
-                        </div>
-                        <img src="{$field.litpic}" alt="{$field.title}">
-                    </div>
-                    <div class="txt-box">
-                        <a href="{$field.arcurl}">
-                            <h6 class="h6">{$field.title}</h6>
-                            <div class="desc">
-                             {$field.seo_description|html_msubstr=###,0,200,true}
-                            </div>
-                        </a>
-                    </div>
-                </li>
-                {/eyou:list} 
-            </ul>
 
-            <div class="pagelist">
-                <ul>
-                    {eyou:pagelist listitem='index,pre,pageno,next,end' listsize='2' /}
+<body>
+    <!--网站公用头部——开始-->
+    {eyou:include file="header.htm" /}
+    <!--网站公用头部——结束-->
+    <!-- header -->
+    <div class="news-page page">
+        <!--网站公用自定义文件——开始-->
+        {eyou:include file="banner.htm" /}
+        <!--网站公用自定义文件——结束-->
+        <!-- banner -->
+        <div class="wrapper">
+            <div class="breadcrumb">
+                <i class="iconfont icon-shouye"></i>
+                <a class="link">{eyou:position style=""/}</a>
+            </div>
+        </div>
+        <!-- 当前位置 -->
+        <div class="news">
+            <div class="wrapper ">
+                <div class="arrow-tabs">
+                    <ul class="tabs-hd">
+                        {eyou:channel type="first" row='10' currentstyle="active"}
+                        <li class="{$field.currentstyle}">
+                            <a href="{$field.typeurl}" title="{$field.typename}">{$field.typename}</a>
+                        </li>
+                        {/eyou:channel}
+                        <!-- <li class="active"><a>公司动态</a></li> -->
+                    </ul>
+                    <div class="clear"></div>
+                </div>
+                <!-- tabs -->
+                <ul class="news-list">
+                    {eyou:list titlelen='60' pagesize='8'}
+                    <li>
+                        <div class="picture-box">
+                            <div class="date">
+                                <span class="month">{$field.add_time|MyDate='m',###}/</span>
+                                <span>{$field.add_time|MyDate='d',###}</span>
+                                <span>{$field.add_time|MyDate='Y',###}</span>
+                            </div>
+                            <img src="{$field.litpic}" alt="{$field.title}">
+                        </div>
+                        <div class="txt-box">
+                            <a href="{$field.arcurl}">
+                                <h6 class="h6">{$field.title}</h6>
+                                <div class="desc">
+                                    {$field.seo_description|html_msubstr=###,0,200,true}
+                                </div>
+                            </a>
+                        </div>
+                    </li>
+                    {/eyou:list}
                 </ul>
+
+                <div class="pagelist">
+                    <ul>
+                        {eyou:pagelist listitem='index,pre,pageno,next,end' listsize='2' /}
+                    </ul>
+                </div>
             </div>
         </div>
     </div>
-</div>
-<!-- pages -->
-<!--网站公用底部——开始-->
-{eyou:include file="footer.htm" /}
-<!--网站公用底部——结束-->
-<!-- footer -->
-<script src="{eyou:global name='web_templets_pc' /}/skin/js/build.js"></script>
-<script src="{eyou:global name='web_templets_pc' /}/skin/js/app.js"></script>
+    <!-- pages -->
+    <!--网站公用底部——开始-->
+    {eyou:include file="footer.htm" /}
+    <!--网站公用底部——结束-->
+    <!-- footer -->
+    <script src="{eyou:global name='web_templets_pc' /}/skin/js/build.js"></script>
+    <script src="{eyou:global name='web_templets_pc' /}/skin/js/app.js"></script>
 </body>
 
 </html>

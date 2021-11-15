@@ -3,7 +3,6 @@
 @import "./common/mixin.scss";
 @import "./common/common.scss";
 
-
 .wrapper{width:$width;}
 .c-banner {
   position: relative;
@@ -40,14 +39,49 @@
 	  margin: 0 auto;
   }
 }
+.header{
+    z-index: 999;
+    background-color: $white-color;
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+    .logo {
+      img {
+        &.show { opacity: 0;}
+        &.hide { opacity: 1;}
+      }
+      .txt-box {
+        &:before { background-color: #d6d6d6;}
+        h3, span {color: #333;}
+      }
+    }
+    .nav {
+      li {
+        .nav-link {
+          color: #000;	  
+          &:hover{
+			  color: $color!important;
+		  }
+        }
+        .tel {
+          color: #555;
+        }	
+        &.active,&.current{
+          .nav-link {
+            color: $color!important;
+            &:after {transform: scaleX(1);}
+          }
+        }
+      }
+    }
+    .search {
+      color: #555;
+    }
+}
 .page {
   overflow: hidden;
   min-width: $width;
   background: $column-bj;
   padding:70px 0 100px 0;
-  .column-title {
-    margin-bottom: 50px;
-  }
+  .column-title { margin-bottom: 50px;}
   .enterprise {
     overflow: hidden;
     height: 484px;
@@ -73,9 +107,6 @@
       overflow: hidden;
       height: 420px;
       color: $white-color;
-      // background-image: url("../images/apply-bj.jpg");
-      // background-repeat: no-repeat;
-      // background-position: center center;
       @include img-bj(center,center,"../images/apply-bj.jpg");
       h3 {
         margin-top: 150px;
@@ -277,7 +308,7 @@
           color:$light-gray-color;
           text-align: center;
           cursor: default;
-          &.active,&.hover {
+          &.active{
             color: $white-color;
             background-image: url("../images/solution/creo/design-tabs.png");
             background-repeat: no-repeat;
@@ -1434,7 +1465,6 @@
 
 // 关于我们
 .about-page{
-
   background-image: url("../images/index/s2-bj.jpg");
   background-repeat: no-repeat;
 	.column-title{
@@ -1838,9 +1868,6 @@
     }
   } 
 }
-
-/* 头 */
-.header{background-color: #1b2c59;}
 
 
 
