@@ -64,10 +64,16 @@
         .tel {
           color: #555;
         }	
-        &.active,&.current{
+        &:hover {
+          .nav-link { color: $color;}
+		  }
+		&.active,&.current{
           .nav-link {
             color: $color!important;
-            &:after {transform: scaleX(1);}
+            &:after {
+				transform: scaleX(1);
+				background-color: $color;
+				}
           }
         }
       }
@@ -1188,7 +1194,7 @@
 			display:flex;
 			padding: 30px;
 			border-bottom: 2px solid #e5e5e5;
-			transition: all .3s ease;
+			// transition: all .3s ease;
 			&:hover{
 				background: $color;
 				a{
@@ -1663,8 +1669,10 @@
     overflow: hidden;
     background-image: url("../images/contact/contact-bj.png");
     background-repeat: no-repeat;
+	background-size: cover;
     .contact-box{
-      margin: 150px 0;
+      // margin: 150px 0;
+	  margin-bottom: 150px;
       padding: 60px;
       background-color:$white-color ;
       box-shadow: 0 10px 10px rgba(0, 0, 0,0.1);
