@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>{$eyou.field.seo_title}</title>
+		<link rel="stylesheet" href="{eyou:global name='web_templets_pc' /}/skin/css/style.min.css" />
+		<link rel="stylesheet" href="{eyou:global name='web_templets_pc' /}/skin/css/swiper.min.css">
+	</head>
+	<body>
+	<!--网站公用头部——开始-->
+{eyou:include file="header.htm" /}
+<!--网站公用头部——结束-->
+		<!-- header -->
+		<div class="message-page page">
+  {eyou:include file="banner.htm" /}
+			<!-- c-banner -->
+			<div class="wrapper">
+				<div class="breadcrumb">
+					<i class="iconfont icon-shouye"></i>
+					{eyou:position style="" /}
+				</div>
+			</div>
+			<!-- 当前位置 -->
+			<div class="wrapper">
+        {eyou:guestbookform type='default'}
+        <form method="POST" class="am-form am-form-horizontal form-add form_message" enctype="multipart/form-data"
+      action="{$field.action}" onsubmit="return checkForm();">
+				<div class="message">
+					<ul class="form-list">
+						<li>
+							<div class="item">
+								<div class="label-box">{$field.itemname_48} <span class="red">*</span></div>
+								<div class="input-box"><input type="text" id='attr_48' name='{$field.attr_48}' class="input" placeholder="请输入姓名"></div>
+							</div>
+						</li>
+						<li>
+							<div class="item">
+								<div class="label-box">{$field.itemname_50}<span class="red">*</span></div>
+								<div class="input-box"><input type="text"  id='attr_50' name='{$field.attr_50}' class="input" placeholder="请输入公司名称"></div>
+							</div>
+						</li>
+						<li>
+							<div class="item">
+								<div class="label-box">{$field.itemname_52}</div>
+								<div class="input-box"><input type="text" id='attr_52' name='{$field.attr_52}' class="input" placeholder="请输入邮箱地址"></div>
+							</div>
+						</li>
+						<li>
+							<div class="item">
+								<div class="label-box">{$field.itemname_54}<span class="red">*</span></div>
+								<div class="input-box">
+									<select type="text" class="input" id='attr_54' name='{$field.attr_54}'>
+										<option selected="selected" disabled="disabled" style='display: none' value=''></option>
+										<option value="PTC">PTC</option>
+										<option value=" Creo"> Creo</option>
+										<option value="PTC ">PTC </option>
+										<option value="PLM">PLM</option>
+										<option value="Windchill">Windchill</option>
+										<option value="PTC AR">PTC AR</option>
+										<option value="PTC IoT">PTC IoT</option>
+										<option value="Ansys结构">Ansys结构</option>
+										<option value="Ansys流体">Ansys流体</option>
+										<option value="Ansys电磁">Ansys电磁</option>
+										<option value="Smart. MES">Smart. MES</option>
+										<option value="其他产品">其他产品</option>
+									</select>
+								</div>
+							</div>
+						</li>
+						<li>
+							<div class="item">
+								<div class="label-box">{$field.itemname_56}<span class="red">*</span></div>
+								<div class="input-box">
+									<select type="text" class="input prov" id='attr_56' name='{$field.attr_56}'>
+									</select>
+								</div>
+							</div>
+						</li>
+						<li>
+							<div class="item">
+								<div class="label-box">{$field.itemname_58}<span class="red">*</span></div>
+								<div class="input-box">
+									<select type="text" class="input city" id='attr_58' name='{$field.attr_58}'>
+									</select>
+								</div>
+							</div>
+						</li>
+					</ul>
+					<div class="submit-btn">
+						<button class="btn"><i class="iconfont icon-submit"></i>提交</button>
+					</div>
+        </div>
+        {$field.hidden}
+	  </form>
+	  <script type="text/javascript">
+		function checkForm() {
+		  var mailValue = document.getElementById('attr_52').value;
+  
+		  if (document.getElementById('attr_48').value.length == 0) {
+			alert('{$field.itemname_48}不能为空！');
+			return false;
+		  }
+		  if (document.getElementById('attr_50').value.length == 0) {
+			alert('{$field.itemname_50}不能为空！');
+			return false;
+		  }
+		  if (document.getElementById('attr_52').value.length == 0) {
+			alert('{$field.itemname_52}不能为空！');
+			return false;
+		  }
+		  if (document.getElementById('attr_54').value.length == 0) {
+			alert('{$field.itemname_54}不能为空！');
+			return false;
+		  }
+		  if (document.getElementById('attr_56').value.length == 0) {
+			alert('{$field.itemname_56}不能为空！');
+			return false;
+		  }
+		  if (document.getElementById('attr_58').value.length == 0) {
+			alert('{$field.itemname_58}不能为空！');
+			return false;
+		  }
+		  // 其他验证
+  
+		  if (mailValue.length !== 0) {
+			var reg = /^([a-zA-Z]|[0-9])(\w|\-)+@[a-zA-Z0-9]+\.([a-zA-Z]{2,4})$/;
+			if (!(reg.test(mailValue))) {
+			  alert("邮箱格式不正确");
+			  return false;
+			}
+		  }
+  
+		  return true;
+		}
+	  </script>
+        {/eyou:guestbookform}
+			</div>
+		</div>
+		<!-- page -->
+	<!--网站公用底部——开始-->
+  {eyou:include file="footer.htm" /}
+    <!--网站公用底部——结束-->
+		<!-- footer -->
+		<script src="{eyou:global name='web_templets_pc' /}/skin/js/build.js"></script>
+		<script src="{eyou:global name='web_templets_pc' /}/skin/js/app.js"></script>
+	</body>
+</html>

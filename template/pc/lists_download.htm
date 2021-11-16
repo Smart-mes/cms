@@ -1,0 +1,71 @@
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>download</title>
+		<link rel="stylesheet" href="{eyou:global name='web_templets_pc' /}/skin/css/style.min.css" />
+		<link rel="stylesheet" href="{eyou:global name='web_templets_pc' /}/skin/css/swiper.min.css">
+	</head>
+	<body>
+	<!--网站公用头部——开始-->
+  {eyou:include file="header.htm" /}
+  <!--网站公用头部——结束-->
+		<!-- header -->
+		<div class="download-page page">
+      {eyou:include file="banner.htm" /}
+			<!-- c-banner -->
+			<div class="wrapper">
+				<div class="breadcrumb">
+					<i class="iconfont icon-shouye"></i>
+          {eyou:position style="" /}
+				</div>
+			</div>
+			<!-- 当前位置 -->
+			<!--<div class="download-page page"> -->
+			<div class="wrapper">
+				<ul class="down-list">
+          {eyou:list titlelen='60' pagesize='8'}
+					<li>
+						<div class="down-item">
+							<div class="show">
+								<h6 class="h6">{$field.title}</h6>
+								<span class="date">{$field.add_time|MyDate='Y-m-d',###}</span>
+							</div>
+							<div class="hide">
+								<a href="#">
+									<div class="p-20">
+                    <h6 class="h6">{$field.title}</h6>
+                   
+										<div class="icon-box" >
+                    
+											<i class="iconfont icon-xiazai" >
+                        <a href="{$field.downurl}">{eyou:lang name='yybl10' /}({$i})</a> 
+                      </i>
+                   
+                    </div>
+                   
+									</div>
+								</a>
+							</div>
+						</div>
+          </li>	
+          {/eyou:list} 		
+				</ul>
+				<div class="pagelist">
+					<ul>
+            {eyou:pagelist listitem='index,pre,pageno,next,end' listsize='2' /}
+					</ul>
+				</div>
+			</div>
+			<!-- </div> -->
+		</div>
+		<!-- page -->
+		<!--网站公用底部——开始-->
+    {eyou:include file="footer.htm" /}
+    <!--网站公用底部——结束-->
+		<!-- footer -->
+		<script src="{eyou:global name='web_templets_pc' /}/skin/js/build.js"></script>
+		<script src="{eyou:global name='web_templets_pc' /}/skin/js/app.js"></script>
+	</body>
+</html>
