@@ -1,7 +1,6 @@
 $(document).ready(function () {
 	// 手风琴
 	const accordion = (page, hd, bd) => {
-
 		$(`${page} ${hd}`).on('click', function () {
 			const $children = $(this).children('.iconfont');
 
@@ -131,7 +130,7 @@ $(document).ready(function () {
 		let i = $(this).index();
 		creoSwiper.slideTo(i, false);
 	})
-	accordion('.creo-page', '.accordion-hd', '.accordion-bd');
+	// accordion('.creo-page', '.accordion-hd', '.accordion-bd');
 
 	// mes
 	accordion('.mes-page .main-modules', '.accordion-hd', '.accordion-bd');
@@ -142,6 +141,7 @@ $(document).ready(function () {
 		centeredSlides: true,
 		initialSlide: 1,
 		loop: true,
+		autoplay:true,
 		coverflowEffect: {
 			rotate: 0,
 			stretch: 400,

@@ -1,8 +1,9 @@
+// 字体
 @font-face {
   font-family: "iconfont"; /* Project id 2809127 */
-  src: url('https://at.alicdn.com/t/font_2809127_iy9pl6lkfjk.woff2?t=1636614267691') format('woff2'),
-       url('https://at.alicdn.com/t/font_2809127_iy9pl6lkfjk.woff?t=1636614267691') format('woff'),
-       url('https://at.alicdn.com/t/font_2809127_iy9pl6lkfjk.ttf?t=1636614267691') format('truetype');
+  src: url('../iconfont/iconfont.woff2?t=1637656990030') format('woff2'),
+       url('../iconfont/iconfont.woff?t=1637656990030') format('woff'),
+       url('../iconfont/iconfont.ttf?t=1637656990030') format('truetype');
 }
 
 .iconfont {
